@@ -1,0 +1,15 @@
+packages:
+  - apps/api
+  - apps/web
+  - packages/*
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@openapitools/openapi-generator-cli'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - argon2
+  - esbuild
+  - prisma
+  - sharp
+  - unrs-resolver

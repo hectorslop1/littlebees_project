@@ -1,0 +1,39 @@
+{
+  "name": "kinderspace-mx",
+  "private": true,
+  "version": "0.1.0",
+  "description": "KinderSpace MX - Sistema de Gestión para Guarderías",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "generate:openapi": "turbo run generate:openapi",
+    "generate:clients": "turbo run generate:ts-client generate:dart-client",
+    "db:migrate": "pnpm --filter @kinderspace/api run db:migrate",
+    "db:seed": "pnpm --filter @kinderspace/api run db:seed",
+    "db:studio": "pnpm --filter @kinderspace/api run db:studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3"
+  },
+  "packageManager": "pnpm@10.12.4",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "argon2",
+      "esbuild",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}

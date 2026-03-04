@@ -1,0 +1,101 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ChatService } from './chat.service';
+
+@ApiTags('chat')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('chat')
+export class ChatController {
+  constructor(private readonly chatService: ChatService) {}
+
+  @Get('conversations')
+  @ApiOperation({ summary: 'Listar conversaciones del usuario' })
+  findConversations(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.chatService.findConversations(tenantId, userId);
+  }
+
+  @Get('conversations/:id')
+  @ApiOperation({ summary: 'Detalle de conversación' })
+  findConversationById(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.findConversationById(tenantId, id, userId);
+  }
+
+  @Post('conversations')
+  @ApiOperation({ summary: 'Crear conversación' })
+  createConversation(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: { childId: string; participantIds: string[] },
+  ) {
+    return this.chatService.createConversation(tenantId, dto);
+  }
+
+  @Get('conversations/:id/messages')
+  @ApiOperation({ summary: 'Obtener mensajes de conversación' })
+  @ApiQuery({ name: 'cursor', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  findMessages(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.chatService.findMessages(
+      tenantId,
+      id,
+      userId,
+      cursor,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  @Post('conversations/:id/messages')
+  @ApiOperation({ summary: 'Enviar mensaje' })
+  sendMessage(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: { content: string; messageType?: string; attachmentUrl?: string },
+  ) {
+    return this.chatService.sendMessage(tenantId, id, userId, dto);
+  }
+
+  @Patch('conversations/:id/read')
+  @ApiOperation({ summary: 'Marcar conversación como leída' })
+  markAsRead(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.markAsRead(tenantId, id, userId);
+  }
+
+  @Get('unread-count')
+  @ApiOperation({ summary: 'Total de mensajes no leídos' })
+  getUnreadCount(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.chatService.getUnreadCount(tenantId, userId);
+  }
+}
