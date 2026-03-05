@@ -74,4 +74,7 @@ WORKDIR /app/littlebees-web/apps/api
 
 EXPOSE 3002
 
+ENV NODE_ENV=production
+ENV NODE_PATH=/app/littlebees-web/node_modules
+
 CMD ["node", "dist/main"]
