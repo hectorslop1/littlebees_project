@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "dart-mcp-server": {
+      "command": "dart",
+      "args": ["mcp-server"],
+      "env": {},
+      "description": "MCP server for Dart language support"
+    },
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-docker"],
+      "env": {},
+      "description": "MCP server for Docker container management"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://kinderspace:kinderspace@localhost:5437/kinderspace_dev"
+      ],
+      "env": {},
+      "description": "MCP server for PostgreSQL database access"
+    }
+  },
+  "_comments": {
+    "installation": "Copy this file to: ~/Library/Application Support/Windsurf/User/globalStorage/codeium.windsurf/mcp/mcp_settings.json",
+    "marketplace_mcps": [
+      "Context7 - Install from Windsurf MCP Marketplace",
+      "GitHub - Install from Windsurf MCP Marketplace",
+      "Chrome DevTools - Install from Windsurf MCP Marketplace",
+      "Vercel - Install from Windsurf MCP Marketplace"
+    ],
+    "database_connection": "Update the PostgreSQL connection string if you use different credentials",
+    "dart_requirement": "Requires Dart SDK to be installed and in PATH",
+    "node_requirement": "Requires Node.js and npx to be installed"
+  }
+}

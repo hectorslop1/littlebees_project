@@ -21,11 +21,27 @@ littlebees_project/
 
 ## 🚀 Quick Start
 
+### **¿Primera vez configurando el proyecto?**
+
+**Opción 1: Setup Automático (Recomendado)**
+```bash
+./setup.sh
+```
+
+**Opción 2: Setup Manual**
+Sigue la guía completa: [SETUP_ENVIRONMENT.md](./SETUP_ENVIRONMENT.md)
+
+**Opción 3: Checklist Rápido**
+Consulta: [QUICK_SETUP_CHECKLIST.md](./QUICK_SETUP_CHECKLIST.md)
+
+---
+
 ### **Prerequisitos**
 - Node.js 20+
 - pnpm 10+
 - Docker Desktop
 - Flutter 3.11+
+- Windsurf IDE (opcional pero recomendado)
 
 ### **1. Instalar dependencias**
 ```bash
@@ -156,12 +172,23 @@ pnpm mobile:test      # Tests Flutter
 
 ## 📚 Documentación
 
+### **Setup y Configuración**
+- [Setup Environment - Guía Completa](./SETUP_ENVIRONMENT.md) 🆕
+- [Quick Setup Checklist](./QUICK_SETUP_CHECKLIST.md) 🆕
+- [Script de Setup Automático](./setup.sh) 🆕
+
+### **Arquitectura y Stack**
 - [Estructura del Monorepo](./ESTRUCTURA_MULTIREPO.md)
 - [Guía de Stack Tecnológico](./GUIA_STACK_TECNOLOGICO.md)
-- [Generación de Cliente API](./GENERACION_CLIENTE_API.md) ⭐ **Nuevo**
-- [Setup pgAdmin](./littlebees-web/infrastructure/docker/PGADMIN_SETUP.md)
+
+### **Desarrollo**
+- [Generación de Cliente API](./GENERACION_CLIENTE_API.md)
 - [API Contracts](./littlebees-web/packages/api-contracts/README.md)
 - [README Mobile](./littlebees-mobile/README.md)
+
+### **Infraestructura**
+- [Setup pgAdmin](./littlebees-web/infrastructure/docker/PGADMIN_SETUP.md)
+- [Configuración MCP](./.windsurf/mcp_settings.example.json)
 
 ---
 
