@@ -52,17 +52,21 @@ WORKDIR /app
 COPY --from=base /app/package.json ./
 COPY --from=base /app/pnpm-workspace.yaml ./
 COPY --from=base /app/littlebees-web/package.json ./littlebees-web/
+COPY --from=base /app/littlebees-web/pnpm-lock.yaml ./littlebees-web/
 COPY --from=base /app/littlebees-web/pnpm-workspace.yaml ./littlebees-web/
+COPY --from=base /app/littlebees-web/apps/web/package.json ./littlebees-web/apps/web/
+COPY --from=base /app/littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
+COPY --from=base /app/littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
+
+# Instalar dependencias de producción
+WORKDIR /app/littlebees-web
+RUN pnpm install --frozen-lockfile --prod
 
 # Copiar archivos compilados y necesarios
 WORKDIR /app
 COPY --from=base /app/littlebees-web/apps/web/.next ./littlebees-web/apps/web/.next
 COPY --from=base /app/littlebees-web/apps/web/next.config.ts ./littlebees-web/apps/web/
-COPY --from=base /app/littlebees-web/apps/web/package.json ./littlebees-web/apps/web/
 COPY --from=base /app/littlebees-web/packages ./littlebees-web/packages
-
-# Copiar node_modules completo desde la etapa de build
-COPY --from=base /app/littlebees-web/node_modules ./littlebees-web/node_modules
 
 WORKDIR /app/littlebees-web/apps/web
 
