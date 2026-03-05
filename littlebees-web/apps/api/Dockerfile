@@ -74,4 +74,4 @@ WORKDIR /app/littlebees-web/apps/api
 
 EXPOSE 3002
 
-CMD ["pnpm", "start:prod"]
+CMD ["node", "dist/main"]
