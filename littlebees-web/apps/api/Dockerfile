@@ -33,6 +33,13 @@ COPY littlebees-web/apps/api ./littlebees-web/apps/api
 COPY littlebees-web/packages/shared-types ./littlebees-web/packages/shared-types
 COPY littlebees-web/packages/shared-validators ./littlebees-web/packages/shared-validators
 
+# Compilar packages compartidos primero
+WORKDIR /app/littlebees-web/packages/shared-types
+RUN pnpm build
+
+WORKDIR /app/littlebees-web/packages/shared-validators
+RUN pnpm build
+
 # Generar Prisma Client
 WORKDIR /app/littlebees-web/apps/api
 RUN pnpm prisma generate

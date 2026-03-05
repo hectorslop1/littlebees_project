@@ -30,6 +30,13 @@ COPY littlebees-web/apps/web ./littlebees-web/apps/web
 COPY littlebees-web/packages/shared-types ./littlebees-web/packages/shared-types
 COPY littlebees-web/packages/shared-validators ./littlebees-web/packages/shared-validators
 
+# Compilar packages compartidos primero
+WORKDIR /app/littlebees-web/packages/shared-types
+RUN pnpm build
+
+WORKDIR /app/littlebees-web/packages/shared-validators
+RUN pnpm build
+
 # Build de la aplicación
 WORKDIR /app/littlebees-web/apps/web
 RUN pnpm build
