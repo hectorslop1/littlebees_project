@@ -6,16 +6,26 @@ RUN npm install -g pnpm@10.12.4
 
 WORKDIR /app
 
-# Copiar archivos de configuración de workspace
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Copiar archivos de configuración del monorepo raíz
+COPY package.json ./
+COPY pnpm-workspace.yaml ./
+
+# Copiar archivos de configuración de littlebees-web
+COPY littlebees-web/package.json ./littlebees-web/
+COPY littlebees-web/pnpm-lock.yaml ./littlebees-web/
+COPY littlebees-web/pnpm-workspace.yaml ./littlebees-web/
+
+# Copiar package.json de cada workspace
 COPY littlebees-web/apps/web/package.json ./littlebees-web/apps/web/
 COPY littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
 COPY littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
 
-# Instalar dependencias
+# Instalar dependencias desde littlebees-web
+WORKDIR /app/littlebees-web
 RUN pnpm install --frozen-lockfile
 
 # Copiar código fuente
+WORKDIR /app
 COPY littlebees-web/apps/web ./littlebees-web/apps/web
 COPY littlebees-web/packages/shared-types ./littlebees-web/packages/shared-types
 COPY littlebees-web/packages/shared-validators ./littlebees-web/packages/shared-validators
@@ -32,15 +42,21 @@ RUN npm install -g pnpm@10.12.4
 WORKDIR /app
 
 # Copiar archivos necesarios desde la etapa de build
-COPY --from=base /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml ./
+COPY --from=base /app/package.json ./
+COPY --from=base /app/pnpm-workspace.yaml ./
+COPY --from=base /app/littlebees-web/package.json ./littlebees-web/
+COPY --from=base /app/littlebees-web/pnpm-lock.yaml ./littlebees-web/
+COPY --from=base /app/littlebees-web/pnpm-workspace.yaml ./littlebees-web/
 COPY --from=base /app/littlebees-web/apps/web/package.json ./littlebees-web/apps/web/
 COPY --from=base /app/littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
 COPY --from=base /app/littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
 
 # Instalar solo dependencias de producción
+WORKDIR /app/littlebees-web
 RUN pnpm install --frozen-lockfile --prod
 
 # Copiar archivos compilados
+WORKDIR /app
 COPY --from=base /app/littlebees-web/apps/web/.next ./littlebees-web/apps/web/.next
 COPY --from=base /app/littlebees-web/apps/web/public ./littlebees-web/apps/web/public
 COPY --from=base /app/littlebees-web/apps/web/next.config.js ./littlebees-web/apps/web/
