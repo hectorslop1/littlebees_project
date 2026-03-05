@@ -23,7 +23,13 @@ littlebees_project/
 
 ### **¿Primera vez configurando el proyecto?**
 
-**Opción 1: Setup Automático (Recomendado)**
+**🆕 Nueva Mac (Flujo Recomendado):**
+1. Instala Docker Desktop + Windsurf
+2. Instala MCP desde marketplace (Context7, GitHub, Chrome DevTools, Vercel)
+3. Abre nuevo chat con Cascade
+4. Sigue: [PRIMERA_VEZ_EN_NUEVA_MAC.md](./PRIMERA_VEZ_EN_NUEVA_MAC.md) ⭐
+
+**Opción 1: Setup Automático**
 ```bash
 ./setup.sh
 ```
@@ -173,9 +179,10 @@ pnpm mobile:test      # Tests Flutter
 ## 📚 Documentación
 
 ### **Setup y Configuración**
-- [Setup Environment - Guía Completa](./SETUP_ENVIRONMENT.md) 🆕
-- [Quick Setup Checklist](./QUICK_SETUP_CHECKLIST.md) 🆕
-- [Script de Setup Automático](./setup.sh) 🆕
+- [Primera Vez en Nueva Mac](./PRIMERA_VEZ_EN_NUEVA_MAC.md) ⭐ **Recomendado**
+- [Setup Environment - Guía Completa](./SETUP_ENVIRONMENT.md)
+- [Quick Setup Checklist](./QUICK_SETUP_CHECKLIST.md)
+- [Script de Setup Automático](./setup.sh)
 
 ### **Arquitectura y Stack**
 - [Estructura del Monorepo](./ESTRUCTURA_MULTIREPO.md)
