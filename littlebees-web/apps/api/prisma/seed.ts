@@ -24,29 +24,29 @@ function randomTime(hourMin: number, hourMax: number): Date {
 async function main() {
   console.log('Seeding database...');
 
-  // Clean existing data
-  await prisma.$executeRaw`TRUNCATE TABLE "AuditLog" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Notification" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "File" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Message" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "ConversationParticipant" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Conversation" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Invoice" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Payment" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "ExtraService" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "DevelopmentRecord" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "DevelopmentMilestone" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "DailyLogEntry" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "AttendanceRecord" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "EmergencyContact" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "ChildMedicalInfo" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "ChildParent" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Child" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Group" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "RefreshToken" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "UserTenant" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "User" CASCADE`;
-  await prisma.$executeRaw`TRUNCATE TABLE "Tenant" CASCADE`;
+  // Clean existing data (using correct table names from schema)
+  await prisma.$executeRaw`TRUNCATE TABLE "audit_logs" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "notifications" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "files" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "messages" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "conversation_participants" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "conversations" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "invoices" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "payments" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "extra_services" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "development_records" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "development_milestones" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "daily_log_entries" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "attendance_records" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "emergency_contacts" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "child_medical_info" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "child_parents" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "children" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "groups" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "refresh_tokens" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "user_tenants" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "users" CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "tenants" CASCADE`;
 
   // --- Tenant ---
   const tenant = await prisma.tenant.create({

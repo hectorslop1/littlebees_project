@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme/colors.dart';
 
 class HomeScreen extends StatelessWidget {
   final Widget child;
