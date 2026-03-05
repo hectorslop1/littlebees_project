@@ -73,7 +73,7 @@ RUN pnpm install --frozen-lockfile --prod
 WORKDIR /app
 COPY --from=base /app/littlebees-web/apps/api/dist ./littlebees-web/apps/api/dist
 COPY --from=base /app/littlebees-web/apps/api/prisma ./littlebees-web/apps/api/prisma
-COPY --from=base /app/littlebees-web/apps/api/node_modules/.prisma ./littlebees-web/apps/api/node_modules/.prisma
+COPY --from=base /app/littlebees-web/node_modules/.prisma ./littlebees-web/node_modules/.prisma
 COPY --from=base /app/littlebees-web/packages ./littlebees-web/packages
 
 WORKDIR /app/littlebees-web/apps/api
