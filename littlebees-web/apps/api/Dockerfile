@@ -65,16 +65,19 @@ COPY --from=base /app/littlebees-web/apps/api/package.json ./littlebees-web/apps
 COPY --from=base /app/littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
 COPY --from=base /app/littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
 
+# Copiar código compilado y archivos necesarios antes de instalar
+WORKDIR /app
+COPY --from=base /app/littlebees-web/apps/api/dist ./littlebees-web/apps/api/dist
+COPY --from=base /app/littlebees-web/apps/api/prisma ./littlebees-web/apps/api/prisma
+COPY --from=base /app/littlebees-web/packages ./littlebees-web/packages
+
 # Instalar solo dependencias de producción
 WORKDIR /app/littlebees-web
 RUN pnpm install --frozen-lockfile --prod
 
-# Copiar código compilado y archivos necesarios
-WORKDIR /app
-COPY --from=base /app/littlebees-web/apps/api/dist ./littlebees-web/apps/api/dist
-COPY --from=base /app/littlebees-web/apps/api/prisma ./littlebees-web/apps/api/prisma
-COPY --from=base /app/littlebees-web/node_modules/.prisma ./littlebees-web/node_modules/.prisma
-COPY --from=base /app/littlebees-web/packages ./littlebees-web/packages
+# Generar Prisma Client en producción
+WORKDIR /app/littlebees-web/apps/api
+RUN pnpm prisma generate
 
 WORKDIR /app/littlebees-web/apps/api
 
