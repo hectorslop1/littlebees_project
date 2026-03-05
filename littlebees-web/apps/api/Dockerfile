@@ -59,7 +59,15 @@ WORKDIR /app
 COPY --from=base /app/package.json ./
 COPY --from=base /app/pnpm-workspace.yaml ./
 COPY --from=base /app/littlebees-web/package.json ./littlebees-web/
+COPY --from=base /app/littlebees-web/pnpm-lock.yaml ./littlebees-web/
 COPY --from=base /app/littlebees-web/pnpm-workspace.yaml ./littlebees-web/
+COPY --from=base /app/littlebees-web/apps/api/package.json ./littlebees-web/apps/api/
+COPY --from=base /app/littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
+COPY --from=base /app/littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
+
+# Instalar dependencias de producción
+WORKDIR /app/littlebees-web
+RUN pnpm install --frozen-lockfile --prod
 
 # Copiar código compilado y archivos necesarios
 WORKDIR /app
@@ -67,14 +75,13 @@ COPY --from=base /app/littlebees-web/apps/api/dist ./littlebees-web/apps/api/dis
 COPY --from=base /app/littlebees-web/apps/api/prisma ./littlebees-web/apps/api/prisma
 COPY --from=base /app/littlebees-web/packages ./littlebees-web/packages
 
-# Copiar node_modules completo desde la etapa de build (incluye Prisma Client generado)
-COPY --from=base /app/littlebees-web/node_modules ./littlebees-web/node_modules
+# Copiar Prisma Client generado
+COPY --from=base /app/littlebees-web/node_modules/.pnpm ./littlebees-web/node_modules/.pnpm
 
 WORKDIR /app/littlebees-web/apps/api
 
 EXPOSE 3002
 
 ENV NODE_ENV=production
-ENV NODE_PATH=/app/littlebees-web/node_modules
 
 CMD ["node", "dist/main"]
