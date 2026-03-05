@@ -1,18 +1,21 @@
-# 🏗️ Estructura Multirepo — Little Bees
+# 🏗️ Estructura Monorepo — Little Bees
 
-**Fecha:** 3 de marzo de 2026  
-**Estado:** ✅ Configurado y listo para desarrollo
+**Fecha:** 4 de marzo de 2026  
+**Estado:** ✅ Configurado como monorepo con workspaces separados
 
 ---
 
 ## 📁 Estructura de Directorios
 
 ```
-/Users/hectorlopez/Desktop/Proyectos/project/
+/Users/hectorlopez/Desktop/Proyectos/littlebees_project/
 │
+├── package.json                         ← Root package.json (monorepo)
+├── pnpm-workspace.yaml                  ← Workspace configuration
 ├── ESTRUCTURA_MULTIREPO.md              ← Este documento
+├── GUIA_STACK_TECNOLOGICO.md            ← Guía de instalación
 │
-├── 📦 littlebees-web/                    ← Backend + Frontend Web
+├── 📦 littlebees-web/                    ← Backend + Frontend Web (pnpm workspace)
 │   ├── apps/
 │   │   ├── api/                          # NestJS 10 + Prisma 6
 │   │   │   ├── src/
@@ -65,11 +68,12 @@
 │   │
 │   ├── infrastructure/
 │   │   └── docker/
-│   │       ├── docker-compose.yml        # PostgreSQL, Redis, MinIO
-│   │       └── init.sql
+│   │       ├── docker-compose.yml        # PostgreSQL, Redis, MinIO, pgAdmin
+│   │       ├── init.sql
+│   │       └── PGADMIN_SETUP.md          # Guía de configuración pgAdmin
 │   │
 │   ├── turbo.json                        # Turborepo config
-│   ├── pnpm-workspace.yaml
+│   ├── pnpm-workspace.yaml               # Workspace interno de littlebees-web
 │   ├── package.json
 │   └── start-dev.sh                      # Script de inicio
 │

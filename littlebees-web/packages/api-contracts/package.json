@@ -2,14 +2,17 @@
   "name": "@kinderspace/api-contracts",
   "version": "0.1.0",
   "private": true,
+  "description": "OpenAPI contracts and client generation for KinderSpace API",
   "scripts": {
-    "generate:ts-client": "orval --config orval.config.ts",
-    "generate:dart-client": "openapi-generator-cli generate -i ./openapi.yaml -g dart-dio -o ../../apps/mobile/lib/generated --additional-properties=pubName=kinderspace_api",
-    "clean": "rm -rf generated"
+    "fetch:openapi": "curl http://localhost:3002/api/docs-json > openapi.json",
+    "generate:dart": "openapi-generator-cli generate -i ./openapi.json -g dart-dio -o ../../../littlebees-mobile/lib/generated/api --additional-properties=pubName=kinderspace_api,pubVersion=1.0.0,useEnumExtension=true",
+    "generate:ts": "orval --config orval.config.ts",
+    "generate": "pnpm fetch:openapi && pnpm generate:dart",
+    "clean": "rm -rf ../../../littlebees-mobile/lib/generated/api && rm -f openapi.json"
   },
   "devDependencies": {
-    "orval": "^7.3.0",
     "@openapitools/openapi-generator-cli": "^2.15.3",
+    "orval": "^7.3.0",
     "typescript": "^5.7.3"
   }
 }

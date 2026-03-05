@@ -1,0 +1,42 @@
+{
+  "name": "littlebees-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LittleBees - Sistema de gestión para guarderías (Backend + Web + Mobile)",
+  "scripts": {
+    "dev": "pnpm --filter @kinderspace/api dev & pnpm --filter @kinderspace/web dev",
+    "dev:api": "pnpm --filter @kinderspace/api dev",
+    "dev:web": "pnpm --filter @kinderspace/web dev",
+    "build": "turbo run build",
+    "build:api": "pnpm --filter @kinderspace/api build",
+    "build:web": "pnpm --filter @kinderspace/web build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:migrate": "pnpm --filter @kinderspace/api db:migrate",
+    "db:seed": "pnpm --filter @kinderspace/api db:seed",
+    "db:studio": "pnpm --filter @kinderspace/api db:studio",
+    "docker:up": "cd littlebees-web/infrastructure/docker && docker compose up -d",
+    "docker:down": "cd littlebees-web/infrastructure/docker && docker compose down",
+    "docker:logs": "cd littlebees-web/infrastructure/docker && docker compose logs -f",
+    "mobile:run": "cd littlebees-mobile && flutter run",
+    "mobile:build": "cd littlebees-mobile && flutter build apk",
+    "mobile:analyze": "cd littlebees-mobile && flutter analyze",
+    "mobile:test": "cd littlebees-mobile && flutter test",
+    "generate:api-client": "cd littlebees-web/packages/api-contracts && ./generate-client.sh",
+    "generate:dart-client": "pnpm --filter @kinderspace/api-contracts generate"
+  },
+  "workspaces": [
+    "littlebees-web/apps/*",
+    "littlebees-web/packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.12.4",
+  "devDependencies": {
+    "turbo": "^2.8.12"
+  }
+}

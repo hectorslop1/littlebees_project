@@ -1,0 +1,6 @@
+packages:
+  # Backend + Web apps
+  - 'littlebees-web/apps/*'
+  
+  # Shared packages
+  - 'littlebees-web/packages/*'
