@@ -32,7 +32,8 @@ class MockData {
     lastName: 'García',
     classroomId: 'class1',
     classroomName: 'Butterflies',
-    avatarUrl: 'https://source.unsplash.com/yBuzsGe9p3k/150x150',
+    avatarUrl:
+        'https://images.pexels.com/photos/3771646/pexels-photo-3771646.jpeg',
     dateOfBirth: DateTime(2023, 8, 20),
     allergies: [],
     authorizedPickups: [

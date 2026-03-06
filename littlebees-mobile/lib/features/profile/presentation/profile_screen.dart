@@ -27,9 +27,9 @@ class ProfileScreen extends ConsumerWidget {
           children: [
             const Center(
               child: LBAvatar(
-                placeholder: 'G',
+                placeholder: 'GF',
                 size: LBAvatarSize.large,
-                imageUrl: 'https://i.pravatar.cc/150?u=carlos',
+                imageUrl: null, // Remove image, show initials only
               ),
             ),
             const SizedBox(height: 16),
@@ -57,10 +57,14 @@ class ProfileScreen extends ConsumerWidget {
                   _buildChildRow(
                     'Emma García',
                     'Butterflies',
-                    'https://i.pravatar.cc/150?u=emma',
+                    'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=150&h=150&fit=crop',
                   ),
                   const Divider(height: 32),
-                  _buildChildRow('Lucas García', 'Ladybugs', null),
+                  _buildChildRow(
+                    'Liam García',
+                    'Butterflies',
+                    'https://images.pexels.com/photos/3771646/pexels-photo-3771646.jpeg',
+                  ),
                 ],
               ),
             ),

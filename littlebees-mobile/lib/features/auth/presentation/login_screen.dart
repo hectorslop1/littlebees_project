@@ -37,15 +37,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref
           .read(authProvider.notifier)
           .login(_emailController.text.trim(), _passwordController.text);
-      // Router redirect will handle navigation automatically
-    } catch (e) {
+
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('LOGIN ERROR: $e'); // Debug logging
+      if (mounted) {
+        setState(() => _isLoading = false);
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
+        print('SHOWING SNACKBAR: $errorMessage'); // Debug logging
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(errorMessage),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

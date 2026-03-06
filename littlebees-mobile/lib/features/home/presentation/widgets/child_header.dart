@@ -13,7 +13,7 @@ class ChildHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentChild = ref.watch(currentChildIdProvider);
+    final currentChild = ref.watch(currentChildIdProvider) ?? 'c1';
 
     final children = [
       {
@@ -27,7 +27,8 @@ class ChildHeader extends ConsumerWidget {
         'id': 'c2',
         'name': 'Liam',
         'initial': 'L',
-        'imageUrl': 'https://source.unsplash.com/yBuzsGe9p3k/150x150',
+        'imageUrl':
+            'https://images.pexels.com/photos/3771646/pexels-photo-3771646.jpeg',
       },
     ];
 

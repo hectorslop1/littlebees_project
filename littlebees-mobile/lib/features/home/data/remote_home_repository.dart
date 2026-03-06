@@ -12,9 +12,18 @@ class RemoteHomeRepository {
   /// Get all children for the current logged-in parent (via NestJS API)
   Future<List<Child>> getMyChildren() async {
     try {
-      final response = await _api.get<Map<String, dynamic>>(Endpoints.children);
+      final response = await _api.get<dynamic>(Endpoints.children);
 
-      final items = response['data'] as List? ?? [];
+      // Handle both response formats: direct list or object with data property
+      List items;
+      if (response is List) {
+        items = response;
+      } else if (response is Map<String, dynamic>) {
+        items = response['data'] as List? ?? [];
+      } else {
+        items = [];
+      }
+
       return items.map((json) {
         return Child(
           id: json['id'],

@@ -11,12 +11,7 @@ class AuthState {
   final bool isLoading;
   final String? error;
 
-  const AuthState({
-    this.user,
-    this.tenant,
-    this.isLoading = false,
-    this.error,
-  });
+  const AuthState({this.user, this.tenant, this.isLoading = false, this.error});
 
   bool get isAuthenticated => user != null;
   UserRole? get role => user?.role;
@@ -96,15 +91,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return response;
     } catch (e) {
       String errorMessage = 'Error al iniciar sesión';
-      if (e.toString().contains('401')) {
+
+      // Parse DioException for better error messages
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('401') || errorStr.contains('unauthorized')) {
         errorMessage = 'Credenciales incorrectas';
-      } else if (e.toString().contains('SocketException') ||
-          e.toString().contains('connection')) {
+      } else if (errorStr.contains('400') || errorStr.contains('bad request')) {
+        errorMessage = 'Email o contraseña inválidos';
+      } else if (errorStr.contains('socketexception') ||
+          errorStr.contains('connection') ||
+          errorStr.contains('network')) {
         errorMessage = 'Error de conexión. Verifica tu internet.';
+      } else if (errorStr.contains('timeout')) {
+        errorMessage = 'Tiempo de espera agotado. Intenta de nuevo.';
       }
 
       state = state.copyWith(isLoading: false, error: errorMessage);
-      rethrow;
+      throw Exception(errorMessage);
     }
   }
 
