@@ -46,7 +46,10 @@ export class PaymentsService {
     ]);
 
     return {
-      data,
+      data: data.map((payment) => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
       meta: {
         total,
         page,
@@ -94,7 +97,10 @@ export class PaymentsService {
     ]);
 
     return {
-      data,
+      data: data.map((payment) => ({
+        ...payment,
+        amount: Number(payment.amount),
+      })),
       meta: {
         total,
         page,
