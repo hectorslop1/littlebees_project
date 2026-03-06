@@ -105,14 +105,14 @@ services:
       context: .
       dockerfile: littlebees-web/apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://216.250.125.239:3002/api/v1
+        NEXT_PUBLIC_API_URL: https://little-bees.cbluna-dev.com/api/v1
     container_name: littlebees-web
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://216.250.125.239:3002/api/v1
+      NEXT_PUBLIC_API_URL: https://little-bees.cbluna-dev.com/api/v1
     depends_on:
       - api
     networks:
