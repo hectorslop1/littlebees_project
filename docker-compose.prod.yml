@@ -103,6 +103,8 @@ services:
     build:
       context: .
       dockerfile: littlebees-web/apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://216.250.125.239:3002
     container_name: littlebees-web
     restart: unless-stopped
     ports:
