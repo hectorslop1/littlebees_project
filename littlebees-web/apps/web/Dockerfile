@@ -58,9 +58,9 @@ COPY --from=base /app/littlebees-web/apps/web/package.json ./littlebees-web/apps
 COPY --from=base /app/littlebees-web/packages/shared-types/package.json ./littlebees-web/packages/shared-types/
 COPY --from=base /app/littlebees-web/packages/shared-validators/package.json ./littlebees-web/packages/shared-validators/
 
-# Instalar dependencias de producción
+# Instalar dependencias (incluyendo typescript para next.config.ts)
 WORKDIR /app/littlebees-web
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 # Copiar archivos compilados y necesarios
 WORKDIR /app
