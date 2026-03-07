@@ -24,7 +24,7 @@ GEAR="⚙"
 # Configuración del servidor
 SERVER_IP="216.250.125.239"
 SERVER_USER="cbluna"
-SSH_KEY="/Users/hectorlopez/Documents/Archivo Servidor (NO COMPARTIR)/sshcbluna"
+SSH_KEY="/Users/hectoreduardosanchezlopez/Documents/Archivo Servidor (NO COMPARTIR)/sshcbluna"
 REPO_URL="https://github.com/hectorslop1/littlebees_project"
 REMOTE_DIR="/home/cbluna/littlebees_project"
 BRANCH="main"

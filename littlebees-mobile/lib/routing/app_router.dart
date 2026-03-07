@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,15 +18,23 @@ import '../features/splash/presentation/splash_screen.dart';
 import '../features/auth/application/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final notifier = _AuthChangeNotifier(ref);
+  ref.onDispose(() => notifier.dispose());
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
+      // Read auth state DIRECTLY at redirect time (not captured)
+      final authState = ref.read(authProvider);
       final isLoading = authState.isLoading;
       final isLoggedIn = authState.isAuthenticated;
       final isOnAuthPage = state.matchedLocation.startsWith('/auth');
       final isOnSplash = state.matchedLocation == '/';
+
+      print(
+        '🔄 ROUTER REDIRECT: isLoading=$isLoading, isLoggedIn=$isLoggedIn, location=${state.matchedLocation}',
+      );
 
       // While auth is loading, stay on splash
       if (isLoading) {
@@ -44,6 +53,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // If logged in and on auth page, redirect to home
       if (isLoggedIn && isOnAuthPage) {
+        print(
+          '🔄 ROUTER: Redirecting authenticated user from auth page to /home',
+        );
         return '/home';
       }
 
@@ -120,3 +132,24 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+// Listens to auth state changes and notifies GoRouter to re-run redirect
+class _AuthChangeNotifier extends ChangeNotifier {
+  _AuthChangeNotifier(this._ref) {
+    _subscription = _ref.listen(authProvider, (previous, next) {
+      print(
+        '🔄 AUTH NOTIFIER: isAuthenticated changed to ${next.isAuthenticated}',
+      );
+      notifyListeners();
+    });
+  }
+
+  final Ref _ref;
+  late final ProviderSubscription<AuthState> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.close();
+    super.dispose();
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../design_system/theme/app_colors.dart';
@@ -40,6 +41,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         setState(() => _isLoading = false);
+        // Explicitly navigate to home after successful login
+        context.go('/home');
       }
     } catch (e) {
       print('LOGIN ERROR: $e'); // Debug logging
