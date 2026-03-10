@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { DailyLogsService } from './daily-logs.service';
+import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
 
 @ApiTags('daily-logs')
 @ApiBearerAuth()
@@ -15,12 +16,13 @@ export class DailyLogsController {
 
   @Get()
   @ApiOperation({ summary: 'Obtener entradas de bitácora por niño y fecha' })
-  findByChildAndDate(
+  async findByChildAndDate(
     @CurrentTenant() tenantId: string,
     @Query('childId') childId: string,
     @Query('date') date: string,
   ) {
-    return this.dailyLogsService.findByChildAndDate(tenantId, childId, date);
+    const entries = await this.dailyLogsService.findByChildAndDate(tenantId, childId, date);
+    return createPaginatedResponse(entries);
   }
 
   @Post()

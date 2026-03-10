@@ -3,7 +3,7 @@ import { Providers } from '@/providers/providers';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'KinderSpace MX',
+  title: 'Littlebees',
   description: 'Sistema de Gestión para Guarderías',
 };
 

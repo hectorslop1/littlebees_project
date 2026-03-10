@@ -11,7 +11,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold font-heading">
-        Bienvenido{user?.firstName ? `, ${user.firstName}` : ''} a KinderSpace
+        Bienvenido{user?.firstName ? `, ${user.firstName}` : ''} a Littlebees
       </h1>
 
       {/* Stats Grid */}

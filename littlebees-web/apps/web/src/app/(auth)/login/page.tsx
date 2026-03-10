@@ -11,6 +11,7 @@ import type { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { BlobAnimation } from '@/components/blob-animation';
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -60,85 +61,94 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-card bg-card p-8 shadow-card">
-      {/* Logo */}
-      <div className="mb-8 text-center">
-        <div className="mb-3 flex items-center justify-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg text-white">
-            🐝
+    <div className="flex min-h-screen">
+      {/* Left Side - Login Form */}
+      <div className="flex w-full lg:w-1/2 flex-col justify-center px-8 py-12 lg:px-16 xl:px-24 bg-white">
+        <div className="w-full max-w-md mx-auto">
+          {/* Logo */}
+          <div className="mb-10">
+            <img 
+              src="/logo.png" 
+              alt="Littlebees" 
+              className="mb-4 h-20 w-auto"
+            />
+            <p className="text-base text-[#6B6B6B]">
+              Inicia sesión en tu cuenta
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-primary">KinderSpace</h1>
+
+          {/* Dev User Selector */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-6 rounded-xl border border-[#D4A853]/30 bg-[#FBF6E9] p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#2C2C2C]">
+                <Users className="h-4 w-4 text-[#D4A853]" />
+                Usuarios de prueba
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {DEV_USERS.map((u) => (
+                  <button
+                    key={u.email}
+                    type="button"
+                    onClick={() => selectDevUser(u.email)}
+                    className="rounded-full border border-[#D4A853]/30 bg-white px-3 py-1.5 text-xs font-medium text-[#2C2C2C] transition-all hover:bg-[#D4A853] hover:text-white hover:border-[#D4A853]"
+                    title={u.email}
+                  >
+                    {u.name}
+                    <span className="ml-1 text-[10px] opacity-70">({u.role})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* API Error */}
+          {apiError && (
+            <div className="mb-6 rounded-xl border border-[#D4655E]/20 bg-[#D4655E]/10 px-4 py-3 text-sm text-[#D4655E]">
+              {apiError}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <Input
+              label="Correo electrónico"
+              type="email"
+              placeholder="tu@email.com"
+              icon={<Mail className="h-4 w-4" />}
+              error={errors.email?.message}
+              {...register('email')}
+            />
+
+            <Input
+              label="Contraseña"
+              type="password"
+              placeholder="••••••••"
+              icon={<Lock className="h-4 w-4" />}
+              error={errors.password?.message}
+              {...register('password')}
+            />
+
+            <Button
+              type="submit"
+              className="w-full bg-[#D4A853] hover:bg-[#C49743] text-white"
+              size="lg"
+              loading={isSubmitting}
+            >
+              Iniciar Sesión
+            </Button>
+          </form>
+
+          {/* Footer */}
+          <p className="mt-8 text-center text-sm text-[#A0A0A0]">
+            Plataforma de gestión para kínderes y guarderías
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Inicia sesión en tu cuenta
-        </p>
       </div>
 
-      {/* Dev User Selector */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mb-5 rounded-lg border border-accent/30 bg-accent/5 p-3">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-accent-700">
-            <Users className="h-3.5 w-3.5" />
-            Usuarios de prueba
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {DEV_USERS.map((u) => (
-              <button
-                key={u.email}
-                type="button"
-                onClick={() => selectDevUser(u.email)}
-                className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary/15 hover:border-primary/40"
-                title={u.email}
-              >
-                {u.name}
-                <span className="ml-1 text-[10px] text-muted-foreground">({u.role})</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* API Error */}
-      {apiError && (
-        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {apiError}
-        </div>
-      )}
-
-      {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input
-          label="Correo electrónico"
-          type="email"
-          placeholder="tu@email.com"
-          icon={<Mail className="h-4 w-4" />}
-          error={errors.email?.message}
-          {...register('email')}
-        />
-
-        <Input
-          label="Contraseña"
-          type="password"
-          placeholder="••••••••"
-          icon={<Lock className="h-4 w-4" />}
-          error={errors.password?.message}
-          {...register('password')}
-        />
-
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          loading={isSubmitting}
-        >
-          Iniciar Sesión
-        </Button>
-      </form>
-
-      {/* Footer */}
-      <p className="mt-6 text-center text-xs text-muted-foreground">
-        Plataforma de gestión para kínderes y guarderías
-      </p>
+      {/* Right Side - Blob Animation */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#FBF6E9]">
+        <BlobAnimation />
+      </div>
     </div>
   );
 }

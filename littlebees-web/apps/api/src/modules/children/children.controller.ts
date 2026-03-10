@@ -7,6 +7,7 @@ import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 import { UserRole } from '@kinderspace/shared-types';
 import { Gender } from '@prisma/client';
 import { ChildrenService } from './children.service';
+import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
 
 @ApiTags('children')
 @ApiBearerAuth()
@@ -20,13 +21,14 @@ export class ChildrenController {
   @ApiQuery({ name: 'groupId', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'search', required: false })
-  findAll(
+  async findAll(
     @CurrentTenant() tenantId: string,
     @Query('groupId') groupId?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    return this.childrenService.findAll(tenantId, { groupId, status, search });
+    const children = await this.childrenService.findAll(tenantId, { groupId, status, search });
+    return createPaginatedResponse(children);
   }
 
   @Get(':id')

@@ -20,11 +20,12 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
         <Menu className="h-5 w-5 text-muted" />
       </button>
 
-      <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-600">
-          <span className="text-xs font-bold text-white">K</span>
-        </div>
-        <span className="text-lg font-bold font-heading text-primary">KinderSpace</span>
+      <div className="flex items-center">
+        <img 
+          src="/logo.png" 
+          alt="Littlebees" 
+          className="h-8 w-auto"
+        />
       </div>
 
       <Avatar size="sm" name={user ? `${user.firstName} ${user.lastName}` : ''}>

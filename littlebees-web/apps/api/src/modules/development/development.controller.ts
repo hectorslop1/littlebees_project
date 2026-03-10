@@ -18,6 +18,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@kinderspace/shared-types';
 import { DevelopmentCategory, MilestoneStatus } from '@prisma/client';
 import { DevelopmentService } from './development.service';
+import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
 
 @ApiTags('development')
 @ApiBearerAuth()
@@ -101,19 +102,20 @@ export class DevelopmentController {
   @ApiQuery({ name: 'milestoneId', required: false })
   @ApiQuery({ name: 'category', required: false })
   @ApiQuery({ name: 'status', required: false })
-  findRecords(
+  async findRecords(
     @CurrentTenant() tenantId: string,
     @Query('childId') childId?: string,
     @Query('milestoneId') milestoneId?: string,
     @Query('category') category?: string,
     @Query('status') status?: string,
   ) {
-    return this.developmentService.findRecords(tenantId, {
+    const records = await this.developmentService.findRecords(tenantId, {
       childId,
       milestoneId,
       category,
       status,
     });
+    return createPaginatedResponse(records);
   }
 
   @Get('records/:id')

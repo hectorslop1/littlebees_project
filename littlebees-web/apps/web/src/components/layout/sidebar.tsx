@@ -73,13 +73,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-lg">
-              🐝
-            </div>
-            <span className="text-xl font-bold font-heading text-primary">
-              Little Bee
-            </span>
+          <Link href="/" className="flex items-center">
+            <img 
+              src="/logo.png" 
+              alt="Littlebees" 
+              className="h-10 w-auto"
+            />
           </Link>
           <button onClick={onClose} className="lg:hidden rounded-lg p-1 hover:bg-gray-100" title="Cerrar menú">
             <X className="h-5 w-5 text-muted" />

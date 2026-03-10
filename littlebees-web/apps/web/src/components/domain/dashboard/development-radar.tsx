@@ -2,11 +2,12 @@
 
 import { useMemo } from 'react';
 import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -89,31 +90,35 @@ export function DevelopmentRadar() {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="flex h-64 items-center justify-center text-muted">
-            Sin datos
+          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            Sin evaluaciones de desarrollo este mes
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={256}>
-            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
-              <PolarGrid stroke="#e5e7eb" />
-              <PolarAngleAxis
-                dataKey="category"
+            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis 
+                dataKey="category" 
                 tick={{ fontSize: 11 }}
+                angle={-15}
+                textAnchor="end"
+                height={60}
               />
-              <PolarRadiusAxis
-                angle={30}
+              <YAxis 
                 domain={[0, 100]}
                 tick={{ fontSize: 10 }}
                 tickFormatter={(v) => `${v}%`}
               />
-              <Radar
-                name="Promedio"
-                dataKey="value"
-                stroke="#4ECDC4"
-                fill="#4ECDC4"
-                fillOpacity={0.3}
+              <Tooltip 
+                formatter={(value) => [`${value}%`, 'Progreso']}
+                contentStyle={{ fontSize: 12 }}
               />
-            </RadarChart>
+              <Bar 
+                dataKey="value" 
+                fill="#4ECDC4" 
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
           </ResponsiveContainer>
         )}
       </CardContent>

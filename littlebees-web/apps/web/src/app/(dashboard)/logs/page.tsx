@@ -76,6 +76,19 @@ export default function LogsPage() {
             </div>
           ))}
         </div>
+      ) : filteredEntries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="rounded-full bg-muted p-3 mb-4">
+            <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No hay registros en la bitácora</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            No se encontraron entradas para la fecha seleccionada ({formattedDate}).
+            Intenta seleccionar otra fecha o agrega una nueva entrada.
+          </p>
+        </div>
       ) : (
         <LogTimeline entries={filteredEntries} />
       )}
