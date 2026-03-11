@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../design_system/theme/app_colors.dart';
 import '../../../../design_system/widgets/lb_card.dart';
 import '../../../../core/i18n/app_translations.dart';
+import '../application/calendar_providers.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -151,56 +152,134 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 8,
-                ),
-                children: [
-                  _buildAgendaItem(
-                    time: '09:00 AM',
-                    endTime: '10:00 AM',
-                    title: 'Morning Circle & Songs 🎵',
-                    description: 'Interactive group activity',
-                    color: AppColors.primary,
-                    icon: LucideIcons.music,
-                    index: 0,
-                  ),
-                  _buildAgendaItem(
-                    time: '10:30 AM',
-                    endTime: '11:15 AM',
-                    title: 'Art Creation 🎨',
-                    description: 'Finger painting session',
-                    color: AppColors.info,
-                    icon: LucideIcons.palette,
-                    index: 1,
-                  ),
-                  _buildAgendaItem(
-                    time: '12:00 PM',
-                    endTime: '12:30 PM',
-                    title: 'Lunch Time 🍱',
-                    description: 'Healthy meals in the cafeteria',
-                    color: AppColors.warning,
-                    icon: LucideIcons.utensils,
-                    index: 2,
-                  ),
-                  _buildAgendaItem(
-                    time: '02:00 PM',
-                    endTime: 'All Day',
-                    title: 'Monthly Payment Due 💳',
-                    description: 'Please process via the app',
-                    color: AppColors.error,
-                    icon: LucideIcons.creditCard,
-                    index: 3,
-                    isImportant: true,
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: _buildAgendaList()),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAgendaList() {
+    final attendanceAsync = ref.watch(attendanceForDateProvider);
+    final dailyLogsAsync = ref.watch(dailyLogsForDateProvider);
+
+    return attendanceAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              LucideIcons.alertCircle,
+              size: 48,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 16),
+            Text('Error loading agenda: $error'),
+          ],
+        ),
+      ),
+      data: (attendanceRecords) {
+        return dailyLogsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) =>
+              Center(child: Text('Error loading daily logs: $error')),
+          data: (dailyLogs) {
+            final allItems = <Widget>[];
+            int index = 0;
+
+            // Add attendance records
+            for (final record in attendanceRecords) {
+              if (record.checkInAt != null) {
+                allItems.add(
+                  _buildAgendaItem(
+                    time: DateFormat('hh:mm a').format(record.checkInAt!),
+                    endTime: record.checkOutAt != null
+                        ? DateFormat('hh:mm a').format(record.checkOutAt!)
+                        : 'Present',
+                    title: 'Check-in',
+                    description: record.observations ?? 'Attendance recorded',
+                    color: AppColors.success,
+                    icon: LucideIcons.checkCircle,
+                    index: index++,
+                  ),
+                );
+              }
+            }
+
+            // Add daily logs
+            for (final log in dailyLogs) {
+              IconData icon;
+              Color color;
+
+              switch (log.type.name) {
+                case 'meal':
+                  icon = LucideIcons.utensils;
+                  color = AppColors.warning;
+                  break;
+                case 'nap':
+                  icon = LucideIcons.moon;
+                  color = AppColors.info;
+                  break;
+                case 'photo':
+                  icon = LucideIcons.camera;
+                  color = AppColors.primary;
+                  break;
+                case 'activity':
+                  icon = LucideIcons.activity;
+                  color = AppColors.success;
+                  break;
+                default:
+                  icon = LucideIcons.fileText;
+                  color = AppColors.textSecondary;
+              }
+
+              allItems.add(
+                _buildAgendaItem(
+                  time: log.time ?? '00:00',
+                  endTime: '',
+                  title: log.title,
+                  description: log.description ?? '',
+                  color: color,
+                  icon: icon,
+                  index: index++,
+                ),
+              );
+            }
+
+            if (allItems.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.calendar,
+                      size: 64,
+                      color: AppColors.textSecondary.withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No activities for this day',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 8,
+              ),
+              children: allItems,
+            );
+          },
+        );
+      },
     );
   }
 

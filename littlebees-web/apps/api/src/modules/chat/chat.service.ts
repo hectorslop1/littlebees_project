@@ -17,12 +17,7 @@ export class ChatService {
       where: { id: { in: conversationIds }, tenantId },
       include: {
         child: { select: { id: true, firstName: true, lastName: true, photoUrl: true } },
-        participants: {
-          include: {
-            // No direct user relation on ConversationParticipant in schema
-            // We'll enrich this separately
-          },
-        },
+        participants: true,
         messages: {
           take: 1,
           orderBy: { createdAt: 'desc' },
@@ -31,7 +26,7 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Enrich with unread count for the current user
+    // Enrich with unread count and participant user info
     const enriched = await Promise.all(
       conversations.map(async (conv) => {
         const participation = await this.prisma.conversationParticipant.findUnique({
@@ -48,11 +43,40 @@ export class ChatService {
           },
         });
 
+        // Get user info for each participant
+        const participantsWithUserInfo = await Promise.all(
+          conv.participants.map(async (p) => {
+            const user = await this.prisma.user.findUnique({
+              where: { id: p.userId },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            });
+            return {
+              userId: p.userId,
+              firstName: user?.firstName || '',
+              lastName: user?.lastName || '',
+              avatarUrl: user?.avatarUrl,
+              joinedAt: p.joinedAt,
+              lastReadAt: p.lastReadAt,
+            };
+          }),
+        );
+
         return {
-          ...conv,
+          id: conv.id,
+          tenantId: conv.tenantId,
+          childId: conv.childId,
+          childName: conv.child ? `${conv.child.firstName} ${conv.child.lastName}` : null,
+          participants: participantsWithUserInfo,
           lastMessage: conv.messages[0] || null,
           unreadCount,
-          messages: undefined,
+          createdAt: conv.createdAt,
+          updatedAt: conv.updatedAt,
         };
       }),
     );

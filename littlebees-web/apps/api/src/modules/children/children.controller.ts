@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@kinderspace/shared-types';
 import { Gender } from '@prisma/client';
 import { ChildrenService } from './children.service';
@@ -17,17 +18,19 @@ export class ChildrenController {
   constructor(private readonly childrenService: ChildrenService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar niños del tenant' })
+  @ApiOperation({ summary: 'Listar niños del tenant (filtrado por rol)' })
   @ApiQuery({ name: 'groupId', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'search', required: false })
   async findAll(
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Query('groupId') groupId?: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    const children = await this.childrenService.findAll(tenantId, { groupId, status, search });
+    const children = await this.childrenService.findAll(tenantId, userId, userRole, { groupId, status, search });
     return createPaginatedResponse(children);
   }
 

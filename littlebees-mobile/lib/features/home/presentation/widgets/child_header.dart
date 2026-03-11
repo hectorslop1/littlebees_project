@@ -13,58 +13,51 @@ class ChildHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentChild = ref.watch(currentChildIdProvider) ?? 'c1';
+    final currentChildId = ref.watch(currentChildIdProvider);
+    final childrenAsync = ref.watch(myChildrenProvider);
 
-    final children = [
-      {
-        'id': 'c1',
-        'name': 'Emma',
-        'initial': 'E',
-        'imageUrl':
-            'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=150&h=150&fit=crop',
-      },
-      {
-        'id': 'c2',
-        'name': 'Liam',
-        'initial': 'L',
-        'imageUrl':
-            'https://images.pexels.com/photos/3771646/pexels-photo-3771646.jpeg',
-      },
-    ];
+    // Get the list of children from the provider
+    final children = childrenAsync.when(
+      data: (childrenList) => childrenList,
+      loading: () => <Child>[],
+      error: (_, __) => <Child>[],
+    );
 
     return PopupMenuButton<String>(
       offset: const Offset(0, 60),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
       shadowColor: AppColors.primary.withAlpha(50),
-      onSelected: (String result) {
-        if (result != currentChild) {
-          ref.read(currentChildIdProvider.notifier).state = result;
+      onSelected: (String childId) {
+        if (childId != currentChildId) {
+          ref.read(currentChildIdProvider.notifier).state = childId;
         }
       },
       itemBuilder: (BuildContext context) => children
           .map(
             (child) => PopupMenuItem<String>(
-              value: child['id'] as String,
+              value: child.id,
               child: Row(
                 children: [
                   LBAvatar(
-                    imageUrl: child['imageUrl'],
-                    placeholder: child['initial'] as String,
+                    imageUrl: child.photoUrl,
+                    placeholder: child.firstName.isNotEmpty
+                        ? child.firstName[0]
+                        : 'C',
                     size: LBAvatarSize.small,
-                    statusColor: child['id'] == currentChild
+                    statusColor: child.id == currentChildId
                         ? AppColors.primary
                         : Colors.transparent,
-                    showStatusDot: child['id'] == currentChild,
+                    showStatusDot: child.id == currentChildId,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    child['name'] as String,
+                    '${child.firstName} ${child.lastName}',
                     style: TextStyle(
-                      fontWeight: child['id'] == currentChild
+                      fontWeight: child.id == currentChildId
                           ? FontWeight.bold
                           : FontWeight.normal,
-                      color: child['id'] == currentChild
+                      color: child.id == currentChildId
                           ? AppColors.primary
                           : AppColors.textPrimary,
                     ),

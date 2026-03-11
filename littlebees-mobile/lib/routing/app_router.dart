@@ -9,6 +9,7 @@ import '../features/activity/presentation/activity_screen.dart';
 import '../features/activity/presentation/photo_viewer_screen.dart';
 import '../features/messaging/presentation/conversations_screen.dart';
 import '../features/messaging/presentation/chat_screen.dart';
+import '../features/messaging/presentation/teacher_chat_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/activity/domain/photo_model.dart';
@@ -109,6 +110,19 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => ChatScreen(
                   conversationId: state.pathParameters['conversationId']!,
                 ),
+              ),
+              GoRoute(
+                path: 'teacher/:teacherId',
+                name: 'teacherChat',
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>;
+                  return TeacherChatScreen(
+                    teacherConversations:
+                        extra['conversations'] as List<dynamic>,
+                    teacherId: state.pathParameters['teacherId']!,
+                    teacherName: extra['teacherName'] as String,
+                  );
+                },
               ),
             ],
           ),

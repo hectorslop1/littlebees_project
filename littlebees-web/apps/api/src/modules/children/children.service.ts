@@ -6,10 +6,42 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChildrenService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(tenantId: string, options?: { groupId?: string; status?: string; search?: string }) {
+  async findAll(tenantId: string, userId: string, userRole: string, options?: { groupId?: string; status?: string; search?: string }) {
+    // Role-based filtering
+    let roleFilter = {};
+    
+    if (userRole === 'parent') {
+      // Parents only see their own children
+      roleFilter = {
+        parents: {
+          some: {
+            userId: userId,
+          },
+        },
+      };
+    } else if (userRole === 'teacher') {
+      // Teachers only see children in their groups
+      const teacherGroups = await this.prisma.group.findMany({
+        where: { tenantId, teacherId: userId },
+        select: { id: true },
+      });
+      const groupIds = teacherGroups.map(g => g.id);
+      
+      if (groupIds.length > 0) {
+        roleFilter = {
+          groupId: { in: groupIds },
+        };
+      } else {
+        // Teacher has no groups assigned, return empty
+        return [];
+      }
+    }
+    // Admin, director, super_admin see all children (no additional filter)
+    
     return this.prisma.child.findMany({
       where: {
         tenantId,
+        ...roleFilter,
         ...(options?.groupId && { groupId: options.groupId }),
         ...(options?.status && { status: options.status as ChildStatus }),
         ...(options?.search && {
