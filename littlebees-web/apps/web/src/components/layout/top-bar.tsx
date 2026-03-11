@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Bell, Search, LogOut, Settings, User } from 'lucide-react';
@@ -27,10 +27,12 @@ const pageTitles: Record<string, string> = {
   '/services': 'Servicios',
   '/reports': 'Reportes',
   '/settings': 'Configuración',
+  '/profile': 'Mi Perfil',
 };
 
 export function TopBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const { data: notifCount } = useNotificationCount();
   const { data: notifications } = useNotifications({ limit: 5 });
@@ -114,11 +116,11 @@ export function TopBar() {
               <p className="text-xs font-normal text-muted">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/profile')}>
               <User className="mr-2 h-4 w-4" />
               Mi Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Configuración
             </DropdownMenuItem>

@@ -51,6 +51,67 @@ check_http() {
     curl -s -f -m $timeout "$url" >/dev/null 2>&1
 }
 
+# Función para limpiar procesos duplicados
+cleanup_duplicate_processes() {
+    echo "🧹 Limpiando procesos duplicados..."
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    local cleaned=false
+    
+    # Verificar procesos en puerto 3002 (Backend)
+    if lsof -ti:3002 >/dev/null 2>&1; then
+        local pids=$(lsof -ti:3002)
+        local count=$(echo "$pids" | wc -l | tr -d ' ')
+        
+        if [ "$count" -gt 1 ]; then
+            echo -e "${YELLOW}⚠${NC}  Detectados $count procesos en puerto 3002"
+            echo -e "${BLUE}${ARROW}${NC} Deteniendo procesos duplicados..."
+            echo "$pids" | xargs kill -9 2>/dev/null
+            cleaned=true
+        fi
+    fi
+    
+    # Verificar procesos en puerto 3000 (Frontend)
+    if lsof -ti:3000 >/dev/null 2>&1; then
+        local pids=$(lsof -ti:3000)
+        local count=$(echo "$pids" | wc -l | tr -d ' ')
+        
+        if [ "$count" -gt 1 ]; then
+            echo -e "${YELLOW}⚠${NC}  Detectados $count procesos en puerto 3000"
+            echo -e "${BLUE}${ARROW}${NC} Deteniendo procesos duplicados..."
+            echo "$pids" | xargs kill -9 2>/dev/null
+            cleaned=true
+        fi
+    fi
+    
+    # Limpiar procesos huérfanos de pnpm dev
+    local orphan_count=$(ps aux | grep -E "pnpm.*dev|nest.js start|next dev" | grep -v grep | wc -l | tr -d ' ')
+    
+    if [ "$orphan_count" -gt 2 ]; then
+        echo -e "${YELLOW}⚠${NC}  Detectados $orphan_count procesos de desarrollo"
+        echo -e "${BLUE}${ARROW}${NC} Limpiando procesos huérfanos..."
+        pkill -f "nest.js start" 2>/dev/null
+        pkill -f "next dev" 2>/dev/null
+        pkill -f "pnpm.*dev" 2>/dev/null
+        cleaned=true
+        sleep 2
+    fi
+    
+    if [ "$cleaned" = true ]; then
+        echo -e "${GREEN}${CHECK}${NC} Procesos duplicados limpiados"
+        sleep 1
+    else
+        echo -e "${GREEN}${CHECK}${NC} No se encontraron procesos duplicados"
+    fi
+    
+    echo ""
+}
+
+# Ejecutar limpieza de procesos duplicados si auto-fix está activado
+if [ "$AUTO_FIX" = "--auto-fix" ]; then
+    cleanup_duplicate_processes
+fi
+
 # Contador de errores
 ERRORS=0
 

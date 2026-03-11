@@ -1,0 +1,9 @@
+export { ProfileHeader } from './profile-header';
+export { StatsCard } from './stats-card';
+export { QuickActions } from './quick-actions';
+export { TeacherProfile } from './teacher-profile';
+export { ParentProfile } from './parent-profile';
+export { DirectorProfile } from './director-profile';
+export { ActivityTab } from './activity-tab';
+export { NotificationsTab } from './notifications-tab';
+export { SecurityTab } from './security-tab';
