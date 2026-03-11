@@ -1,6 +1,7 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -25,11 +26,21 @@ export function AttendanceFilters({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
       <div className="w-full sm:w-56">
-        <Input
-          type="date"
-          label="Fecha"
-          value={date}
-          onChange={(e) => onDateChange(e.target.value)}
+        <Label>Fecha</Label>
+        <DatePicker
+          value={date ? new Date(date) : undefined}
+          onChange={(date) => {
+            if (!date) {
+              onDateChange('');
+              return;
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            onDateChange(`${year}-${month}-${day}`);
+          }}
+          placeholder="Selecciona fecha"
+          toDate={new Date()}
         />
       </div>
 

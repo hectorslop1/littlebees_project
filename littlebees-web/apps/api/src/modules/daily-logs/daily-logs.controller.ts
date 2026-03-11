@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -41,5 +41,30 @@ export class DailyLogsController {
     },
   ) {
     return this.dailyLogsService.create(tenantId, userId, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar entrada de bitácora' })
+  update(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      type?: string;
+      title?: string;
+      description?: string;
+      time?: string;
+      metadata?: Prisma.InputJsonValue;
+    },
+  ) {
+    return this.dailyLogsService.update(id, tenantId, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar entrada de bitácora' })
+  delete(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.dailyLogsService.delete(id, tenantId);
   }
 }

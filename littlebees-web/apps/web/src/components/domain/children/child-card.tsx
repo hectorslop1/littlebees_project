@@ -32,7 +32,7 @@ export function ChildCard({ child, onClick }: ChildCardProps) {
             {fullName}
           </p>
           <p className="text-xs text-muted-foreground">
-            {child.age} anos
+            {child.age} años
           </p>
         </div>
 

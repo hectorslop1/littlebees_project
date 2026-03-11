@@ -66,7 +66,7 @@ export function ChildrenFilters({
       <div className="ml-auto">
         <Button onClick={onAddClick}>
           <Plus className="h-4 w-4" />
-          Agregar Nino
+          Agregar Niño
         </Button>
       </div>
     </div>

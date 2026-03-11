@@ -19,6 +19,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { InvoicingModule } from './modules/invoicing/invoicing.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { GroupsModule } from './modules/groups/groups.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     AuthModule,
     UsersModule,
     TenantsModule,
+    GroupsModule,
     ChildrenModule,
     AttendanceModule,
     DailyLogsModule,

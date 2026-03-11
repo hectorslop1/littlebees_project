@@ -60,4 +60,146 @@ export class ChildrenService {
       },
     });
   }
+
+  async update(
+    id: string,
+    tenantId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: Date;
+      gender?: Gender;
+      groupId?: string;
+      photoUrl?: string;
+      status?: ChildStatus;
+    },
+  ) {
+    await this.findById(id, tenantId);
+
+    return this.prisma.child.update({
+      where: { id },
+      data,
+      include: {
+        group: { select: { id: true, name: true, color: true } },
+      },
+    });
+  }
+
+  async delete(id: string, tenantId: string) {
+    await this.findById(id, tenantId);
+
+    return this.prisma.child.update({
+      where: { id },
+      data: {
+        status: ChildStatus.inactive,
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  // Medical Info
+  async upsertMedicalInfo(
+    childId: string,
+    tenantId: string,
+    data: {
+      allergies?: string[];
+      conditions?: string[];
+      medications?: string[];
+      bloodType?: string;
+      observations?: string;
+      doctorName?: string;
+      doctorPhone?: string;
+      insuranceInfo?: any;
+    },
+  ) {
+    await this.findById(childId, tenantId);
+
+    return this.prisma.childMedicalInfo.upsert({
+      where: { childId },
+      create: {
+        childId,
+        tenantId,
+        allergies: data.allergies || [],
+        conditions: data.conditions || [],
+        medications: data.medications || [],
+        bloodType: data.bloodType,
+        observations: data.observations,
+        doctorName: data.doctorName,
+        doctorPhone: data.doctorPhone,
+        insuranceInfo: data.insuranceInfo,
+      },
+      update: data,
+    });
+  }
+
+  // Emergency Contacts
+  async addEmergencyContact(
+    childId: string,
+    tenantId: string,
+    data: {
+      name: string;
+      relationship: string;
+      phone: string;
+      email?: string;
+      priority?: number;
+    },
+  ) {
+    await this.findById(childId, tenantId);
+
+    return this.prisma.emergencyContact.create({
+      data: {
+        childId,
+        tenantId,
+        name: data.name,
+        relationship: data.relationship,
+        phone: data.phone,
+        email: data.email,
+        priority: data.priority || 1,
+      },
+    });
+  }
+
+  async updateEmergencyContact(
+    contactId: string,
+    childId: string,
+    tenantId: string,
+    data: {
+      name?: string;
+      relationship?: string;
+      phone?: string;
+      email?: string;
+      priority?: number;
+    },
+  ) {
+    const contact = await this.prisma.emergencyContact.findFirst({
+      where: { id: contactId, childId, tenantId },
+    });
+
+    if (!contact) {
+      throw new NotFoundException('Contacto de emergencia no encontrado');
+    }
+
+    return this.prisma.emergencyContact.update({
+      where: { id: contactId },
+      data,
+    });
+  }
+
+  async deleteEmergencyContact(
+    contactId: string,
+    childId: string,
+    tenantId: string,
+  ) {
+    const contact = await this.prisma.emergencyContact.findFirst({
+      where: { id: contactId, childId, tenantId },
+    });
+
+    if (!contact) {
+      throw new NotFoundException('Contacto de emergencia no encontrado');
+    }
+
+    return this.prisma.emergencyContact.delete({
+      where: { id: contactId },
+    });
+  }
 }

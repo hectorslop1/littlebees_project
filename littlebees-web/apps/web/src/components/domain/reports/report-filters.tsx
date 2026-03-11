@@ -1,6 +1,7 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectTrigger,
@@ -31,20 +32,39 @@ export function ReportFilters({
   return (
     <div className="flex flex-wrap items-end gap-4">
       <div className="w-48">
-        <Input
-          type="date"
-          label="Desde"
-          value={from}
-          onChange={(e) => onFromChange(e.target.value)}
+        <Label>Desde</Label>
+        <DatePicker
+          value={from ? new Date(from) : undefined}
+          onChange={(date) => {
+            if (!date) {
+              onFromChange('');
+              return;
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            onFromChange(`${year}-${month}-${day}`);
+          }}
+          placeholder="Selecciona fecha inicial"
         />
       </div>
 
       <div className="w-48">
-        <Input
-          type="date"
-          label="Hasta"
-          value={to}
-          onChange={(e) => onToChange(e.target.value)}
+        <Label>Hasta</Label>
+        <DatePicker
+          value={to ? new Date(to) : undefined}
+          onChange={(date) => {
+            if (!date) {
+              onToChange('');
+              return;
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            onToChange(`${year}-${month}-${day}`);
+          }}
+          placeholder="Selecciona fecha final"
+          toDate={new Date()}
         />
       </div>
 

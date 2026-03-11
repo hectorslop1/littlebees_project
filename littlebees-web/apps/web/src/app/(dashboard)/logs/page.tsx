@@ -11,7 +11,11 @@ import { LogTimeline } from '@/components/domain/logs/log-timeline';
 import { LogFormDialog } from '@/components/domain/logs/log-form-dialog';
 
 function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export default function LogsPage() {

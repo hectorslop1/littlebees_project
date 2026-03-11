@@ -37,7 +37,7 @@ export default function ChildrenPage() {
     <div className="space-y-6">
       {/* Encabezado */}
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold font-heading">Ninos</h1>
+        <h1 className="text-2xl font-bold font-heading">Niños</h1>
         <Badge variant="secondary">{total}</Badge>
       </div>
 
@@ -70,8 +70,8 @@ export default function ChildrenPage() {
       ) : (
         <EmptyState
           icon={<Users />}
-          title="No se encontraron ninos"
-          description="No hay ninos que coincidan con los filtros seleccionados. Intenta ajustar la busqueda o agrega un nuevo nino."
+          title="No se encontraron niños"
+          description="No hay niños que coincidan con los filtros seleccionados. Intenta ajustar la búsqueda o agrega un nuevo niño."
         />
       )}
 

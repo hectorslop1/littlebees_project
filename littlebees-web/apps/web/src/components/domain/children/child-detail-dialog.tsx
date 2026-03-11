@@ -1,19 +1,26 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
+import { useDeleteChild } from '@/hooks/use-children';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gender } from '@kinderspace/shared-types';
+import { ChildFormDialog } from './child-form-dialog';
 import type {
   ChildResponse,
   MedicalInfoResponse,
@@ -43,6 +50,9 @@ export function ChildDetailDialog({
   open,
   onOpenChange,
 }: ChildDetailDialogProps) {
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deleteChild = useDeleteChild();
   const childId = child?.id ?? '';
 
   const { data: medicalInfo, isLoading: medicalLoading } = useQuery({
@@ -65,12 +75,46 @@ export function ChildDetailDialog({
 
   const fullName = `${child.firstName} ${child.lastName}`;
 
+  async function handleDelete() {
+    if (!child) return;
+    try {
+      await deleteChild.mutateAsync(child.id);
+      toast.success('Niño eliminado exitosamente');
+      setShowDeleteConfirm(false);
+      onOpenChange(false);
+    } catch {
+      toast.error('Error al eliminar el niño. Intenta de nuevo.');
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Detalle del Nino</DialogTitle>
+          <DialogTitle>Detalle del Niño</DialogTitle>
         </DialogHeader>
+
+        {/* Action buttons */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowEditDialog(true)}
+            className="flex-1"
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Eliminar
+          </Button>
+        </div>
 
         {/* Informacion general */}
         <div className="flex flex-col items-center gap-3">
@@ -92,7 +136,7 @@ export function ChildDetailDialog({
           </div>
           <div>
             <span className="font-medium text-muted-foreground">Edad</span>
-            <p>{child.age} anos</p>
+            <p>{child.age} años</p>
           </div>
           <div>
             <span className="font-medium text-muted-foreground">Genero</span>
@@ -252,6 +296,44 @@ export function ChildDetailDialog({
           )}
         </div>
       </DialogContent>
+
+      {/* Edit dialog */}
+      <ChildFormDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        child={child}
+        onSuccess={() => {
+          setShowEditDialog(false);
+        }}
+      />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar niño?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Estás seguro de que deseas eliminar a <strong>{fullName}</strong>?
+            Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              loading={deleteChild.isPending}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

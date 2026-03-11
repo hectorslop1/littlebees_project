@@ -67,7 +67,7 @@ erDiagram
         int capacity
         varchar color
         varchar academic_year
-        uuid teacher_id
+        uuid teacher_id FK
         timestamp created_at
         timestamp updated_at
     }
@@ -319,6 +319,7 @@ erDiagram
     users ||--o{ user_tenants : "belongs_to"
     users ||--o{ refresh_tokens : "has"
     users ||--o{ child_parents : "is_parent_of"
+    users ||--o{ groups : "teaches"
 
     %% Group and Children relationships
     groups ||--o{ children : "contains"

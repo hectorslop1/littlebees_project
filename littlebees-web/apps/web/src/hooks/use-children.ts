@@ -39,3 +39,22 @@ export function useCreateChild() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['children'] }),
   });
 }
+
+export function useUpdateChild() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateChildRequest> }) =>
+      api.patch<ChildResponse>(`/children/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['children'] });
+    },
+  });
+}
+
+export function useDeleteChild() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/children/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['children'] }),
+  });
+}

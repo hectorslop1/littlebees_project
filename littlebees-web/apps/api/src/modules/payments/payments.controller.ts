@@ -84,23 +84,39 @@ export class PaymentsController {
 
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Crear cargo de pago' })
+  @ApiOperation({ summary: 'Crear nuevo cargo/pago' })
   create(
     @CurrentTenant() tenantId: string,
-    @Body() dto: { childId: string; concept: string; amount: number; dueDate: string },
+    @Body() dto: {
+      childId: string;
+      concept: string;
+      amount: number;
+      dueDate: string;
+    },
   ) {
     return this.paymentsService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Actualizar datos del pago' })
+  @ApiOperation({ summary: 'Actualizar pago pendiente' })
   update(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
-    @Body() dto: { concept?: string; amount?: number; dueDate?: string },
+    @Body() dto: {
+      concept?: string;
+      amount?: number;
+      dueDate?: string;
+    },
   ) {
     return this.paymentsService.update(tenantId, id, dto);
+  }
+
+  @Patch(':id/cancel')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Cancelar pago' })
+  cancel(@CurrentTenant() tenantId: string, @Param('id') id: string) {
+    return this.paymentsService.cancel(tenantId, id);
   }
 
   @Post(':id/mark-paid')
@@ -112,12 +128,5 @@ export class PaymentsController {
     @Body() dto: { paymentMethod: string },
   ) {
     return this.paymentsService.markAsPaid(tenantId, id, dto.paymentMethod);
-  }
-
-  @Post(':id/cancel')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
-  @ApiOperation({ summary: 'Cancelar pago' })
-  cancel(@CurrentTenant() tenantId: string, @Param('id') id: string) {
-    return this.paymentsService.cancel(tenantId, id);
   }
 }

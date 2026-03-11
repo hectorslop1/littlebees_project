@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -34,6 +34,45 @@ export class DailyLogsService {
         metadata: data.metadata ?? Prisma.JsonNull,
         recordedBy: userId,
       },
+    });
+  }
+
+  async update(
+    id: string,
+    tenantId: string,
+    data: {
+      type?: string;
+      title?: string;
+      description?: string;
+      time?: string;
+      metadata?: Prisma.InputJsonValue;
+    },
+  ) {
+    const entry = await this.prisma.dailyLogEntry.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Entrada de bitácora no encontrada');
+    }
+
+    return this.prisma.dailyLogEntry.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async delete(id: string, tenantId: string) {
+    const entry = await this.prisma.dailyLogEntry.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Entrada de bitácora no encontrada');
+    }
+
+    return this.prisma.dailyLogEntry.delete({
+      where: { id },
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -45,5 +45,105 @@ export class ChildrenController {
       ...dto,
       dateOfBirth: new Date(dto.dateOfBirth),
     });
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Actualizar niño/a' })
+  update(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
+      gender?: Gender;
+      groupId?: string;
+      photoUrl?: string;
+      status?: string;
+    },
+  ) {
+    const updateData: any = { ...dto };
+    if (dto.dateOfBirth) {
+      updateData.dateOfBirth = new Date(dto.dateOfBirth);
+    }
+    delete updateData.status;
+    if (dto.status) {
+      updateData.status = dto.status;
+    }
+    return this.childrenService.update(id, tenantId, updateData);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Eliminar niño/a (soft delete)' })
+  delete(@Param('id') id: string, @CurrentTenant() tenantId: string) {
+    return this.childrenService.delete(id, tenantId);
+  }
+
+  @Post(':id/medical-info')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.TEACHER)
+  @ApiOperation({ summary: 'Crear/actualizar información médica' })
+  upsertMedicalInfo(
+    @Param('id') childId: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      allergies?: string[];
+      conditions?: string[];
+      medications?: string[];
+      bloodType?: string;
+      observations?: string;
+      doctorName?: string;
+      doctorPhone?: string;
+      insuranceInfo?: any;
+    },
+  ) {
+    return this.childrenService.upsertMedicalInfo(childId, tenantId, dto);
+  }
+
+  @Post(':id/emergency-contacts')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Agregar contacto de emergencia' })
+  addEmergencyContact(
+    @Param('id') childId: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      name: string;
+      relationship: string;
+      phone: string;
+      email?: string;
+      priority?: number;
+    },
+  ) {
+    return this.childrenService.addEmergencyContact(childId, tenantId, dto);
+  }
+
+  @Patch(':id/emergency-contacts/:contactId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Actualizar contacto de emergencia' })
+  updateEmergencyContact(
+    @Param('id') childId: string,
+    @Param('contactId') contactId: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      name?: string;
+      relationship?: string;
+      phone?: string;
+      email?: string;
+      priority?: number;
+    },
+  ) {
+    return this.childrenService.updateEmergencyContact(contactId, childId, tenantId, dto);
+  }
+
+  @Delete(':id/emergency-contacts/:contactId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Eliminar contacto de emergencia' })
+  deleteEmergencyContact(
+    @Param('id') childId: string,
+    @Param('contactId') contactId: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.childrenService.deleteEmergencyContact(contactId, childId, tenantId);
   }
 }
