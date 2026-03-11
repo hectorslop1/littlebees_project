@@ -5,12 +5,16 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../design_system/theme/app_colors.dart';
 import '../../../../design_system/widgets/lb_card.dart';
+import '../application/payments_providers.dart';
 
 class PaymentsScreen extends ConsumerWidget {
   const PaymentsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // TODO: Integrate real payment data display
+    // final paymentsAsync = ref.watch(paymentsProvider);
+    // final totalBalance = ref.watch(totalBalanceProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(

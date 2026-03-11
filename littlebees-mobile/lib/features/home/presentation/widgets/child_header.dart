@@ -90,8 +90,10 @@ class ChildHeader extends ConsumerWidget {
         child: Row(
           children: [
             LBAvatar(
-              imageUrl: childNode.avatarUrl,
-              placeholder: childNode.firstName,
+              imageUrl: childNode.photoUrl,
+              placeholder: childNode.firstName.isNotEmpty
+                  ? childNode.firstName[0]
+                  : 'C',
               size: LBAvatarSize.normal,
             ),
             const SizedBox(width: 12),
@@ -114,7 +116,7 @@ class ChildHeader extends ConsumerWidget {
                     ],
                   ),
                   Text(
-                    '${childNode.classroomName} Class',
+                    '${childNode.groupName ?? "No Group"} Class',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],

@@ -9,6 +9,7 @@ import '../../../core/i18n/app_translations.dart';
 import '../../../core/i18n/locale_provider.dart';
 import '../../../routing/route_names.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../home/application/home_providers.dart';
 import 'widgets/theme_switcher.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -18,6 +19,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(translationsProvider);
     final currentLocale = ref.watch(localeProvider);
+    final user = ref.watch(currentUserProvider);
+    final tenant = ref.watch(currentTenantProvider);
+    final childrenAsync = ref.watch(myChildrenProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(tr.tr('profile'))),
@@ -25,24 +29,29 @@ class ProfileScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            const Center(
+            Center(
               child: LBAvatar(
-                placeholder: 'GF',
+                placeholder: user != null
+                    ? '${user.firstName[0]}${user.lastName[0]}'
+                    : 'U',
                 size: LBAvatarSize.large,
-                imageUrl: null, // Remove image, show initials only
+                imageUrl: user?.avatarUrl,
               ),
             ),
             const SizedBox(height: 16),
-            const Center(
+            Center(
               child: Text(
-                'García Family',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                user != null ? user.fullName : 'User',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            const Center(
+            Center(
               child: Text(
-                'Little Bees Daycare',
-                style: TextStyle(color: AppColors.textSecondary),
+                tenant?.name ?? 'Daycare',
+                style: const TextStyle(color: AppColors.textSecondary),
               ),
             ),
             const SizedBox(height: 32),
@@ -51,22 +60,32 @@ class ProfileScreen extends ConsumerWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            LBCard(
-              child: Column(
-                children: [
-                  _buildChildRow(
-                    'Emma García',
-                    'Butterflies',
-                    'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=150&h=150&fit=crop',
+            childrenAsync.when(
+              data: (children) {
+                if (children.isEmpty) {
+                  return const Text('No children found');
+                }
+                return LBCard(
+                  child: Column(
+                    children: children.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final child = entry.value;
+                      return Column(
+                        children: [
+                          if (index > 0) const Divider(height: 32),
+                          _buildChildRow(
+                            '${child.firstName} ${child.lastName}',
+                            child.groupName ?? 'No Group',
+                            child.photoUrl,
+                          ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                  const Divider(height: 32),
-                  _buildChildRow(
-                    'Liam García',
-                    'Butterflies',
-                    'https://images.pexels.com/photos/3771646/pexels-photo-3771646.jpeg',
-                  ),
-                ],
-              ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const Text('Error loading children'),
             ),
             const SizedBox(height: 32),
             Text(

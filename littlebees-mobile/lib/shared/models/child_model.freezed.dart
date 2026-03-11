@@ -271,15 +271,25 @@ Child _$ChildFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Child {
   String get id => throw _privateConstructorUsedError;
+  String get tenantId => throw _privateConstructorUsedError;
   String get firstName => throw _privateConstructorUsedError;
   String get lastName => throw _privateConstructorUsedError;
-  String get classroomId => throw _privateConstructorUsedError;
-  String get classroomName => throw _privateConstructorUsedError;
-  String? get avatarUrl => throw _privateConstructorUsedError;
   DateTime get dateOfBirth => throw _privateConstructorUsedError;
-  List<String> get allergies => throw _privateConstructorUsedError;
-  List<AuthorizedPickup> get authorizedPickups =>
+  String get gender => throw _privateConstructorUsedError;
+  String? get photoUrl => throw _privateConstructorUsedError;
+  String? get groupId => throw _privateConstructorUsedError;
+  String? get groupName => throw _privateConstructorUsedError;
+  DateTime? get enrollmentDate => throw _privateConstructorUsedError;
+  String get status => throw _privateConstructorUsedError;
+  String? get qrCodeHash => throw _privateConstructorUsedError;
+  List<String>? get allergies => throw _privateConstructorUsedError;
+  List<String>? get conditions => throw _privateConstructorUsedError;
+  List<String>? get medications => throw _privateConstructorUsedError;
+  String? get bloodType => throw _privateConstructorUsedError;
+  List<AuthorizedPickup>? get authorizedPickups =>
       throw _privateConstructorUsedError;
+  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this Child to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -297,14 +307,24 @@ abstract class $ChildCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
+    String tenantId,
     String firstName,
     String lastName,
-    String classroomId,
-    String classroomName,
-    String? avatarUrl,
     DateTime dateOfBirth,
-    List<String> allergies,
-    List<AuthorizedPickup> authorizedPickups,
+    String gender,
+    String? photoUrl,
+    String? groupId,
+    String? groupName,
+    DateTime? enrollmentDate,
+    String status,
+    String? qrCodeHash,
+    List<String>? allergies,
+    List<String>? conditions,
+    List<String>? medications,
+    String? bloodType,
+    List<AuthorizedPickup>? authorizedPickups,
+    DateTime createdAt,
+    DateTime updatedAt,
   });
 }
 
@@ -324,20 +344,34 @@ class _$ChildCopyWithImpl<$Res, $Val extends Child>
   @override
   $Res call({
     Object? id = null,
+    Object? tenantId = null,
     Object? firstName = null,
     Object? lastName = null,
-    Object? classroomId = null,
-    Object? classroomName = null,
-    Object? avatarUrl = freezed,
     Object? dateOfBirth = null,
-    Object? allergies = null,
-    Object? authorizedPickups = null,
+    Object? gender = null,
+    Object? photoUrl = freezed,
+    Object? groupId = freezed,
+    Object? groupName = freezed,
+    Object? enrollmentDate = freezed,
+    Object? status = null,
+    Object? qrCodeHash = freezed,
+    Object? allergies = freezed,
+    Object? conditions = freezed,
+    Object? medications = freezed,
+    Object? bloodType = freezed,
+    Object? authorizedPickups = freezed,
+    Object? createdAt = null,
+    Object? updatedAt = null,
   }) {
     return _then(
       _value.copyWith(
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            tenantId: null == tenantId
+                ? _value.tenantId
+                : tenantId // ignore: cast_nullable_to_non_nullable
                       as String,
             firstName: null == firstName
                 ? _value.firstName
@@ -347,30 +381,66 @@ class _$ChildCopyWithImpl<$Res, $Val extends Child>
                 ? _value.lastName
                 : lastName // ignore: cast_nullable_to_non_nullable
                       as String,
-            classroomId: null == classroomId
-                ? _value.classroomId
-                : classroomId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            classroomName: null == classroomName
-                ? _value.classroomName
-                : classroomName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            avatarUrl: freezed == avatarUrl
-                ? _value.avatarUrl
-                : avatarUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
             dateOfBirth: null == dateOfBirth
                 ? _value.dateOfBirth
                 : dateOfBirth // ignore: cast_nullable_to_non_nullable
                       as DateTime,
-            allergies: null == allergies
+            gender: null == gender
+                ? _value.gender
+                : gender // ignore: cast_nullable_to_non_nullable
+                      as String,
+            photoUrl: freezed == photoUrl
+                ? _value.photoUrl
+                : photoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            groupId: freezed == groupId
+                ? _value.groupId
+                : groupId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            groupName: freezed == groupName
+                ? _value.groupName
+                : groupName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            enrollmentDate: freezed == enrollmentDate
+                ? _value.enrollmentDate
+                : enrollmentDate // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            status: null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                      as String,
+            qrCodeHash: freezed == qrCodeHash
+                ? _value.qrCodeHash
+                : qrCodeHash // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            allergies: freezed == allergies
                 ? _value.allergies
                 : allergies // ignore: cast_nullable_to_non_nullable
-                      as List<String>,
-            authorizedPickups: null == authorizedPickups
+                      as List<String>?,
+            conditions: freezed == conditions
+                ? _value.conditions
+                : conditions // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            medications: freezed == medications
+                ? _value.medications
+                : medications // ignore: cast_nullable_to_non_nullable
+                      as List<String>?,
+            bloodType: freezed == bloodType
+                ? _value.bloodType
+                : bloodType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            authorizedPickups: freezed == authorizedPickups
                 ? _value.authorizedPickups
                 : authorizedPickups // ignore: cast_nullable_to_non_nullable
-                      as List<AuthorizedPickup>,
+                      as List<AuthorizedPickup>?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            updatedAt: null == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
           )
           as $Val,
     );
@@ -387,14 +457,24 @@ abstract class _$$ChildImplCopyWith<$Res> implements $ChildCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
+    String tenantId,
     String firstName,
     String lastName,
-    String classroomId,
-    String classroomName,
-    String? avatarUrl,
     DateTime dateOfBirth,
-    List<String> allergies,
-    List<AuthorizedPickup> authorizedPickups,
+    String gender,
+    String? photoUrl,
+    String? groupId,
+    String? groupName,
+    DateTime? enrollmentDate,
+    String status,
+    String? qrCodeHash,
+    List<String>? allergies,
+    List<String>? conditions,
+    List<String>? medications,
+    String? bloodType,
+    List<AuthorizedPickup>? authorizedPickups,
+    DateTime createdAt,
+    DateTime updatedAt,
   });
 }
 
@@ -413,20 +493,34 @@ class __$$ChildImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? tenantId = null,
     Object? firstName = null,
     Object? lastName = null,
-    Object? classroomId = null,
-    Object? classroomName = null,
-    Object? avatarUrl = freezed,
     Object? dateOfBirth = null,
-    Object? allergies = null,
-    Object? authorizedPickups = null,
+    Object? gender = null,
+    Object? photoUrl = freezed,
+    Object? groupId = freezed,
+    Object? groupName = freezed,
+    Object? enrollmentDate = freezed,
+    Object? status = null,
+    Object? qrCodeHash = freezed,
+    Object? allergies = freezed,
+    Object? conditions = freezed,
+    Object? medications = freezed,
+    Object? bloodType = freezed,
+    Object? authorizedPickups = freezed,
+    Object? createdAt = null,
+    Object? updatedAt = null,
   }) {
     return _then(
       _$ChildImpl(
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        tenantId: null == tenantId
+            ? _value.tenantId
+            : tenantId // ignore: cast_nullable_to_non_nullable
                   as String,
         firstName: null == firstName
             ? _value.firstName
@@ -436,30 +530,66 @@ class __$$ChildImplCopyWithImpl<$Res>
             ? _value.lastName
             : lastName // ignore: cast_nullable_to_non_nullable
                   as String,
-        classroomId: null == classroomId
-            ? _value.classroomId
-            : classroomId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        classroomName: null == classroomName
-            ? _value.classroomName
-            : classroomName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        avatarUrl: freezed == avatarUrl
-            ? _value.avatarUrl
-            : avatarUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
         dateOfBirth: null == dateOfBirth
             ? _value.dateOfBirth
             : dateOfBirth // ignore: cast_nullable_to_non_nullable
                   as DateTime,
-        allergies: null == allergies
+        gender: null == gender
+            ? _value.gender
+            : gender // ignore: cast_nullable_to_non_nullable
+                  as String,
+        photoUrl: freezed == photoUrl
+            ? _value.photoUrl
+            : photoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        groupId: freezed == groupId
+            ? _value.groupId
+            : groupId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        groupName: freezed == groupName
+            ? _value.groupName
+            : groupName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        enrollmentDate: freezed == enrollmentDate
+            ? _value.enrollmentDate
+            : enrollmentDate // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        status: null == status
+            ? _value.status
+            : status // ignore: cast_nullable_to_non_nullable
+                  as String,
+        qrCodeHash: freezed == qrCodeHash
+            ? _value.qrCodeHash
+            : qrCodeHash // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        allergies: freezed == allergies
             ? _value._allergies
             : allergies // ignore: cast_nullable_to_non_nullable
-                  as List<String>,
-        authorizedPickups: null == authorizedPickups
+                  as List<String>?,
+        conditions: freezed == conditions
+            ? _value._conditions
+            : conditions // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        medications: freezed == medications
+            ? _value._medications
+            : medications // ignore: cast_nullable_to_non_nullable
+                  as List<String>?,
+        bloodType: freezed == bloodType
+            ? _value.bloodType
+            : bloodType // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        authorizedPickups: freezed == authorizedPickups
             ? _value._authorizedPickups
             : authorizedPickups // ignore: cast_nullable_to_non_nullable
-                  as List<AuthorizedPickup>,
+                  as List<AuthorizedPickup>?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        updatedAt: null == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
       ),
     );
   }
@@ -470,15 +600,27 @@ class __$$ChildImplCopyWithImpl<$Res>
 class _$ChildImpl implements _Child {
   const _$ChildImpl({
     required this.id,
+    required this.tenantId,
     required this.firstName,
     required this.lastName,
-    required this.classroomId,
-    required this.classroomName,
-    required this.avatarUrl,
     required this.dateOfBirth,
-    required final List<String> allergies,
-    required final List<AuthorizedPickup> authorizedPickups,
+    required this.gender,
+    this.photoUrl,
+    this.groupId,
+    this.groupName,
+    this.enrollmentDate,
+    required this.status,
+    this.qrCodeHash,
+    final List<String>? allergies,
+    final List<String>? conditions,
+    final List<String>? medications,
+    this.bloodType,
+    final List<AuthorizedPickup>? authorizedPickups,
+    required this.createdAt,
+    required this.updatedAt,
   }) : _allergies = allergies,
+       _conditions = conditions,
+       _medications = medications,
        _authorizedPickups = authorizedPickups;
 
   factory _$ChildImpl.fromJson(Map<String, dynamic> json) =>
@@ -487,37 +629,78 @@ class _$ChildImpl implements _Child {
   @override
   final String id;
   @override
+  final String tenantId;
+  @override
   final String firstName;
   @override
   final String lastName;
   @override
-  final String classroomId;
-  @override
-  final String classroomName;
-  @override
-  final String? avatarUrl;
-  @override
   final DateTime dateOfBirth;
-  final List<String> _allergies;
   @override
-  List<String> get allergies {
+  final String gender;
+  @override
+  final String? photoUrl;
+  @override
+  final String? groupId;
+  @override
+  final String? groupName;
+  @override
+  final DateTime? enrollmentDate;
+  @override
+  final String status;
+  @override
+  final String? qrCodeHash;
+  final List<String>? _allergies;
+  @override
+  List<String>? get allergies {
+    final value = _allergies;
+    if (value == null) return null;
     if (_allergies is EqualUnmodifiableListView) return _allergies;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_allergies);
+    return EqualUnmodifiableListView(value);
   }
 
-  final List<AuthorizedPickup> _authorizedPickups;
+  final List<String>? _conditions;
   @override
-  List<AuthorizedPickup> get authorizedPickups {
+  List<String>? get conditions {
+    final value = _conditions;
+    if (value == null) return null;
+    if (_conditions is EqualUnmodifiableListView) return _conditions;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  final List<String>? _medications;
+  @override
+  List<String>? get medications {
+    final value = _medications;
+    if (value == null) return null;
+    if (_medications is EqualUnmodifiableListView) return _medications;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final String? bloodType;
+  final List<AuthorizedPickup>? _authorizedPickups;
+  @override
+  List<AuthorizedPickup>? get authorizedPickups {
+    final value = _authorizedPickups;
+    if (value == null) return null;
     if (_authorizedPickups is EqualUnmodifiableListView)
       return _authorizedPickups;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_authorizedPickups);
+    return EqualUnmodifiableListView(value);
   }
 
   @override
+  final DateTime createdAt;
+  @override
+  final DateTime updatedAt;
+
+  @override
   String toString() {
-    return 'Child(id: $id, firstName: $firstName, lastName: $lastName, classroomId: $classroomId, classroomName: $classroomName, avatarUrl: $avatarUrl, dateOfBirth: $dateOfBirth, allergies: $allergies, authorizedPickups: $authorizedPickups)';
+    return 'Child(id: $id, tenantId: $tenantId, firstName: $firstName, lastName: $lastName, dateOfBirth: $dateOfBirth, gender: $gender, photoUrl: $photoUrl, groupId: $groupId, groupName: $groupName, enrollmentDate: $enrollmentDate, status: $status, qrCodeHash: $qrCodeHash, allergies: $allergies, conditions: $conditions, medications: $medications, bloodType: $bloodType, authorizedPickups: $authorizedPickups, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -526,42 +709,73 @@ class _$ChildImpl implements _Child {
         (other.runtimeType == runtimeType &&
             other is _$ChildImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.tenantId, tenantId) ||
+                other.tenantId == tenantId) &&
             (identical(other.firstName, firstName) ||
                 other.firstName == firstName) &&
             (identical(other.lastName, lastName) ||
                 other.lastName == lastName) &&
-            (identical(other.classroomId, classroomId) ||
-                other.classroomId == classroomId) &&
-            (identical(other.classroomName, classroomName) ||
-                other.classroomName == classroomName) &&
-            (identical(other.avatarUrl, avatarUrl) ||
-                other.avatarUrl == avatarUrl) &&
             (identical(other.dateOfBirth, dateOfBirth) ||
                 other.dateOfBirth == dateOfBirth) &&
+            (identical(other.gender, gender) || other.gender == gender) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl) &&
+            (identical(other.groupId, groupId) || other.groupId == groupId) &&
+            (identical(other.groupName, groupName) ||
+                other.groupName == groupName) &&
+            (identical(other.enrollmentDate, enrollmentDate) ||
+                other.enrollmentDate == enrollmentDate) &&
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.qrCodeHash, qrCodeHash) ||
+                other.qrCodeHash == qrCodeHash) &&
             const DeepCollectionEquality().equals(
               other._allergies,
               _allergies,
             ) &&
             const DeepCollectionEquality().equals(
+              other._conditions,
+              _conditions,
+            ) &&
+            const DeepCollectionEquality().equals(
+              other._medications,
+              _medications,
+            ) &&
+            (identical(other.bloodType, bloodType) ||
+                other.bloodType == bloodType) &&
+            const DeepCollectionEquality().equals(
               other._authorizedPickups,
               _authorizedPickups,
-            ));
+            ) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
+    tenantId,
     firstName,
     lastName,
-    classroomId,
-    classroomName,
-    avatarUrl,
     dateOfBirth,
+    gender,
+    photoUrl,
+    groupId,
+    groupName,
+    enrollmentDate,
+    status,
+    qrCodeHash,
     const DeepCollectionEquality().hash(_allergies),
+    const DeepCollectionEquality().hash(_conditions),
+    const DeepCollectionEquality().hash(_medications),
+    bloodType,
     const DeepCollectionEquality().hash(_authorizedPickups),
-  );
+    createdAt,
+    updatedAt,
+  ]);
 
   /// Create a copy of Child
   /// with the given fields replaced by the non-null parameter values.
@@ -580,14 +794,24 @@ class _$ChildImpl implements _Child {
 abstract class _Child implements Child {
   const factory _Child({
     required final String id,
+    required final String tenantId,
     required final String firstName,
     required final String lastName,
-    required final String classroomId,
-    required final String classroomName,
-    required final String? avatarUrl,
     required final DateTime dateOfBirth,
-    required final List<String> allergies,
-    required final List<AuthorizedPickup> authorizedPickups,
+    required final String gender,
+    final String? photoUrl,
+    final String? groupId,
+    final String? groupName,
+    final DateTime? enrollmentDate,
+    required final String status,
+    final String? qrCodeHash,
+    final List<String>? allergies,
+    final List<String>? conditions,
+    final List<String>? medications,
+    final String? bloodType,
+    final List<AuthorizedPickup>? authorizedPickups,
+    required final DateTime createdAt,
+    required final DateTime updatedAt,
   }) = _$ChildImpl;
 
   factory _Child.fromJson(Map<String, dynamic> json) = _$ChildImpl.fromJson;
@@ -595,21 +819,41 @@ abstract class _Child implements Child {
   @override
   String get id;
   @override
+  String get tenantId;
+  @override
   String get firstName;
   @override
   String get lastName;
   @override
-  String get classroomId;
-  @override
-  String get classroomName;
-  @override
-  String? get avatarUrl;
-  @override
   DateTime get dateOfBirth;
   @override
-  List<String> get allergies;
+  String get gender;
   @override
-  List<AuthorizedPickup> get authorizedPickups;
+  String? get photoUrl;
+  @override
+  String? get groupId;
+  @override
+  String? get groupName;
+  @override
+  DateTime? get enrollmentDate;
+  @override
+  String get status;
+  @override
+  String? get qrCodeHash;
+  @override
+  List<String>? get allergies;
+  @override
+  List<String>? get conditions;
+  @override
+  List<String>? get medications;
+  @override
+  String? get bloodType;
+  @override
+  List<AuthorizedPickup>? get authorizedPickups;
+  @override
+  DateTime get createdAt;
+  @override
+  DateTime get updatedAt;
 
   /// Create a copy of Child
   /// with the given fields replaced by the non-null parameter values.

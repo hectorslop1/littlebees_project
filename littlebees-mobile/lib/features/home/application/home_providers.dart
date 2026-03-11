@@ -2,20 +2,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/child_model.dart';
 import '../domain/daily_story.dart';
 import '../data/remote_home_repository.dart';
-import '../../../core/mocks/mock_data.dart';
+import '../../../shared/repositories/children_repository.dart';
+import '../../auth/application/auth_provider.dart';
 
 // Provider for the RemoteHomeRepository
 final remoteHomeRepositoryProvider = Provider<RemoteHomeRepository>((ref) {
   return RemoteHomeRepository();
 });
 
-// Provider to get all children for the current user
+// Provider for the ChildrenRepository
+final childrenRepositoryProvider = Provider<ChildrenRepository>((ref) {
+  return ChildrenRepository();
+});
+
+// Provider to get all children for the current user (role-based filtering)
 final myChildrenProvider = FutureProvider<List<Child>>((ref) async {
-  // Temporarily return mock data to avoid API issues
-  await Future.delayed(
-    const Duration(milliseconds: 800),
-  ); // Simulate network delay
-  return [MockData.child1, MockData.child2];
+  final user = ref.watch(currentUserProvider);
+
+  if (user == null) {
+    throw Exception('User not authenticated');
+  }
+
+  final repository = ref.watch(childrenRepositoryProvider);
+
+  // The backend API automatically filters children based on user role:
+  // - Parents see only their children (via child_parents table)
+  // - Teachers see children in their assigned groups
+  // - Admins/Directors see all children in their tenant
+  return await repository.getMyChildren(user: user);
 });
 
 // StateProvider to keep track of the currently selected child ID
@@ -27,17 +41,9 @@ final dailyStoryProvider = FutureProvider.family<DailyStory, String>((
   ref,
   childId,
 ) async {
-  // Temporarily use mock data to avoid API issues
-  await Future.delayed(
-    const Duration(milliseconds: 1500),
-  ); // Simulate network delay
+  final repository = ref.watch(remoteHomeRepositoryProvider);
+  final date = DateTime.now();
 
-  // Return appropriate mock data based on child ID
-  if (childId == 'demo-child-1' || childId == 'c1') {
-    return MockData.dailyStory;
-  } else if (childId == 'c2') {
-    return MockData.dailyStory2;
-  } else {
-    return MockData.dailyStory; // Default to first child's story
-  }
+  // Fetch real data from API
+  return await repository.getDailyStory(childId, date);
 });

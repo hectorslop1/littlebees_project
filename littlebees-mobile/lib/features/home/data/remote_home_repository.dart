@@ -27,14 +27,36 @@ class RemoteHomeRepository {
       return items.map((json) {
         return Child(
           id: json['id'],
+          tenantId: json['tenantId'] ?? '',
           firstName: json['firstName'],
           lastName: json['lastName'],
-          classroomId: json['groupId'] ?? '',
-          classroomName: json['groupName'] ?? '',
-          avatarUrl: json['photoUrl'],
           dateOfBirth: DateTime.parse(json['dateOfBirth']),
-          allergies: List<String>.from(json['allergies'] ?? []),
-          authorizedPickups: [],
+          gender: json['gender'] ?? 'male',
+          photoUrl: json['photoUrl'],
+          groupId: json['groupId'],
+          groupName: json['groupName'],
+          enrollmentDate: json['enrollmentDate'] != null
+              ? DateTime.parse(json['enrollmentDate'])
+              : null,
+          status: json['status'] ?? 'active',
+          qrCodeHash: json['qrCodeHash'],
+          allergies: json['allergies'] != null
+              ? List<String>.from(json['allergies'])
+              : null,
+          conditions: json['conditions'] != null
+              ? List<String>.from(json['conditions'])
+              : null,
+          medications: json['medications'] != null
+              ? List<String>.from(json['medications'])
+              : null,
+          bloodType: json['bloodType'],
+          authorizedPickups: null,
+          createdAt: json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
+          updatedAt: json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'])
+              : DateTime.now(),
         );
       }).toList();
     } catch (e) {
@@ -54,14 +76,36 @@ class RemoteHomeRepository {
 
       final child = Child(
         id: childJson['id'],
+        tenantId: childJson['tenantId'] ?? '',
         firstName: childJson['firstName'],
         lastName: childJson['lastName'],
-        classroomId: childJson['groupId'] ?? '',
-        classroomName: childJson['groupName'] ?? '',
-        avatarUrl: childJson['photoUrl'],
         dateOfBirth: DateTime.parse(childJson['dateOfBirth']),
-        allergies: List<String>.from(childJson['allergies'] ?? []),
-        authorizedPickups: [],
+        gender: childJson['gender'] ?? 'male',
+        photoUrl: childJson['photoUrl'],
+        groupId: childJson['groupId'],
+        groupName: childJson['groupName'],
+        enrollmentDate: childJson['enrollmentDate'] != null
+            ? DateTime.parse(childJson['enrollmentDate'])
+            : null,
+        status: childJson['status'] ?? 'active',
+        qrCodeHash: childJson['qrCodeHash'],
+        allergies: childJson['allergies'] != null
+            ? List<String>.from(childJson['allergies'])
+            : null,
+        conditions: childJson['conditions'] != null
+            ? List<String>.from(childJson['conditions'])
+            : null,
+        medications: childJson['medications'] != null
+            ? List<String>.from(childJson['medications'])
+            : null,
+        bloodType: childJson['bloodType'],
+        authorizedPickups: null,
+        createdAt: childJson['createdAt'] != null
+            ? DateTime.parse(childJson['createdAt'])
+            : DateTime.now(),
+        updatedAt: childJson['updatedAt'] != null
+            ? DateTime.parse(childJson['updatedAt'])
+            : DateTime.now(),
       );
 
       // Get attendance for the date

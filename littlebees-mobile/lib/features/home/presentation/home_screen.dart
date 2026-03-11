@@ -19,9 +19,56 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(translationsProvider);
-    final currentChildId =
-        ref.watch(currentChildIdProvider) ?? 'c1'; // Default to Emma
+    final childrenAsync = ref.watch(myChildrenProvider);
 
+    // Auto-select first child if none selected
+    final currentChildId = ref.watch(currentChildIdProvider);
+
+    return childrenAsync.when(
+      data: (children) {
+        if (children.isEmpty) {
+          return Scaffold(
+            body: SafeArea(child: Center(child: Text('No children found'))),
+          );
+        }
+
+        // Auto-select first child
+        final selectedId = currentChildId ?? children.first.id;
+        if (currentChildId == null) {
+          Future.microtask(
+            () => ref.read(currentChildIdProvider.notifier).state = selectedId,
+          );
+        }
+
+        return _buildHomeContent(context, ref, selectedId, tr);
+      },
+      loading: () => const HomeShimmer(),
+      error: (error, stack) => Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error loading children: $error'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(myChildrenProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeContent(
+    BuildContext context,
+    WidgetRef ref,
+    String currentChildId,
+    dynamic tr,
+  ) {
     // Watch daily story for the currently selected child
     final dailyStoryAsync = ref.watch(dailyStoryProvider(currentChildId));
 
