@@ -28,7 +28,10 @@ export function AttendanceFilters({
       <div className="w-full sm:w-56">
         <Label>Fecha</Label>
         <DatePicker
-          value={date ? new Date(date) : undefined}
+          value={date ? (() => {
+            const [year, month, day] = date.split('-').map(Number);
+            return new Date(year, month - 1, day);
+          })() : undefined}
           onChange={(date) => {
             if (!date) {
               onDateChange('');

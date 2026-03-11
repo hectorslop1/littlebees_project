@@ -34,7 +34,10 @@ export function ReportFilters({
       <div className="w-48">
         <Label>Desde</Label>
         <DatePicker
-          value={from ? new Date(from) : undefined}
+          value={from ? (() => {
+            const [year, month, day] = from.split('-').map(Number);
+            return new Date(year, month - 1, day);
+          })() : undefined}
           onChange={(date) => {
             if (!date) {
               onFromChange('');
@@ -52,7 +55,10 @@ export function ReportFilters({
       <div className="w-48">
         <Label>Hasta</Label>
         <DatePicker
-          value={to ? new Date(to) : undefined}
+          value={to ? (() => {
+            const [year, month, day] = to.split('-').map(Number);
+            return new Date(year, month - 1, day);
+          })() : undefined}
           onChange={(date) => {
             if (!date) {
               onToChange('');

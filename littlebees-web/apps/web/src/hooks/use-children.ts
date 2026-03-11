@@ -58,3 +58,14 @@ export function useDeleteChild() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['children'] }),
   });
 }
+
+export function useUpdateChildStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      api.patch<ChildResponse>(`/children/${id}`, { status }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['children'] });
+    },
+  });
+}

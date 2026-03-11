@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
-import { useDeleteChild } from '@/hooks/use-children';
+import { useDeleteChild, useUpdateChildStatus } from '@/hooks/use-children';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Gender } from '@kinderspace/shared-types';
+import { Gender, ChildStatus } from '@kinderspace/shared-types';
 import { ChildFormDialog } from './child-form-dialog';
 import type {
   ChildResponse,
@@ -52,7 +52,9 @@ export function ChildDetailDialog({
 }: ChildDetailDialogProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReactivateConfirm, setShowReactivateConfirm] = useState(false);
   const deleteChild = useDeleteChild();
+  const updateChildStatus = useUpdateChildStatus();
   const childId = child?.id ?? '';
 
   const { data: medicalInfo, isLoading: medicalLoading } = useQuery({
@@ -87,6 +89,18 @@ export function ChildDetailDialog({
     }
   }
 
+  async function handleReactivate() {
+    if (!child) return;
+    try {
+      await updateChildStatus.mutateAsync({ id: child.id, status: ChildStatus.ACTIVE });
+      toast.success('Niño reactivado exitosamente');
+      setShowReactivateConfirm(false);
+      onOpenChange(false);
+    } catch {
+      toast.error('Error al reactivar el niño. Intenta de nuevo.');
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
@@ -96,24 +110,37 @@ export function ChildDetailDialog({
 
         {/* Action buttons */}
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowEditDialog(true)}
-            className="flex-1"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Editar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Eliminar
-          </Button>
+          {child.status === ChildStatus.INACTIVE ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReactivateConfirm(true)}
+              className="flex-1 text-green-600 hover:bg-green-50 hover:text-green-700"
+            >
+              Reactivar
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowEditDialog(true)}
+                className="flex-1"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Informacion general */}
@@ -315,7 +342,7 @@ export function ChildDetailDialog({
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             ¿Estás seguro de que deseas eliminar a <strong>{fullName}</strong>?
-            Esta acción no se puede deshacer.
+            Esta acción marcará al niño como inactivo.
           </p>
           <DialogFooter>
             <Button
@@ -330,6 +357,33 @@ export function ChildDetailDialog({
               loading={deleteChild.isPending}
             >
               Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate confirmation dialog */}
+      <Dialog open={showReactivateConfirm} onOpenChange={setShowReactivateConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Reactivar niño?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Estás seguro de que deseas reactivar a <strong>{fullName}</strong>?
+            El niño volverá a estar activo en el sistema.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowReactivateConfirm(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleReactivate}
+              loading={updateChildStatus.isPending}
+            >
+              Reactivar
             </Button>
           </DialogFooter>
         </DialogContent>
