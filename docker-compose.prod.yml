@@ -76,10 +76,10 @@ services:
       DATABASE_URL: postgresql://kinderspace:kinderspace@postgres:5432/kinderspace_dev
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
+      MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: kinderspace
       MINIO_SECRET_KEY: kinderspace123
+      MINIO_BUCKET: kinderspace-files
       MINIO_USE_SSL: "false"
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
