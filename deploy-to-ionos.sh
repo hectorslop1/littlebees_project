@@ -24,10 +24,24 @@ GEAR="⚙"
 # Configuración del servidor
 SERVER_IP="216.250.125.239"
 SERVER_USER="cbluna"
-SSH_KEY="/Users/hectoreduardosanchezlopez/Documents/Archivo Servidor (NO COMPARTIR)/sshcbluna"
 REPO_URL="https://github.com/hectorslop1/littlebees_project"
 REMOTE_DIR="/home/cbluna/littlebees_project"
 BRANCH="main"
+
+# Detectar automáticamente la ruta de la llave SSH según la computadora
+SSH_KEY_PATH1="/Users/hectorlopez/Documents/Archivo Servidor (NO COMPARTIR)/sshcbluna"
+SSH_KEY_PATH2="/Users/hectoreduardosanchezlopez/Documents/Archivo Servidor (NO COMPARTIR)/sshcbluna"
+
+if [ -f "$SSH_KEY_PATH1" ]; then
+    SSH_KEY="$SSH_KEY_PATH1"
+elif [ -f "$SSH_KEY_PATH2" ]; then
+    SSH_KEY="$SSH_KEY_PATH2"
+else
+    echo -e "${RED}${CROSS}${NC} Llave SSH no encontrada en ninguna de las rutas esperadas:"
+    echo "   - $SSH_KEY_PATH1"
+    echo "   - $SSH_KEY_PATH2"
+    exit 1
+fi
 
 # Configuración de puertos
 BACKEND_PORT=3002
