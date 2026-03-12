@@ -13,7 +13,7 @@ export function GroupsOverview() {
     // La respuesta de la API puede ser un array directamente o un objeto con data
     const groups = Array.isArray(groupsResponse) 
       ? groupsResponse 
-      : groupsResponse?.data || [];
+      : (groupsResponse as any)?.data || [];
     
     if (!groups || groups.length === 0) return [];
     
