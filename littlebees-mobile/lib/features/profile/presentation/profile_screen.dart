@@ -85,7 +85,7 @@ class ProfileScreen extends ConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Text('Error loading children'),
+              error: (_, _) => const Text('Error loading children'),
             ),
             const SizedBox(height: 32),
             Text(

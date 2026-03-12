@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
@@ -47,6 +47,9 @@ export function DevelopmentRadar() {
 
     for (const child of report.children) {
       for (const cat of child.categoryBreakdown) {
+        // Skip if percent is NaN or invalid
+        if (!Number.isFinite(cat.percent)) continue;
+        
         const existing = categoryTotals.get(cat.category) ?? {
           totalPercent: 0,
           count: 0,
@@ -60,7 +63,7 @@ export function DevelopmentRadar() {
     return Array.from(categoryTotals.entries()).map(
       ([category, { totalPercent, count }]) => ({
         category: CATEGORY_LABELS[category] ?? category,
-        value: Math.round(totalPercent / count),
+        value: count > 0 ? Math.round(totalPercent / count) : 0,
         fullMark: 100,
       }),
     );
@@ -82,7 +85,7 @@ export function DevelopmentRadar() {
   }
 
   return (
-    <Card>
+    <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
       <CardHeader>
         <CardTitle className="text-lg font-semibold font-heading">
           Desarrollo Promedio
@@ -93,32 +96,46 @@ export function DevelopmentRadar() {
           <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
             Sin evaluaciones de desarrollo este mes
           </div>
+        ) : chartData.length < 3 ? (
+          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            Se necesitan al menos 3 áreas de desarrollo con datos válidos
+          </div>
         ) : (
-          <ResponsiveContainer width="100%" height={256}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
+          <ResponsiveContainer width="100%" height={300}>
+            <RadarChart data={chartData} cx="50%" cy="50%" outerRadius="70%">
+              <PolarGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+              <PolarAngleAxis 
                 dataKey="category" 
-                tick={{ fontSize: 11 }}
-                angle={-15}
-                textAnchor="end"
-                height={60}
+                tick={{ fontSize: 11, fill: '#6b7280' }}
               />
-              <YAxis 
+              <PolarRadiusAxis 
+                angle={90}
                 domain={[0, 100]}
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 10, fill: '#9ca3af' }}
                 tickFormatter={(v) => `${v}%`}
+                tickCount={5}
               />
               <Tooltip 
                 formatter={(value) => [`${value}%`, 'Progreso']}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={{ 
+                  fontSize: 12,
+                  borderRadius: '8px',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
               />
-              <Bar 
+              <Radar 
+                name="Desarrollo"
                 dataKey="value" 
+                stroke="#4ECDC4" 
                 fill="#4ECDC4" 
-                radius={[4, 4, 0, 0]}
+                fillOpacity={0.6}
+                strokeWidth={2}
+                isAnimationActive={true}
+                animationDuration={800}
+                animationBegin={0}
               />
-            </BarChart>
+            </RadarChart>
           </ResponsiveContainer>
         )}
       </CardContent>

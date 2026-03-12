@@ -80,7 +80,7 @@ export function AttendanceChart() {
   }
 
   return (
-    <Card>
+    <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <CardHeader>
         <CardTitle className="text-lg font-semibold font-heading">
           Tendencia de Asistencia
@@ -121,6 +121,9 @@ export function AttendanceChart() {
                 fill="#4ECDC4"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={40}
+                isAnimationActive={true}
+                animationDuration={800}
+                animationBegin={0}
               />
             </BarChart>
           </ResponsiveContainer>

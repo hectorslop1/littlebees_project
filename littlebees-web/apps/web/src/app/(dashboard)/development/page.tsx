@@ -21,6 +21,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { CategoryOverviewCards } from '@/components/domain/development/category-overview-cards';
 import { MilestonesList } from '@/components/domain/development/milestones-list';
 import { EvaluationFormDialog } from '@/components/domain/development/evaluation-form-dialog';
+import { DevelopmentMilestones } from '@/components/domain/development/development-milestones';
+import { HomeExercises } from '@/components/domain/development/home-exercises';
+import { DevelopmentRadar } from '@/components/domain/dashboard/development-radar';
+import { DevelopmentEvolution } from '@/components/domain/dashboard/development-evolution';
 
 const CATEGORY_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'Todas las categorías' },
@@ -121,6 +125,18 @@ export default function DevelopmentPage() {
           {summary?.categories && (
             <CategoryOverviewCards categories={summary.categories} />
           )}
+
+          {/* Charts Row - Radar y Evolución */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <DevelopmentRadar />
+            <DevelopmentEvolution />
+          </div>
+
+          {/* Hitos de Desarrollo */}
+          <DevelopmentMilestones />
+
+          {/* Ejercicios en Casa */}
+          <HomeExercises />
 
           {/* Category filter + records */}
           <div className="space-y-4">

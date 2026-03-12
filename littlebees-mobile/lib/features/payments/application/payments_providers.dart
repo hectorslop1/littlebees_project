@@ -25,7 +25,7 @@ final pendingPaymentsProvider = Provider<List<Payment>>((ref) {
     data: (payments) =>
         payments.where((p) => p.status.value == 'pending').toList(),
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 });
 

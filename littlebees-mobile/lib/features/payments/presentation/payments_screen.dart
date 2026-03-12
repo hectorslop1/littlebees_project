@@ -5,7 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../design_system/theme/app_colors.dart';
 import '../../../../design_system/widgets/lb_card.dart';
-import '../application/payments_providers.dart';
 
 class PaymentsScreen extends ConsumerWidget {
   const PaymentsScreen({super.key});

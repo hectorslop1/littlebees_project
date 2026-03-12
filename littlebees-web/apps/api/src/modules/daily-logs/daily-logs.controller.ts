@@ -15,13 +15,25 @@ export class DailyLogsController {
   constructor(private readonly dailyLogsService: DailyLogsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Obtener entradas de bitácora por niño y fecha' })
+  @ApiOperation({ summary: 'Obtener entradas de bitácora por niño y/o fecha' })
   async findByChildAndDate(
     @CurrentTenant() tenantId: string,
-    @Query('childId') childId: string,
-    @Query('date') date: string,
+    @Query('childId') childId?: string,
+    @Query('date') date?: string,
   ) {
-    const entries = await this.dailyLogsService.findByChildAndDate(tenantId, childId, date);
+    if (!childId && !date) {
+      return createPaginatedResponse([]);
+    }
+
+    let entries: any[];
+    if (childId && date) {
+      entries = await this.dailyLogsService.findByChildAndDate(tenantId, childId, date);
+    } else if (date) {
+      entries = await this.dailyLogsService.findByDate(tenantId, date);
+    } else {
+      entries = [];
+    }
+    
     return createPaginatedResponse(entries);
   }
 

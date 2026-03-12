@@ -6,6 +6,7 @@
 /// Para generar el cliente:
 /// 1. Asegúrate de que el API esté corriendo: `pnpm dev:api`
 /// 2. Genera el cliente: `pnpm generate:api-client`
+library;
 
 // TODO: Descomentar después de generar el cliente
 // import 'package:littlebees_mobile/generated/api/api.dart';

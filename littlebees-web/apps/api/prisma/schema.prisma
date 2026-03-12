@@ -44,6 +44,8 @@ model Tenant {
   auditLogs         AuditLog[]
   files             File[]
   extraServices     ExtraService[]
+  announcements     Announcement[]
+  exercises         Exercise[]
 
   @@map("tenants")
 }
@@ -87,6 +89,7 @@ model User {
   userTenants    UserTenant[]
   refreshTokens  RefreshToken[]
   childParents   ChildParent[]
+  announcements  Announcement[] @relation("AnnouncementAuthor")
 
   @@map("users")
 }
@@ -159,16 +162,17 @@ model Child {
   updatedAt      DateTime    @updatedAt @map("updated_at")
   deletedAt      DateTime?   @map("deleted_at")
 
-  tenant            Tenant              @relation(fields: [tenantId], references: [id])
-  group             Group               @relation(fields: [groupId], references: [id])
-  medicalInfo       ChildMedicalInfo?
-  emergencyContacts EmergencyContact[]
-  parents           ChildParent[]
-  attendanceRecords AttendanceRecord[]
-  dailyLogEntries   DailyLogEntry[]
+  tenant             Tenant               @relation(fields: [tenantId], references: [id])
+  group              Group                @relation(fields: [groupId], references: [id])
+  medicalInfo        ChildMedicalInfo?
+  emergencyContacts  EmergencyContact[]
+  parents            ChildParent[]
+  attendanceRecords  AttendanceRecord[]
+  dailyLogEntries    DailyLogEntry[]
   developmentRecords DevelopmentRecord[]
-  payments          Payment[]
-  conversations     Conversation[]
+  payments           Payment[]
+  conversations      Conversation[]
+  childExercises     ChildExercise[]
 
   @@index([tenantId, groupId])
   @@map("children")
@@ -556,4 +560,66 @@ enum PaymentStatus {
 enum InvoiceStatus {
   valid
   cancelled
+}
+
+// ============================================================
+// ANNOUNCEMENTS
+// ============================================================
+
+model Announcement {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  content   String
+  type      String   @db.VarChar(50) // general, event, alert, achievement
+  priority  String   @db.VarChar(20) // high, medium, low
+  authorId  String   @map("author_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  author User   @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("announcements")
+}
+
+// ============================================================
+// EXERCISES
+// ============================================================
+
+model Exercise {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @map("tenant_id") @db.Uuid
+  title       String              @db.VarChar(255)
+  description String
+  category    DevelopmentCategory
+  duration    Int // minutes
+  ageRangeMin Int                 @map("age_range_min") // months
+  ageRangeMax Int                 @map("age_range_max") // months
+  videoUrl    String?             @map("video_url")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  childExercises ChildExercise[]
+
+  @@index([tenantId, category])
+  @@index([ageRangeMin, ageRangeMax])
+  @@map("exercises")
+}
+
+model ChildExercise {
+  childId     String    @map("child_id") @db.Uuid
+  exerciseId  String    @map("exercise_id") @db.Uuid
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+
+  child    Child    @relation(fields: [childId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@id([childId, exerciseId])
+  @@index([childId])
+  @@index([childId, completed])
+  @@map("child_exercises")
 }

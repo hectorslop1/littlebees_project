@@ -9,6 +9,36 @@ export class DailyLogsService {
   async findByChildAndDate(tenantId: string, childId: string, date: string) {
     return this.prisma.dailyLogEntry.findMany({
       where: { tenantId, childId, date: new Date(date) },
+      include: {
+        child: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            photoUrl: true,
+          },
+        },
+      },
+      orderBy: { time: 'asc' },
+    });
+  }
+
+  async findByDate(tenantId: string, date: string) {
+    return this.prisma.dailyLogEntry.findMany({
+      where: { 
+        tenantId, 
+        date: new Date(date) 
+      },
+      include: {
+        child: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            photoUrl: true,
+          },
+        },
+      },
       orderBy: { time: 'asc' },
     });
   }

@@ -12,3 +12,5 @@ export * from './services';
 export * from './files';
 export * from './audit';
 export * from './reports';
+export * from './announcements';
+export * from './exercises';

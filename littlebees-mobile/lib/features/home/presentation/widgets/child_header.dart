@@ -20,7 +20,7 @@ class ChildHeader extends ConsumerWidget {
     final children = childrenAsync.when(
       data: (childrenList) => childrenList,
       loading: () => <Child>[],
-      error: (_, __) => <Child>[],
+      error: (_, _) => <Child>[],
     );
 
     return PopupMenuButton<String>(

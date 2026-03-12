@@ -20,6 +20,8 @@ import { InvoicingModule } from './modules/invoicing/invoicing.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { GroupsModule } from './modules/groups/groups.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { ExercisesModule } from './modules/exercises/exercises.module';
 
 @Module({
   imports: [
@@ -68,6 +70,8 @@ import { GroupsModule } from './modules/groups/groups.module';
     InvoicingModule,
     ChatModule,
     ReportsModule,
+    AnnouncementsModule,
+    ExercisesModule,
   ],
 })
 export class AppModule {}
