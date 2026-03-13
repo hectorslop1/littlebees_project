@@ -62,7 +62,7 @@ export function GroupsOverview() {
           </div>
         ) : (
           <div className="space-y-2">
-            {groupsWithCapacity.map((group) => (
+            {groupsWithCapacity.map((group: any) => (
               <div
                 key={group.id}
                 className="flex items-center justify-between rounded-lg border border-gray-100 bg-white p-3 shadow-sm transition-all hover:shadow-md"
