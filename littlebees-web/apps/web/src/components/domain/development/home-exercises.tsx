@@ -58,8 +58,8 @@ export function HomeExercises() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {exercises.map((exercise) => {
-              const config = CATEGORY_CONFIG[exercise.category];
+            {exercises.map((exercise: any) => {
+              const config = CATEGORY_CONFIG[exercise.category as keyof typeof CATEGORY_CONFIG];
               const Icon = config?.icon || Brain;
 
               return (
