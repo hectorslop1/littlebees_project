@@ -25,7 +25,7 @@ export function useAnnouncements(filters?: {
       const response = await api.get<AnnouncementListResponse>(
         `/announcements?${params.toString()}`,
       );
-      return response.data;
+      return response as any;
     },
   });
 }
@@ -35,7 +35,7 @@ export function useAnnouncement(id: string) {
     queryKey: ['announcements', id],
     queryFn: async () => {
       const response = await api.get<Announcement>(`/announcements/${id}`);
-      return response.data;
+      return response as any;
     },
     enabled: !!id,
   });
@@ -47,7 +47,7 @@ export function useCreateAnnouncement() {
   return useMutation({
     mutationFn: async (data: CreateAnnouncementDto) => {
       const response = await api.post<Announcement>('/announcements', data);
-      return response.data;
+      return response as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
@@ -70,7 +70,7 @@ export function useUpdateAnnouncement() {
         `/announcements/${id}`,
         data,
       );
-      return response.data;
+      return response as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
