@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "KinderSpace IONOS (Producción)",
+      "Group": "Servers",
+      "Host": "216.250.125.239",
+      "Port": 5437,
+      "MaintenanceDB": "kinderspace_dev",
+      "Username": "kinderspace",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}

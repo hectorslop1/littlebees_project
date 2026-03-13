@@ -113,17 +113,20 @@ MINIO_BUCKET="kinderspace-files"
 MINIO_USE_SSL="false"
 ```
 
-### 5. Iniciar Servicios Locales (Solo Redis y MinIO)
+### 5. Iniciar Servicios Locales (Redis, MinIO y pgAdmin)
 
 ```bash
 # Volver a la raíz del proyecto
 cd ~/Desktop/Proyectos/littlebees_project
 
-# Iniciar solo Redis y MinIO (NO PostgreSQL)
-docker compose -f littlebees-web/infrastructure/docker/docker-compose.yml up -d redis minio
+# Iniciar Redis, MinIO y pgAdmin (NO PostgreSQL)
+docker compose -f littlebees-web/infrastructure/docker/docker-compose.yml up -d redis minio pgadmin
 ```
 
-**Nota**: No necesitas PostgreSQL local porque usarás el de IONOS.
+**Nota**: 
+- No necesitas PostgreSQL local porque usarás el de IONOS
+- pgAdmin se levanta para administrar la BD remota de IONOS
+- La conexión a IONOS ya está preconfigurada en pgAdmin
 
 ### 6. Generar Cliente Prisma
 
@@ -161,6 +164,17 @@ Una vez que todo esté corriendo:
 - **Backend API**: http://localhost:3002
 - **Swagger Docs**: http://localhost:3002/api/docs
 - **MinIO Console**: http://localhost:9011
+- **pgAdmin** (BD IONOS): http://localhost:5050
+
+### 🗄️ Acceder a pgAdmin
+
+1. Abre http://localhost:5050 en tu navegador
+2. Inicia sesión con:
+   - **Email**: `admin@kinderspace.mx`
+   - **Password**: `kinderspace123`
+3. El servidor de IONOS ya está preconfigurado como "KinderSpace IONOS (Producción)"
+4. Al conectarte por primera vez, te pedirá la contraseña de la BD: `kinderspace`
+5. Ahora puedes ver y administrar todas las tablas de la BD en IONOS
 
 ---
 
@@ -306,12 +320,13 @@ docker compose -f littlebees-web/infrastructure/docker/docker-compose.yml down
 Antes de empezar a desarrollar, verifica:
 
 - [ ] Docker Desktop está corriendo
-- [ ] Redis y MinIO están corriendo localmente
-- [ ] Archivo `.env` configurado con BD de IONOS
+- [ ] Redis, MinIO y pgAdmin están corriendo localmente
+- [ ] Archivo `.env` configurado con BD de IONOS (216.250.125.239:5437)
 - [ ] `pnpm install` completado
 - [ ] Packages compartidos construidos
 - [ ] Backend API corriendo en puerto 3002
 - [ ] Frontend Web corriendo en puerto 3001
+- [ ] pgAdmin accesible en http://localhost:5050 (conectado a IONOS)
 - [ ] Puedes hacer login en http://localhost:3001
 
 ---

@@ -158,40 +158,33 @@ echo ""
 echo "🐳 2. Verificando Contenedores Docker..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Verificar si algún contenedor falta
+# Verificar si algún contenedor falta (solo Redis, MinIO y pgAdmin - NO PostgreSQL)
 DOCKER_CONTAINERS_MISSING=false
 
-if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-postgres"; then
-    DOCKER_CONTAINERS_MISSING=true
-fi
 if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-redis"; then
     DOCKER_CONTAINERS_MISSING=true
 fi
 if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-minio"; then
     DOCKER_CONTAINERS_MISSING=true
 fi
+if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin"; then
+    DOCKER_CONTAINERS_MISSING=true
+fi
 
 # Si faltan contenedores y auto-fix está activado, levantarlos
 if [ "$DOCKER_CONTAINERS_MISSING" = true ] && [ "$AUTO_FIX" = "--auto-fix" ]; then
-    echo -e "${MAGENTA}${ROCKET}${NC} Iniciando contenedores Docker..."
-    pnpm docker:up
+    echo -e "${MAGENTA}${ROCKET}${NC} Iniciando contenedores Docker (Redis, MinIO, pgAdmin)..."
+    echo -e "${BLUE}${ARROW}${NC} Nota: PostgreSQL se usa desde IONOS, no local"
+    cd littlebees-web/infrastructure/docker && docker compose up -d redis minio pgadmin && cd ../../..
     echo -e "${GREEN}${CHECK}${NC} Contenedores Docker iniciados"
     echo ""
     sleep 3  # Esperar a que los contenedores se inicien
 fi
 
-# PostgreSQL
+# PostgreSQL (IONOS - Remoto)
+echo -e "${BLUE}ℹ${NC}  PostgreSQL: Usando BD remota en IONOS (216.250.125.239:5437)"
 if docker ps --format '{{.Names}}' | grep -q "kinderspace-postgres"; then
-    echo -e "${GREEN}${CHECK}${NC} PostgreSQL Container: Corriendo"
-    if check_port 5437; then
-        echo -e "${GREEN}${CHECK}${NC} PostgreSQL Puerto 5437: Activo"
-    else
-        echo -e "${RED}${CROSS}${NC} PostgreSQL Puerto 5437: No responde"
-        ((ERRORS++))
-    fi
-else
-    echo -e "${RED}${CROSS}${NC} PostgreSQL Container: No está corriendo"
-    ((ERRORS++))
+    echo -e "${YELLOW}⚠${NC}  PostgreSQL local detectado (no necesario, se usa IONOS)"
 fi
 
 # Redis
@@ -233,12 +226,16 @@ if docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin"; then
     echo -e "${GREEN}${CHECK}${NC} pgAdmin Container: Corriendo"
     if check_port 5050; then
         echo -e "${GREEN}${CHECK}${NC} pgAdmin Puerto 5050: Activo"
+        echo -e "${BLUE}${ARROW}${NC} Conectado a BD de IONOS (216.250.125.239:5437)"
     else
         echo -e "${RED}${CROSS}${NC} pgAdmin Puerto 5050: No responde"
         ((ERRORS++))
     fi
 else
-    echo -e "${YELLOW}${CROSS}${NC} pgAdmin Container: No está corriendo (opcional)"
+    echo -e "${YELLOW}${CROSS}${NC} pgAdmin Container: No está corriendo"
+    if [ "$AUTO_FIX" != "--auto-fix" ]; then
+        echo -e "${YELLOW}${ARROW}${NC} Recomendado para administrar la BD de IONOS"
+    fi
 fi
 
 echo ""
