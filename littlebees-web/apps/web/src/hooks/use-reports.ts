@@ -54,3 +54,19 @@ export function usePaymentReport(params: {
     enabled: !!params.from && !!params.to,
   });
 }
+
+export function useActivitiesReport(params: {
+  from: string;
+  to: string;
+  groupId?: string;
+}) {
+  return useQuery({
+    queryKey: ['reports', 'activities', params],
+    queryFn: () =>
+      api.get<any>(
+        '/reports/activities',
+        params as Record<string, string>,
+      ),
+    enabled: !!params.from && !!params.to,
+  });
+}

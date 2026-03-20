@@ -264,4 +264,100 @@ export class ReportsService {
         .sort((a, b) => a.month.localeCompare(b.month)),
     };
   }
+
+  async getActivitiesReport(
+    tenantId: string,
+    from: string,
+    to: string,
+    groupId?: string,
+  ) {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const childrenWhere: Record<string, unknown> = {
+      tenantId,
+      status: 'active',
+    };
+    if (groupId) childrenWhere.groupId = groupId;
+
+    const children = await this.prisma.child.findMany({
+      where: childrenWhere,
+      select: { 
+        id: true, 
+        firstName: true, 
+        lastName: true,
+        groupId: true,
+        group: { select: { name: true } },
+      },
+    });
+
+    const logs = await this.prisma.dailyLogEntry.findMany({
+      where: {
+        tenantId,
+        date: { gte: fromDate, lte: toDate },
+        childId: { in: children.map((c) => c.id) },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    // Agrupar por tipo de actividad
+    const activityTypeMap = new Map<string, number>();
+    for (const log of logs) {
+      const count = activityTypeMap.get(log.type) || 0;
+      activityTypeMap.set(log.type, count + 1);
+    }
+
+    // Agrupar por fecha
+    const dailyMap = new Map<string, Map<string, number>>();
+    for (const log of logs) {
+      const dateKey = log.date.toISOString().split('T')[0];
+      const dayMap = dailyMap.get(dateKey) || new Map<string, number>();
+      const count = dayMap.get(log.type) || 0;
+      dayMap.set(log.type, count + 1);
+      dailyMap.set(dateKey, dayMap);
+    }
+
+    const dailyBreakdown = Array.from(dailyMap.entries()).map(([date, typeMap]) => ({
+      date,
+      activities: Array.from(typeMap.entries()).map(([type, count]) => ({
+        type,
+        count,
+      })),
+      total: Array.from(typeMap.values()).reduce((a, b) => a + b, 0),
+    }));
+
+    // Resumen por niño
+    const childSummaries = children.map((child) => {
+      const childLogs = logs.filter((l) => l.childId === child.id);
+      const typeMap = new Map<string, number>();
+      
+      for (const log of childLogs) {
+        const count = typeMap.get(log.type) || 0;
+        typeMap.set(log.type, count + 1);
+      }
+
+      return {
+        childId: child.id,
+        childName: `${child.firstName} ${child.lastName}`,
+        groupName: child.group?.name,
+        totalActivities: childLogs.length,
+        activitiesByType: Array.from(typeMap.entries()).map(([type, count]) => ({
+          type,
+          count,
+        })),
+      };
+    });
+
+    return {
+      period: { from, to },
+      totalActivities: logs.length,
+      activitiesByType: Array.from(activityTypeMap.entries()).map(([type, count]) => ({
+        type,
+        count,
+        percentage: Math.round((count / logs.length) * 100),
+      })),
+      dailyBreakdown,
+      children: childSummaries,
+    };
+  }
 }

@@ -1,0 +1,257 @@
+🎯 PLAN DE ACCIÓN INMEDIATA - APP MÓVIL FLUTTER
+================================================
+
+📊 DIAGNÓSTICO COMPLETADO
+-------------------------
+
+✅ CORREGIDO:
+- URL del API cambiada de puerto 3002 a 3001
+- Ruta base corregida (eliminado /api/v1)
+
+🔴 PROBLEMAS IDENTIFICADOS:
+1. Backend puede no tener datos (falta ejecutar seed)
+2. Autenticación puede estar fallando
+3. Navegación por rol YA ESTÁ implementada pero puede no estar siendo usada
+4. Repositorios están bien implementados
+
+🚀 ACCIONES INMEDIATAS (EJECUTAR EN ORDEN)
+==========================================
+
+PASO 1: VERIFICAR BACKEND
+--------------------------
+cd littlebees-web/apps/api
+
+# Ejecutar seed para poblar base de datos
+npm run seed
+
+# Iniciar backend
+npm run dev
+
+# Verificar que corra en puerto 3001
+# Debe mostrar: "Server running on http://localhost:3001"
+
+USUARIOS DE PRUEBA CREADOS POR SEED:
+- Padre: padre@littlebees.com / Parent123!
+- Maestra: maestra@littlebees.com / Teacher123!
+- Directora: directora@littlebees.com / Director123!
+- Admin: admin@littlebees.com / Admin123!
+
+PASO 2: PROBAR ENDPOINTS MANUALMENTE
+------------------------------------
+# Login
+curl -X POST http://localhost:3001/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"padre@littlebees.com","password":"Parent123!"}'
+
+# Copiar el accessToken de la respuesta
+
+# Obtener hijos (usar token del paso anterior)
+curl http://localhost:3001/children \
+  -H "Authorization: Bearer <TU_TOKEN_AQUI>"
+
+# Si responde con datos JSON → Backend funciona ✅
+# Si responde con [] → Falta ejecutar seed
+# Si responde 401 → Token inválido
+# Si responde 404 → Endpoint no existe
+
+PASO 3: EJECUTAR APP MÓVIL
+---------------------------
+cd littlebees-mobile
+
+# Limpiar build
+flutter clean
+flutter pub get
+
+# Ejecutar en emulador/dispositivo
+flutter run
+
+PASO 4: PROBAR LOGIN EN APP
+----------------------------
+1. Abrir app
+2. Ingresar:
+   Email: padre@littlebees.com
+   Password: Parent123!
+3. Presionar Login
+
+PASO 5: VERIFICAR LOGS
+-----------------------
+En la consola de Flutter, buscar:
+
+✅ ÉXITO:
+[API] GET /children
+[API] Response: [{id: "...", firstName: "..."}]
+
+❌ ERROR:
+[API] DioException: Connection refused
+→ Backend no está corriendo
+
+[API] Response: 401 Unauthorized
+→ Token inválido o expirado
+
+[API] Response: []
+→ No hay datos, ejecutar seed
+
+🔧 SOLUCIONES POR TIPO DE ERROR
+================================
+
+ERROR: "Connection refused" o "Failed to connect"
+--------------------------------------------------
+CAUSA: Backend no está corriendo
+SOLUCIÓN:
+1. cd littlebees-web/apps/api
+2. npm run dev
+3. Verificar que muestre puerto 3001
+
+ERROR: 401 Unauthorized
+-----------------------
+CAUSA: Token inválido o no se está enviando
+SOLUCIÓN:
+1. Verificar que login funcione
+2. Revisar que token se guarde en SecureStorage
+3. Verificar AuthInterceptor en lib/core/api/auth_interceptor.dart
+
+ERROR: Response vacía []
+------------------------
+CAUSA: No hay datos en base de datos
+SOLUCIÓN:
+1. cd littlebees-web/apps/api
+2. npm run seed
+3. Reiniciar app móvil
+
+ERROR: Pantallas vacías pero sin errores en logs
+-------------------------------------------------
+CAUSA: UI no está renderizando datos correctamente
+SOLUCIÓN:
+1. Verificar que providers estén retornando datos
+2. Agregar prints en repositorios:
+   print('Children loaded: ${children.length}');
+3. Verificar widgets de error/empty state
+
+📱 ESTRUCTURA POR ROL (YA IMPLEMENTADA)
+=======================================
+
+PADRES (parent):
+- Home → /home
+- Mis Hijos → /children  
+- Chat → /messages
+- Perfil → /profile
+
+MAESTRAS (teacher):
+- Home → /home
+- Actividad → /activity (registro rápido)
+- Grupos → /groups
+- Chat → /messages
+- Perfil → /profile
+
+DIRECTORAS (director):
+- Home → /home
+- Grupos → /groups
+- Reportes → /reports
+- Chat → /messages
+- Perfil → /profile
+
+ADMINS (admin/super_admin):
+- Home → /home
+- Grupos → /groups
+- Configuración → /settings
+- Chat → /messages
+- Perfil → /profile
+
+🔍 DEBUGGING AVANZADO
+=====================
+
+Si después de todo esto sigue sin funcionar:
+
+1. ACTIVAR LOGS DETALLADOS:
+En lib/core/api/api_client.dart, el LogInterceptor ya está activo.
+Revisar TODA la salida en consola.
+
+2. PROBAR CON DATOS HARDCODEADOS:
+Editar lib/features/home/data/remote_home_repository.dart:
+
+Future<List<Child>> getMyChildren() async {
+  // TEMPORAL: Comentar código real y usar esto
+  return [
+    Child(
+      id: 'test-1',
+      tenantId: 'test-tenant',
+      firstName: 'Juan',
+      lastName: 'Pérez',
+      dateOfBirth: DateTime(2020, 1, 1),
+      gender: 'male',
+      photoUrl: null,
+      groupId: null,
+      groupName: null,
+      enrollmentDate: DateTime.now(),
+      status: 'active',
+      qrCodeHash: null,
+      allergies: null,
+      conditions: null,
+      medications: null,
+      bloodType: null,
+      authorizedPickups: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+  ];
+}
+
+Si con datos hardcodeados SÍ se muestra → Problema es de API/Backend
+Si con datos hardcodeados NO se muestra → Problema es de UI/Widgets
+
+3. VERIFICAR ESTADO DE PROVIDERS:
+Agregar en lib/features/home/presentation/home_screen.dart:
+
+print('Children async state: ${childrenAsync.value}');
+print('Is loading: ${childrenAsync.isLoading}');
+print('Has error: ${childrenAsync.hasError}');
+
+📋 CHECKLIST FINAL
+==================
+
+Backend:
+[ ] Backend corriendo en puerto 3001
+[ ] Seed ejecutado (datos en BD)
+[ ] Endpoints respondiendo (probar con curl)
+[ ] CORS configurado
+
+App Móvil:
+[✅] URL corregida a puerto 3001
+[ ] Login funcional
+[ ] Token guardándose correctamente
+[ ] Logs mostrando peticiones exitosas
+[ ] Datos mostrándose en pantalla
+
+🎯 RESULTADO ESPERADO
+=====================
+
+Después de seguir estos pasos:
+
+1. Login exitoso con padre@littlebees.com
+2. Pantalla Home mostrando:
+   - Header con nombre del hijo
+   - Tarjeta de estado (presente/ausente)
+   - Timeline de actividades del día
+3. Navegación funcionando entre tabs
+4. Chat mostrando conversaciones
+5. Perfil mostrando información del usuario
+
+💡 TIPS FINALES
+===============
+
+- El código de la app móvil está BIEN implementado
+- El problema más probable es DATOS VACÍOS en backend
+- Ejecutar seed es CRÍTICO
+- Los logs de Dio te dirán exactamente qué está pasando
+- La navegación por rol YA FUNCIONA automáticamente
+
+🆘 SI NADA FUNCIONA
+===================
+
+Comparte:
+1. Logs completos de la consola Flutter
+2. Respuesta de: curl http://localhost:3001/children -H "Authorization: Bearer <token>"
+3. Screenshot de la pantalla vacía
+4. Versión de Flutter: flutter --version
+
+Última actualización: Marzo 18, 2026

@@ -17,6 +17,10 @@ import '../features/payments/presentation/payments_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
 import '../features/auth/application/auth_provider.dart';
+import '../features/groups/presentation/groups_screen.dart';
+import '../features/children/presentation/children_list_screen.dart';
+import '../features/reports/presentation/reports_screen.dart';
+import '../features/excuses/presentation/excuses_list_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthChangeNotifier(ref);
@@ -140,6 +144,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/payments',
             name: RouteNames.payments,
             builder: (context, state) => const PaymentsScreen(),
+          ),
+          GoRoute(
+            path: '/groups',
+            name: RouteNames.groups,
+            builder: (context, state) => const GroupsScreen(),
+          ),
+          GoRoute(
+            path: '/children',
+            name: RouteNames.children,
+            builder: (context, state) => const ChildrenListScreen(),
+          ),
+          GoRoute(
+            path: '/reports',
+            name: RouteNames.reports,
+            builder: (context, state) => const ReportsScreen(),
+          ),
+          GoRoute(
+            path: '/excuses',
+            name: RouteNames.excuses,
+            builder: (context, state) => const ExcusesListScreen(),
           ),
         ],
       ),

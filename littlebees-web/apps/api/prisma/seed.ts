@@ -750,6 +750,24 @@ async function main() {
     ],
   });
 
+  // --- Day Schedule Template ---
+  await prisma.dayScheduleTemplate.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Horario Estándar',
+      isDefault: true,
+      items: [
+        { time: '07:30', type: 'check_in', label: 'Entrada' },
+        { time: '09:00', type: 'activity', label: 'Actividad educativa' },
+        { time: '10:00', type: 'other', label: 'Recreo' },
+        { time: '11:00', type: 'meal', label: 'Comida' },
+        { time: '12:00', type: 'nap', label: 'Siesta' },
+        { time: '14:00', type: 'activity', label: 'Actividad libre' },
+        { time: '16:00', type: 'check_out', label: 'Salida' },
+      ],
+    },
+  });
+
   console.log('Seed completed!');
   console.log('---');
   console.log('Demo credentials (Password: Password123!):');

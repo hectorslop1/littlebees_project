@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { BulkCheckInDto, BulkCheckInResponseDto } from './dto/bulk-check-in.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -55,5 +57,74 @@ export class AttendanceService {
         checkOutBy: userId,
       },
     });
+  }
+
+  async bulkCheckIn(
+    tenantId: string,
+    userId: string,
+    dto: BulkCheckInDto,
+  ): Promise<BulkCheckInResponseDto> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+
+    const successIds: string[] = [];
+    const failedIds: string[] = [];
+
+    // Procesar cada niño
+    for (const childId of dto.childIds) {
+      try {
+        // Verificar que el niño existe y pertenece al tenant
+        const child = await this.prisma.child.findFirst({
+          where: { id: childId, tenantId },
+        });
+
+        if (!child) {
+          failedIds.push(childId);
+          continue;
+        }
+
+        // Crear o actualizar registro de asistencia
+        await this.prisma.attendanceRecord.upsert({
+          where: {
+            childId_date: {
+              childId,
+              date: today,
+            },
+          },
+          create: {
+            tenantId,
+            childId,
+            date: today,
+            checkInAt: now,
+            checkInBy: userId,
+            checkInMethod: 'bulk',
+            // checkInPhotoUrl: dto.photoUrl, // DISABLED: Field doesn't exist
+            status: AttendanceStatus.present,
+            observations: dto.observations,
+          },
+          update: {
+            checkInAt: now,
+            checkInBy: userId,
+            checkInMethod: 'bulk',
+            // checkInPhotoUrl: dto.photoUrl, // DISABLED: Field doesn't exist
+            status: AttendanceStatus.present,
+            observations: dto.observations,
+          },
+        });
+
+        successIds.push(childId);
+      } catch (error) {
+        failedIds.push(childId);
+      }
+    }
+
+    return {
+      successCount: successIds.length,
+      failedCount: failedIds.length,
+      successIds,
+      failedIds,
+      message: `Check-in masivo completado: ${successIds.length} exitosos, ${failedIds.length} fallidos`,
+    };
   }
 }

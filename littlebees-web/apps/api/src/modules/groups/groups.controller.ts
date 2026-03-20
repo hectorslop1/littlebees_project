@@ -45,6 +45,9 @@ export class GroupsController {
     @Body()
     dto: {
       name: string;
+      level: string;
+      friendlyName: string;
+      subgroup?: string;
       ageRangeMin: number;
       ageRangeMax: number;
       capacity: number;
@@ -65,6 +68,9 @@ export class GroupsController {
     @Body()
     dto: {
       name?: string;
+      level?: string;
+      friendlyName?: string;
+      subgroup?: string;
       ageRangeMin?: number;
       ageRangeMax?: number;
       capacity?: number;

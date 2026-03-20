@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ChildStatus, Gender } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChildProfileDto } from './dto/child-profile.dto';
 
 @Injectable()
 export class ChildrenService {
@@ -233,5 +234,118 @@ export class ChildrenService {
     return this.prisma.emergencyContact.delete({
       where: { id: contactId },
     });
+  }
+
+  // Get complete child profile
+  async getProfile(
+    childId: string,
+    tenantId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<ChildProfileDto> {
+    // Verificar que el niño existe
+    const child = await this.prisma.child.findFirst({
+      where: { id: childId, tenantId },
+      include: {
+        group: { select: { id: true, name: true } },
+        medicalInfo: true,
+        emergencyContacts: { orderBy: { priority: 'asc' } },
+        parents: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!child) {
+      throw new NotFoundException('Niño/a no encontrado');
+    }
+
+    // Validar permisos según rol
+    if (userRole === 'parent') {
+      // Padres solo pueden ver el perfil de sus propios hijos
+      const isParent = child.parents.some((p) => p.userId === userId);
+      if (!isParent) {
+        throw new ForbiddenException('No tienes permiso para ver este perfil');
+      }
+    } else if (userRole === 'teacher') {
+      // Maestras solo pueden ver perfiles de niños en sus grupos
+      const teacherGroups = await this.prisma.group.findMany({
+        where: { tenantId, teacherId: userId },
+        select: { id: true },
+      });
+      const groupIds = teacherGroups.map((g) => g.id);
+      
+      if (!groupIds.includes(child.groupId)) {
+        throw new ForbiddenException('No tienes permiso para ver este perfil');
+      }
+    }
+    // Admin, director, super_admin pueden ver todos los perfiles
+
+    // Calcular edad
+    const today = new Date();
+    const birthDate = new Date(child.dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    // Construir DTO de respuesta
+    const profile: ChildProfileDto = {
+      id: child.id,
+      firstName: child.firstName,
+      lastName: child.lastName,
+      dateOfBirth: child.dateOfBirth,
+      gender: child.gender,
+      photoUrl: child.photoUrl,
+      groupId: child.groupId,
+      groupName: child.group.name,
+      enrollmentDate: child.enrollmentDate,
+      status: child.status,
+      // diagnosis: child.diagnosis, // DISABLED: Field doesn't exist
+      age,
+      medicalInfo: child.medicalInfo
+        ? {
+            allergies: child.medicalInfo.allergies,
+            conditions: child.medicalInfo.conditions,
+            medications: child.medicalInfo.medications,
+            bloodType: child.medicalInfo.bloodType,
+            observations: child.medicalInfo.observations,
+            doctorName: child.medicalInfo.doctorName,
+            doctorPhone: child.medicalInfo.doctorPhone,
+            // medicalNotes: child.medicalInfo.medicalNotes, // DISABLED: Field doesn't exist
+          }
+        : undefined,
+      emergencyContacts: child.emergencyContacts.map((contact) => ({
+        id: contact.id,
+        name: contact.name,
+        relationship: contact.relationship,
+        phone: contact.phone,
+        email: contact.email,
+        priority: contact.priority,
+      })),
+      parents: child.parents.map((parent) => ({
+        userId: parent.user.id,
+        firstName: parent.user.firstName,
+        lastName: parent.user.lastName,
+        email: parent.user.email,
+        phone: parent.user.phone,
+        relationship: parent.relationship,
+        isPrimary: parent.isPrimary,
+        canPickup: parent.canPickup,
+      })),
+    };
+
+    return profile;
   }
 }

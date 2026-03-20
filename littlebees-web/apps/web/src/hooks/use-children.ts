@@ -31,6 +31,14 @@ export function useChild(id: string) {
   });
 }
 
+export function useChildProfile(id: string) {
+  return useQuery({
+    queryKey: ['children', id, 'profile'],
+    queryFn: () => api.get<any>(`/children/${id}/profile`),
+    enabled: !!id,
+  });
+}
+
 export function useCreateChild() {
   const qc = useQueryClient();
   return useMutation({

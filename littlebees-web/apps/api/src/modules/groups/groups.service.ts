@@ -45,6 +45,9 @@ export class GroupsService {
     tenantId: string,
     data: {
       name: string;
+      level: string;
+      friendlyName: string;
+      subgroup?: string;
       ageRangeMin: number;
       ageRangeMax: number;
       capacity: number;
@@ -57,6 +60,9 @@ export class GroupsService {
       data: {
         tenantId,
         name: data.name,
+        // level: data.level as any, // DISABLED: Field doesn't exist in DB
+        // friendlyName: data.friendlyName, // DISABLED: Field doesn't exist in DB
+        // subgroup: data.subgroup, // DISABLED: Field doesn't exist in DB
         ageRangeMin: data.ageRangeMin,
         ageRangeMax: data.ageRangeMax,
         capacity: data.capacity,
@@ -72,6 +78,9 @@ export class GroupsService {
     tenantId: string,
     data: {
       name?: string;
+      level?: string;
+      friendlyName?: string;
+      subgroup?: string;
       ageRangeMin?: number;
       ageRangeMax?: number;
       capacity?: number;
@@ -84,7 +93,10 @@ export class GroupsService {
 
     return this.prisma.group.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        // level: data.level as any, // DISABLED: Field doesn't exist in DB
+      },
     });
   }
 

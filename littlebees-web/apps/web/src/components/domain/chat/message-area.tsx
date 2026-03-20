@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronUp } from 'lucide-react';
+import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
+import { ChevronUp, AlertTriangle, ArrowUpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useMessages, useSendMessage } from '@/hooks/use-chat';
+import { useMessages, useSendMessage, useEscalateConversation } from '@/hooks/use-chat';
 import { useSocket } from '@/hooks/use-socket';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -12,6 +13,7 @@ import { MessageSquare } from 'lucide-react';
 import { MessageBubble } from './message-bubble';
 import { MessageInput } from './message-input';
 import { TypingIndicator } from './typing-indicator';
+import { ConversationHeader } from './conversation-header';
 import type { ConversationResponse } from '@kinderspace/shared-types';
 
 interface MessageAreaProps {
@@ -24,6 +26,8 @@ export function MessageArea({ conversationId, conversation }: MessageAreaProps) 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalationReason, setEscalationReason] = useState('');
 
   const {
     data,
@@ -34,6 +38,15 @@ export function MessageArea({ conversationId, conversation }: MessageAreaProps) 
   } = useMessages(conversationId);
 
   const sendMessage = useSendMessage();
+  const escalateConversation = useEscalateConversation();
+
+  // Detectar si estamos fuera de horario laboral
+  const isOutOfHours = useMemo(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay(); // 0 = Domingo, 6 = Sábado
+    return hour < 7 || hour >= 18 || day === 0 || day === 6;
+  }, []);
 
   const { typingUsers, emitTypingStart, emitTypingStop } = useSocket({
     activeConversationId: conversationId,
@@ -106,6 +119,30 @@ export function MessageArea({ conversationId, conversation }: MessageAreaProps) 
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const handleEscalate = useCallback(() => {
+    if (!escalationReason.trim()) {
+      toast.error('Por favor proporciona un motivo para escalar la conversación');
+      return;
+    }
+
+    escalateConversation.mutate(
+      {
+        conversationId,
+        reason: escalationReason,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Conversación escalada a dirección exitosamente');
+          setShowEscalateDialog(false);
+          setEscalationReason('');
+        },
+        onError: (error: any) => {
+          toast.error(error.message || 'Error al escalar conversación');
+        },
+      }
+    );
+  }, [conversationId, escalationReason, escalateConversation]);
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -117,15 +154,66 @@ export function MessageArea({ conversationId, conversation }: MessageAreaProps) 
   return (
     <div className="flex h-full flex-col">
       {/* Encabezado de la conversacion */}
-      {conversation && (
-        <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              {conversation.childName}
+      {conversation && <ConversationHeader conversation={conversation} />}
+
+      {/* Banner de fuera de horario */}
+      {isOutOfHours && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-amber-800">
+            <AlertTriangle className="h-4 w-4" />
+            <p>
+              <strong>Fuera de horario:</strong> Tu mensaje será respondido durante el horario laboral (Lunes a Viernes, 7:00 AM - 6:00 PM)
             </p>
-            <p className="text-xs text-muted-foreground">
-              {conversation.participants.length} participante{conversation.participants.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
+
+      {/* Botón de escalar (solo para maestras) */}
+      {user?.role === 'teacher' && !(conversation as any)?.isEscalated && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowEscalateDialog(true)}
+            className="text-blue-700 hover:text-blue-900 hover:bg-blue-100"
+          >
+            <ArrowUpCircle className="h-4 w-4 mr-2" />
+            Escalar a Dirección
+          </Button>
+        </div>
+      )}
+
+      {/* Dialog de escalación */}
+      {showEscalateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Escalar Conversación</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Esta conversación será escalada a la dirección. Por favor proporciona un motivo.
             </p>
+            <textarea
+              className="w-full border rounded-md p-2 mb-4 min-h-[100px]"
+              placeholder="Motivo de escalación..."
+              value={escalationReason}
+              onChange={(e) => setEscalationReason(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEscalateDialog(false);
+                  setEscalationReason('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleEscalate}
+                disabled={escalateConversation.isPending}
+              >
+                {escalateConversation.isPending ? 'Escalando...' : 'Escalar'}
+              </Button>
+            </div>
           </div>
         </div>
       )}

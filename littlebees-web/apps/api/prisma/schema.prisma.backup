@@ -1,0 +1,625 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// GLOBAL TABLES (not tenant-scoped)
+// ============================================================
+
+model Tenant {
+  id                 String             @id @default(uuid()) @db.Uuid
+  name               String             @db.VarChar(255)
+  slug               String             @unique @db.VarChar(100)
+  logoUrl            String?            @map("logo_url")
+  address            String?
+  phone              String?            @db.VarChar(20)
+  email              String?            @db.VarChar(255)
+  license            String?            @db.VarChar(50)
+  timezone           String             @default("America/Mexico_City") @db.VarChar(50)
+  locale             String             @default("es-MX") @db.VarChar(10)
+  satRfc             String?            @map("sat_rfc") @db.VarChar(13)
+  satRazonSocial     String?            @map("sat_razon_social")
+  subscriptionStatus SubscriptionStatus @default(trial) @map("subscription_status")
+  trialEndsAt        DateTime?          @map("trial_ends_at")
+  settings           Json               @default("{}")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
+
+  // Relations
+  userTenants       UserTenant[]
+  groups            Group[]
+  children          Child[]
+  attendanceRecords AttendanceRecord[]
+  dailyLogEntries   DailyLogEntry[]
+  conversations     Conversation[]
+  payments          Payment[]
+  invoices          Invoice[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  files             File[]
+  extraServices     ExtraService[]
+  announcements     Announcement[]
+  exercises         Exercise[]
+
+  @@map("tenants")
+}
+
+model DevelopmentMilestone {
+  id          String              @id @default(uuid()) @db.Uuid
+  category    DevelopmentCategory
+  title       String              @db.VarChar(255)
+  description String?
+  ageRangeMin Int                 @map("age_range_min") // months
+  ageRangeMax Int                 @map("age_range_max") // months
+  sortOrder   Int                 @map("sort_order")
+
+  // Relations
+  developmentRecords DevelopmentRecord[]
+
+  @@map("development_milestones")
+}
+
+// ============================================================
+// USER & AUTH
+// ============================================================
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash")
+  firstName     String    @map("first_name") @db.VarChar(100)
+  lastName      String    @map("last_name") @db.VarChar(100)
+  phone         String?   @db.VarChar(20)
+  avatarUrl     String?   @map("avatar_url")
+  mfaEnabled    Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret     String?   @map("mfa_secret")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  userTenants    UserTenant[]
+  refreshTokens  RefreshToken[]
+  childParents   ChildParent[]
+  announcements  Announcement[] @relation("AnnouncementAuthor")
+
+  @@map("users")
+}
+
+model UserTenant {
+  userId   String   @map("user_id") @db.Uuid
+  tenantId String   @map("tenant_id") @db.Uuid
+  role     UserRole
+  active   Boolean  @default(true)
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@id([userId, tenantId])
+  @@map("user_tenants")
+}
+
+model RefreshToken {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  tokenHash         String   @map("token_hash") @db.VarChar(255)
+  deviceFingerprint String?  @map("device_fingerprint") @db.VarChar(255)
+  expiresAt         DateTime @map("expires_at")
+  revoked           Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// CHILDREN & GROUPS
+// ============================================================
+
+model Group {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  name         String   @db.VarChar(100)
+  ageRangeMin  Int      @map("age_range_min") // months
+  ageRangeMax  Int      @map("age_range_max") // months
+  capacity     Int
+  color        String   @db.VarChar(7)
+  academicYear String   @map("academic_year") @db.VarChar(10)
+  teacherId    String?  @map("teacher_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
+  children Child[]
+
+  @@index([tenantId])
+  @@map("groups")
+}
+
+model Child {
+  id             String      @id @default(uuid()) @db.Uuid
+  tenantId       String      @map("tenant_id") @db.Uuid
+  firstName      String      @map("first_name") @db.VarChar(100)
+  lastName       String      @map("last_name") @db.VarChar(100)
+  dateOfBirth    DateTime    @map("date_of_birth") @db.Date
+  gender         Gender
+  photoUrl       String?     @map("photo_url")
+  groupId        String      @map("group_id") @db.Uuid
+  enrollmentDate DateTime    @map("enrollment_date") @db.Date
+  status         ChildStatus @default(active)
+  qrCodeHash     String?     @map("qr_code_hash") @db.VarChar(64)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
+
+  tenant             Tenant               @relation(fields: [tenantId], references: [id])
+  group              Group                @relation(fields: [groupId], references: [id])
+  medicalInfo        ChildMedicalInfo?
+  emergencyContacts  EmergencyContact[]
+  parents            ChildParent[]
+  attendanceRecords  AttendanceRecord[]
+  dailyLogEntries    DailyLogEntry[]
+  developmentRecords DevelopmentRecord[]
+  payments           Payment[]
+  conversations      Conversation[]
+  childExercises     ChildExercise[]
+
+  @@index([tenantId, groupId])
+  @@map("children")
+}
+
+model ChildMedicalInfo {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  childId      String   @unique @map("child_id") @db.Uuid
+  allergies    String[] @default([])
+  conditions   String[] @default([])
+  medications  String[] @default([])
+  bloodType    String?  @map("blood_type") @db.VarChar(5)
+  observations String?
+  doctorName   String?  @map("doctor_name") @db.VarChar(200)
+  doctorPhone  String?  @map("doctor_phone") @db.VarChar(20)
+  insuranceInfo Json?   @map("insurance_info")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  child Child @relation(fields: [childId], references: [id])
+
+  @@map("child_medical_info")
+}
+
+model EmergencyContact {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  childId      String   @map("child_id") @db.Uuid
+  name         String   @db.VarChar(200)
+  relationship String   @db.VarChar(50)
+  phone        String   @db.VarChar(20)
+  email        String?  @db.VarChar(255)
+  priority     Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  child Child @relation(fields: [childId], references: [id])
+
+  @@map("emergency_contacts")
+}
+
+model ChildParent {
+  childId      String  @map("child_id") @db.Uuid
+  userId       String  @map("user_id") @db.Uuid
+  relationship String  @db.VarChar(50)
+  isPrimary    Boolean @default(false) @map("is_primary")
+  canPickup    Boolean @default(true) @map("can_pickup")
+
+  child Child @relation(fields: [childId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([childId, userId])
+  @@map("child_parents")
+}
+
+// ============================================================
+// ATTENDANCE
+// ============================================================
+
+model AttendanceRecord {
+  id            String           @id @default(uuid()) @db.Uuid
+  tenantId      String           @map("tenant_id") @db.Uuid
+  childId       String           @map("child_id") @db.Uuid
+  date          DateTime         @db.Date
+  checkInAt     DateTime?        @map("check_in_at")
+  checkOutAt    DateTime?        @map("check_out_at")
+  checkInBy     String?          @map("check_in_by") @db.Uuid
+  checkOutBy    String?          @map("check_out_by") @db.Uuid
+  checkInMethod String?          @map("check_in_method") @db.VarChar(20)
+  status        AttendanceStatus @default(present)
+  observations  String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  child  Child  @relation(fields: [childId], references: [id])
+
+  @@unique([childId, date])
+  @@index([tenantId, date])
+  @@index([tenantId, childId, date])
+  @@map("attendance_records")
+}
+
+// ============================================================
+// DAILY LOGS (Bitácora)
+// ============================================================
+
+model DailyLogEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  childId     String   @map("child_id") @db.Uuid
+  date        DateTime @db.Date
+  type        String   @db.VarChar(20) // LogType enum
+  title       String   @db.VarChar(255)
+  description String?
+  time        String   @db.VarChar(10) // HH:mm format
+  metadata    Json     @default("{}")
+  recordedBy  String   @map("recorded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  child  Child  @relation(fields: [childId], references: [id])
+
+  @@index([tenantId, childId, date])
+  @@map("daily_log_entries")
+}
+
+// ============================================================
+// DEVELOPMENT TRACKING
+// ============================================================
+
+model DevelopmentRecord {
+  id           String          @id @default(uuid()) @db.Uuid
+  tenantId     String          @map("tenant_id") @db.Uuid
+  childId      String          @map("child_id") @db.Uuid
+  milestoneId  String          @map("milestone_id") @db.Uuid
+  status       MilestoneStatus @default(not_achieved)
+  observations String?
+  evaluatedAt  DateTime        @map("evaluated_at") @db.Date
+  evaluatedBy  String          @map("evaluated_by") @db.Uuid
+  evidenceUrls String[]        @default([]) @map("evidence_urls")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  child     Child               @relation(fields: [childId], references: [id])
+  milestone DevelopmentMilestone @relation(fields: [milestoneId], references: [id])
+
+  @@map("development_records")
+}
+
+// ============================================================
+// CHAT / MESSAGING
+// ============================================================
+
+model Conversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  childId   String   @map("child_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant                    @relation(fields: [tenantId], references: [id])
+  child        Child                     @relation(fields: [childId], references: [id])
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId String    @map("conversation_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  joinedAt       DateTime  @default(now()) @map("joined_at")
+  lastReadAt     DateTime? @map("last_read_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  senderId       String   @map("sender_id") @db.Uuid
+  content        String
+  messageType    String   @default("text") @map("message_type") @db.VarChar(20)
+  attachmentUrl  String?  @map("attachment_url")
+  createdAt      DateTime @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+// ============================================================
+// PAYMENTS & INVOICING
+// ============================================================
+
+model Payment {
+  id                    String        @id @default(uuid()) @db.Uuid
+  tenantId              String        @map("tenant_id") @db.Uuid
+  childId               String        @map("child_id") @db.Uuid
+  concept               String        @db.VarChar(255)
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("MXN") @db.VarChar(3)
+  status                PaymentStatus @default(pending)
+  dueDate               DateTime      @map("due_date") @db.Date
+  paidAt                DateTime?     @map("paid_at")
+  paymentMethod         String?       @map("payment_method") @db.VarChar(20)
+  gatewayTransactionId  String?       @map("gateway_transaction_id") @db.VarChar(255)
+  gatewayResponse       Json?         @map("gateway_response")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  child    Child     @relation(fields: [childId], references: [id])
+  invoices Invoice[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, childId])
+  @@map("payments")
+}
+
+model Invoice {
+  id                 String        @id @default(uuid()) @db.Uuid
+  tenantId           String        @map("tenant_id") @db.Uuid
+  paymentId          String        @map("payment_id") @db.Uuid
+  facturapiId        String?       @map("facturapi_id") @db.VarChar(255)
+  folio              String?       @db.VarChar(50)
+  uuidFiscal         String?       @map("uuid_fiscal") @db.VarChar(36)
+  rfcEmisor          String        @map("rfc_emisor") @db.VarChar(13)
+  rfcReceptor        String        @map("rfc_receptor") @db.VarChar(13)
+  total              Decimal       @db.Decimal(10, 2)
+  status             InvoiceStatus @default(valid)
+  pdfUrl             String?       @map("pdf_url")
+  xmlUrl             String?       @map("xml_url")
+  issuedAt           DateTime      @map("issued_at")
+  cancelledAt        DateTime?     @map("cancelled_at")
+  cancellationReason String?       @map("cancellation_reason")
+  satResponse        Json?         @map("sat_response")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@map("invoices")
+}
+
+// ============================================================
+// SERVICES & MARKETPLACE
+// ============================================================
+
+model ExtraService {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  description String?
+  type        String   @db.VarChar(30) // ServiceType enum
+  schedule    String?
+  price       Decimal  @db.Decimal(10, 2)
+  capacity    Int?
+  imageUrl    String?  @map("image_url")
+  status      String   @default("active") @db.VarChar(20)
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("extra_services")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   @db.VarChar(50)
+  title     String   @db.VarChar(255)
+  body      String
+  data      Json     @default("{}")
+  read      Boolean  @default(false)
+  sentAt    DateTime? @map("sent_at")
+  readAt    DateTime? @map("read_at")
+  channel   String   @db.VarChar(20) // NotificationChannel enum
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOGS (append-only)
+// ============================================================
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  action       String   @db.VarChar(100)
+  resourceType String   @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  changes      Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, resourceType, resourceId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// FILES
+// ============================================================
+
+model File {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  uploadedBy String   @map("uploaded_by") @db.Uuid
+  filename   String   @db.VarChar(255)
+  mimeType   String   @map("mime_type") @db.VarChar(100)
+  sizeBytes  BigInt   @map("size_bytes")
+  storageKey String   @map("storage_key")
+  purpose    String   @db.VarChar(20) // FilePurpose enum
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("files")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  super_admin
+  director
+  admin
+  teacher
+  parent
+}
+
+enum ChildStatus {
+  active
+  inactive
+  graduated
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+enum SubscriptionStatus {
+  trial
+  active
+  past_due
+  cancelled
+}
+
+enum DevelopmentCategory {
+  motor_fine
+  motor_gross
+  cognitive
+  language
+  social
+  emotional
+}
+
+enum MilestoneStatus {
+  achieved
+  in_progress
+  not_achieved
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  overdue
+  cancelled
+}
+
+enum InvoiceStatus {
+  valid
+  cancelled
+}
+
+// ============================================================
+// ANNOUNCEMENTS
+// ============================================================
+
+model Announcement {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  content   String
+  type      String   @db.VarChar(50) // general, event, alert, achievement
+  priority  String   @db.VarChar(20) // high, medium, low
+  authorId  String   @map("author_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  author User   @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("announcements")
+}
+
+// ============================================================
+// EXERCISES
+// ============================================================
+
+model Exercise {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @map("tenant_id") @db.Uuid
+  title       String              @db.VarChar(255)
+  description String
+  category    DevelopmentCategory
+  duration    Int // minutes
+  ageRangeMin Int                 @map("age_range_min") // months
+  ageRangeMax Int                 @map("age_range_max") // months
+  videoUrl    String?             @map("video_url")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  childExercises ChildExercise[]
+
+  @@index([tenantId, category])
+  @@index([ageRangeMin, ageRangeMax])
+  @@map("exercises")
+}
+
+model ChildExercise {
+  childId     String    @map("child_id") @db.Uuid
+  exerciseId  String    @map("exercise_id") @db.Uuid
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+
+  child    Child    @relation(fields: [childId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@id([childId, exerciseId])
+  @@index([childId])
+  @@index([childId, completed])
+  @@map("child_exercises")
+}

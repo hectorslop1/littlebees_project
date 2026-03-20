@@ -118,3 +118,12 @@ export enum ServiceType {
   WORKSHOP = 'workshop',
   MARKETPLACE_ITEM = 'marketplace_item',
 }
+
+// Group levels (educational stages)
+export enum GroupLevel {
+  LACTANTES = 'lactantes',
+  MATERNAL = 'maternal',
+  PREESCOLAR_1 = 'preescolar_1',
+  PREESCOLAR_2 = 'preescolar_2',
+  PREESCOLAR_3 = 'preescolar_3',
+}

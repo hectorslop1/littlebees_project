@@ -56,7 +56,8 @@ export function ChildrenFilters({
             <SelectItem value="all">Todos los grupos</SelectItem>
             {groups.map((group) => (
               <SelectItem key={group.id} value={group.id}>
-                {group.name}
+                {group.friendlyName}
+                {group.subgroup && ` - Grupo ${group.subgroup}`}
               </SelectItem>
             ))}
           </SelectContent>

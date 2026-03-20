@@ -22,6 +22,13 @@ class Endpoints {
 
   // Daily Logs
   static const String dailyLogs = '/daily-logs';
+  static const String dailyLogsQuickRegister = '/daily-logs/quick-register';
+  static String daySchedule(String groupId) =>
+      '/daily-logs/day-schedule/$groupId';
+
+  // Groups
+  static const String groups = '/groups';
+  static String group(String id) => '/groups/$id';
 
   // Development
   static const String development = '/development';
@@ -46,6 +53,12 @@ class Endpoints {
 
   // Reports
   static const String reports = '/reports';
+
+  // Excuses/Justificantes
+  static const String excuses = '/excuses';
+  static String excuse(String id) => '/excuses/$id';
+  static String excusesByChild(String childId) => '/excuses/child/$childId';
+  static String updateExcuseStatus(String id) => '/excuses/$id/status';
 
   // Health
   static const String health = '/health';

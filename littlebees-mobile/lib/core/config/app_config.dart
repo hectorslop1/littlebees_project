@@ -2,15 +2,17 @@ class AppConfig {
   AppConfig._();
 
   // API Configuration — apunta al backend NestJS
+  // DESARROLLO: http://localhost:3002/api/v1 (incluye global prefix)
+  // PRODUCCIÓN: Servidor IONOS desplegado
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3002/api/v1',
+    defaultValue: 'http://216.250.125.239:3002/api/v1', // ← Servidor IONOS
   );
 
   // WebSocket Configuration
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'http://localhost:3002',
+    defaultValue: 'http://216.250.125.239:3002/api/v1', // ← Servidor IONOS
   );
 
   // Timeouts

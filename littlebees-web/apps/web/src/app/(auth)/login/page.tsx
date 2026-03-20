@@ -19,10 +19,6 @@ const DEV_USERS = [
   { email: 'director@petitsoleil.mx', role: 'Directora', name: 'María González' },
   { email: 'admin@petitsoleil.mx', role: 'Admin', name: 'Roberto Sánchez' },
   { email: 'maestra@petitsoleil.mx', role: 'Maestra', name: 'Ana López' },
-  { email: 'maestra2@petitsoleil.mx', role: 'Maestra', name: 'Laura Martínez' },
-  { email: 'padre@gmail.com', role: 'Padre', name: 'Carlos Ramírez' },
-  { email: 'madre@gmail.com', role: 'Madre', name: 'Patricia López' },
-  { email: 'familia@gmail.com', role: 'Padre', name: 'Luis García' },
 ];
 
 const DEV_PASSWORD = 'Password123!';

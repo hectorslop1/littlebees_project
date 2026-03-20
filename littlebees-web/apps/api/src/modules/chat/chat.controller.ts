@@ -10,13 +10,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ChatService } from './chat.service';
 
 @ApiTags('chat')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('teacher', 'director', 'admin', 'super_admin', 'parent')
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
@@ -97,5 +100,28 @@ export class ChatController {
     @CurrentUser('id') userId: string,
   ) {
     return this.chatService.getUnreadCount(tenantId, userId);
+  }
+
+  @Patch('conversations/:id/escalate')
+  @ApiOperation({ summary: 'Escalar conversación a dirección' })
+  @Roles('teacher', 'director', 'admin', 'super_admin')
+  escalateConversation(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: { reason: string },
+  ) {
+    return this.chatService.escalateConversation(tenantId, id, userId, dto.reason);
+  }
+
+  @Patch('conversations/:id/type')
+  @ApiOperation({ summary: 'Cambiar tipo de conversación' })
+  @Roles('teacher', 'director', 'admin', 'super_admin')
+  updateConversationType(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @Body() dto: { type: 'normal' | 'urgent' | 'escalated' },
+  ) {
+    return this.chatService.updateConversationType(tenantId, id, dto.type);
   }
 }

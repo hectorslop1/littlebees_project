@@ -1,5 +1,40 @@
 export 'user_role.dart';
 
+// --- Excuse/Justificante ---
+enum ExcuseType {
+  sick('sick'),
+  medical('medical'),
+  family('family'),
+  travel('travel'),
+  other('other');
+
+  const ExcuseType(this.value);
+  final String value;
+
+  static ExcuseType fromString(String value) {
+    return ExcuseType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => ExcuseType.other,
+    );
+  }
+}
+
+enum ExcuseStatus {
+  pending('pending'),
+  approved('approved'),
+  rejected('rejected');
+
+  const ExcuseStatus(this.value);
+  final String value;
+
+  static ExcuseStatus fromString(String value) {
+    return ExcuseStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => ExcuseStatus.pending,
+    );
+  }
+}
+
 // --- Child enrollment status ---
 enum ChildStatus {
   active('active'),

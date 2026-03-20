@@ -8,8 +8,8 @@ export function useGroups() {
   return useQuery({
     queryKey: ['groups'],
     queryFn: async () => {
-      const response = await api.get<GroupResponse[]>('/groups');
-      return response;
+      const response = await api.get<{ data: GroupResponse[] }>('/groups');
+      return response.data;
     },
   });
 }

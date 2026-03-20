@@ -7,6 +7,8 @@ import 'widgets/photo_grid.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../../design_system/widgets/lb_empty_state.dart';
 import '../../../../design_system/widgets/lb_error_state.dart';
+import '../../auth/application/auth_provider.dart';
+import 'create_activity_screen.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -22,6 +24,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   Widget build(BuildContext context) {
     final photosAsync = ref.watch(photosProvider);
     final tr = ref.watch(translationsProvider);
+    final authState = ref.watch(authProvider);
+    final isTeacher =
+        authState.isTeacher || authState.isDirector || authState.isAdmin;
 
     return Scaffold(
       appBar: AppBar(
@@ -36,6 +41,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           ),
         ],
       ),
+      floatingActionButton: isTeacher
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateActivityScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(LucideIcons.plus),
+              label: const Text('Nueva Actividad'),
+              backgroundColor: AppColors.primary,
+            )
+          : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -135,12 +155,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               child: _isPhotosTab
                   ? photosAsync.when(
                       data: (photos) {
+                        final bool isTeacherRole = isTeacher;
                         if (photos.isEmpty) {
                           return LBEmptyState(
                             icon: LucideIcons.image,
-                            title: 'No Photos Yet',
-                            message:
-                                'Photos and activities will appear here when caregivers share them.',
+                            title: isTeacherRole
+                                ? 'Sin Actividades'
+                                : 'No Photos Yet',
+                            message: isTeacherRole
+                                ? 'Presiona el botón "+" para registrar una nueva actividad para tus alumnos.'
+                                : 'Photos and activities will appear here when caregivers share them.',
                           );
                         }
                         return RefreshIndicator(
@@ -157,76 +181,46 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onRetry: () => ref.refresh(photosProvider),
                       ),
                     )
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        await Future.delayed(const Duration(seconds: 1));
-                      },
-                      child: ListView(
+                  : Center(
+                      child: Padding(
                         padding: const EdgeInsets.all(24),
-                        children: [
-                          _buildLogItem(
-                            '2:30pm',
-                            'Photos added (3)',
-                            Icons.camera_alt,
-                          ),
-                          _buildLogItem('1:00pm', 'Nap ended', Icons.wb_sunny),
-                          _buildLogItem(
-                            '11:30am',
-                            'Nap started',
-                            Icons.nights_stay,
-                          ),
-                          _buildLogItem(
-                            '10:00am',
-                            'Ate mostly entirely lunch',
-                            Icons.restaurant,
-                          ),
-                        ],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.clipboard,
+                              size: 64,
+                              color: AppColors.textTertiary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              isTeacher
+                                  ? 'Registro de Actividades'
+                                  : 'Activity Log',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isTeacher
+                                  ? 'Aquí aparecerá el historial de actividades registradas.\n\nPresiona el botón "+" para crear una nueva actividad.'
+                                  : 'Activity history will appear here.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLogItem(String time, String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(26),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 16),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
       ),
     );
   }

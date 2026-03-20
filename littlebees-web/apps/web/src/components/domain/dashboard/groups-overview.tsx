@@ -19,7 +19,8 @@ export function GroupsOverview() {
     
     return groups.map((group: any) => ({
       id: group.id,
-      name: group.name,
+      name: group.friendlyName || group.name,
+      subgroup: group.subgroup,
       color: group.color || '#4ECDC4',
       enrolled: group._count?.children || 0,
       capacity: group.capacity,
@@ -75,6 +76,11 @@ export function GroupsOverview() {
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-gray-800 block">
                       {group.name}
+                      {group.subgroup && (
+                        <span className="ml-1 text-xs font-normal text-gray-500">
+                          Grupo {group.subgroup}
+                        </span>
+                      )}
                     </span>
                     <span className="text-xs text-gray-500">
                       {group.enrolled}/{group.capacity} niños

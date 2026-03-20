@@ -10,6 +10,52 @@ export function useUsers() {
   });
 }
 
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+      phone?: string;
+      role: string;
+    }) => api.post('/users', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: {
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      password?: string;
+    }}) => api.patch(`/users/${id}`, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/users/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export function useChangeUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) =>
+      api.patch(`/users/${id}/role`, { role }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({

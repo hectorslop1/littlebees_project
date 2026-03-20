@@ -42,6 +42,8 @@ dependencies:
 
   # Images
   photo_view: ^0.15.0
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
 
   # Calendar
   table_calendar: ^3.1.3

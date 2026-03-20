@@ -120,3 +120,41 @@ export function useCreateConversation() {
     },
   });
 }
+
+// --- Escalar conversacion a direccion ---
+
+export function useEscalateConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, reason }: { conversationId: string; reason: string }) =>
+      api.patch<ConversationResponse>(`/chat/conversations/${conversationId}/escalate`, { reason }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['chat', 'conversations'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['chat', 'messages', variables.conversationId],
+      });
+    },
+  });
+}
+
+// --- Cambiar tipo de conversacion ---
+
+export function useUpdateConversationType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, type }: { conversationId: string; type: 'normal' | 'urgent' | 'escalated' }) =>
+      api.patch<ConversationResponse>(`/chat/conversations/${conversationId}/type`, { type }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['chat', 'conversations'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['chat', 'messages', variables.conversationId],
+      });
+    },
+  });
+}

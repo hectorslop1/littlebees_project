@@ -623,3 +623,44 @@ model ChildExercise {
   @@index([childId, completed])
   @@map("child_exercises")
 }
+
+// ============================================================
+// AI CHAT
+// ============================================================
+
+enum AiMessageRole {
+  user
+  assistant
+  system
+}
+
+model AiChatSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  messages AiChatMessage[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ai_chat_sessions")
+}
+
+model AiChatMessage {
+  id        String        @id @default(uuid()) @db.Uuid
+  sessionId String        @map("session_id") @db.Uuid
+  role      AiMessageRole
+  content   String        @db.Text
+  metadata  Json?
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("ai_chat_messages")
+}

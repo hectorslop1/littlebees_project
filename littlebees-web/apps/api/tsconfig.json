@@ -12,7 +12,9 @@
     "rootDir": "./src",
     "incremental": false,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {

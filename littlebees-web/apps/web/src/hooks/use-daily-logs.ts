@@ -28,3 +28,35 @@ export function useCreateDailyLog() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['daily-logs'] }),
   });
 }
+
+export function useQuickRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      childId: string;
+      type: 'check_in' | 'meal' | 'nap' | 'activity' | 'check_out';
+      metadata?: {
+        photoUrl?: string;
+        notes?: string;
+        mood?: string;
+        foodEaten?: string;
+        napDuration?: number;
+        activityDescription?: string;
+      };
+    }) => api.post<any>('/daily-logs/quick-register', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['daily-logs'] });
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['day-schedule'] });
+    },
+  });
+}
+
+export function useDaySchedule(groupId: string, date?: string) {
+  return useQuery({
+    queryKey: ['day-schedule', groupId, date],
+    queryFn: () =>
+      api.get<any>(`/daily-logs/day-schedule/${groupId}`, date ? { date } : {}),
+    enabled: !!groupId,
+  });
+}

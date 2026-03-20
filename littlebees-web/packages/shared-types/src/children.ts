@@ -73,7 +73,10 @@ export interface CreateEmergencyContactRequest {
 
 export interface GroupResponse {
   id: string;
-  name: string;
+  name: string; // Legacy field, kept for compatibility
+  level: string; // Educational stage: 'lactantes', 'maternal', 'preescolar_1', etc.
+  friendlyName: string; // UI display name: "Abejitas 🐝", "Mariposas 🦋", etc.
+  subgroup: string | null; // Optional subgroup: "A", "B", "C"
   ageRangeMin: number;
   ageRangeMax: number;
   capacity: number;

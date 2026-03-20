@@ -9,4 +9,8 @@ class RouteNames {
   static const String calendar = 'calendar';
   static const String profile = 'profile';
   static const String payments = 'payments';
+  static const String groups = 'groups';
+  static const String children = 'children';
+  static const String reports = 'reports';
+  static const String excuses = 'excuses';
 }

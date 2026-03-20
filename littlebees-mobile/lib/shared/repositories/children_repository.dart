@@ -37,6 +37,14 @@ class ChildrenRepository {
   }
 
   Child _parseChild(Map<String, dynamic> json) {
+    // Extract group name from nested group object if present
+    String? groupName;
+    if (json['group'] != null && json['group'] is Map) {
+      groupName = json['group']['name'] as String?;
+    } else {
+      groupName = json['groupName'] as String?;
+    }
+
     return Child(
       id: json['id'] as String,
       tenantId: json['tenantId'] as String? ?? '',
@@ -46,7 +54,7 @@ class ChildrenRepository {
       gender: json['gender'] as String? ?? 'male',
       photoUrl: json['photoUrl'] as String?,
       groupId: json['groupId'] as String?,
-      groupName: json['groupName'] as String?,
+      groupName: groupName,
       enrollmentDate: json['enrollmentDate'] != null
           ? DateTime.parse(json['enrollmentDate'] as String)
           : null,

@@ -12,7 +12,9 @@ import {
   useAttendanceReport,
   useDevelopmentReport,
   usePaymentReport,
+  useActivitiesReport,
 } from '@/hooks/use-reports';
+import { useGroups } from '@/hooks/use-groups';
 
 function getDefaultRange() {
   const to = new Date();
@@ -57,15 +59,21 @@ export default function ReportsPage() {
     groupId: groupIdParam,
   });
   const paymentQuery = usePaymentReport({ from, to });
+  const activitiesQuery = useActivitiesReport({
+    from,
+    to,
+    groupId: groupIdParam,
+  });
+  const { data: groupsData } = useGroups();
 
-  // Extraer grupos disponibles del reporte de asistencia
+  // Mapear grupos con friendlyName y subgroup
   const availableGroups = useMemo(() => {
-    if (!attendanceQuery.data?.groups) return [];
-    return attendanceQuery.data.groups.map((g) => ({
-      id: g.groupId,
-      name: g.groupName,
+    if (!groupsData || groupsData.length === 0) return [];
+    return groupsData.map((g) => ({
+      id: g.id,
+      name: `${g.friendlyName}${g.subgroup ? ` - Grupo ${g.subgroup}` : ''}`,
     }));
-  }, [attendanceQuery.data]);
+  }, [groupsData]);
 
   return (
     <div className="space-y-6">
@@ -84,6 +92,7 @@ export default function ReportsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="attendance">Asistencia</TabsTrigger>
+          <TabsTrigger value="activities">Actividades</TabsTrigger>
           <TabsTrigger value="development">Desarrollo</TabsTrigger>
           <TabsTrigger value="payments">Pagos</TabsTrigger>
         </TabsList>
@@ -93,6 +102,53 @@ export default function ReportsPage() {
             <ReportSkeleton />
           ) : attendanceQuery.data ? (
             <AttendanceReport data={attendanceQuery.data} />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-muted">
+              Selecciona un rango de fechas para generar el reporte
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="activities">
+          {activitiesQuery.isLoading ? (
+            <ReportSkeleton />
+          ) : activitiesQuery.data ? (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-lg border bg-card p-6">
+                  <div className="text-sm text-muted-foreground">Total Actividades</div>
+                  <div className="text-3xl font-bold mt-2">{activitiesQuery.data.totalActivities}</div>
+                </div>
+                <div className="rounded-lg border bg-card p-6 md:col-span-2">
+                  <div className="text-sm text-muted-foreground mb-4">Por Tipo</div>
+                  <div className="flex flex-wrap gap-2">
+                    {activitiesQuery.data.activitiesByType?.map((item: any) => (
+                      <div key={item.type} className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1">
+                        <span className="text-sm font-medium capitalize">{item.type}</span>
+                        <span className="text-sm text-muted-foreground">{item.count} ({item.percentage}%)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="rounded-lg border bg-card p-6">
+                <h3 className="font-semibold mb-4">Resumen por Niño</h3>
+                <div className="space-y-3">
+                  {activitiesQuery.data.children?.map((child: any) => (
+                    <div key={child.childId} className="flex items-center justify-between border-b pb-3 last:border-0">
+                      <div>
+                        <p className="font-medium">{child.childName}</p>
+                        <p className="text-sm text-muted-foreground">{child.groupName}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{child.totalActivities} actividades</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="flex h-64 items-center justify-center text-muted">
               Selecciona un rango de fechas para generar el reporte

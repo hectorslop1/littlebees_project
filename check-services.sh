@@ -71,13 +71,13 @@ cleanup_duplicate_processes() {
         fi
     fi
     
-    # Verificar procesos en puerto 3000 (Frontend)
-    if lsof -ti:3000 >/dev/null 2>&1; then
-        local pids=$(lsof -ti:3000)
+    # Verificar procesos en puerto 3001 (Frontend)
+    if lsof -ti:3001 >/dev/null 2>&1; then
+        local pids=$(lsof -ti:3001)
         local count=$(echo "$pids" | wc -l | tr -d ' ')
         
         if [ "$count" -gt 1 ]; then
-            echo -e "${YELLOW}⚠${NC}  Detectados $count procesos en puerto 3000"
+            echo -e "${YELLOW}⚠${NC}  Detectados $count procesos en puerto 3001"
             echo -e "${BLUE}${ARROW}${NC} Deteniendo procesos duplicados..."
             echo "$pids" | xargs kill -9 2>/dev/null
             cleaned=true
@@ -250,7 +250,7 @@ if check_port 3002; then
     BACKEND_RUNNING=true
 fi
 
-if check_port 3000; then
+if check_port 3001; then
     FRONTEND_RUNNING=true
 fi
 
@@ -275,7 +275,7 @@ if [ "$AUTO_FIX" = "--auto-fix" ] && ([ "$BACKEND_RUNNING" = false ] || [ "$FRON
     MAX_WAIT=60
     
     while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-        if check_port 3002 && check_port 3000; then
+        if check_port 3002 && check_port 3001; then
             echo -e "${GREEN}${CHECK}${NC} Servicios listos!"
             BACKEND_RUNNING=true
             FRONTEND_RUNNING=true
@@ -299,7 +299,7 @@ if check_port 3002; then
     echo -e "${GREEN}${CHECK}${NC} Backend API Puerto 3002: Activo"
     
     # Verificar endpoint de salud
-    if check_http "http://localhost:3002/api/health" 3; then
+    if check_http "http://localhost:3002/api/v1/health" 3; then
         echo -e "${GREEN}${CHECK}${NC} Backend API Health Check: OK"
         echo -e "${BLUE}${ARROW}${NC} Swagger Docs: http://localhost:3002/api/docs"
     else
@@ -314,11 +314,11 @@ else
 fi
 
 # Frontend Web (Next.js)
-if check_port 3000; then
-    echo -e "${GREEN}${CHECK}${NC} Frontend Web Puerto 3000: Activo"
-    echo -e "${BLUE}${ARROW}${NC} Web App: http://localhost:3000"
+if check_port 3001; then
+    echo -e "${GREEN}${CHECK}${NC} Frontend Web Puerto 3001: Activo"
+    echo -e "${BLUE}${ARROW}${NC} Web App: http://localhost:3001"
 else
-    echo -e "${RED}${CROSS}${NC} Frontend Web Puerto 3000: No está corriendo"
+    echo -e "${RED}${CROSS}${NC} Frontend Web Puerto 3001: No está corriendo"
     if [ "$AUTO_FIX" != "--auto-fix" ]; then
         echo -e "${YELLOW}${ARROW}${NC} Ejecuta: pnpm dev (o pnpm dev:web)"
     fi
@@ -346,8 +346,8 @@ if [ $ERRORS -eq 0 ]; then
         echo ""
     fi
     
-    echo "�📱 URLs Disponibles:"
-    echo "   • Frontend Web:    http://localhost:3000"
+    echo "📱 URLs Disponibles:"
+    echo "   • Frontend Web:    http://localhost:3001"
     echo "   • Backend API:     http://localhost:3002"
     echo "   • Swagger Docs:    http://localhost:3002/api/docs"
     echo "   • MinIO Console:   http://localhost:9011"

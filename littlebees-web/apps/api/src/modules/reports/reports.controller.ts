@@ -56,4 +56,19 @@ export class ReportsController {
   ) {
     return this.reportsService.getPaymentReport(tenantId, from, to);
   }
+
+  @Get('activities')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.TEACHER)
+  @ApiOperation({ summary: 'Reporte de actividades del día' })
+  @ApiQuery({ name: 'from', required: true })
+  @ApiQuery({ name: 'to', required: true })
+  @ApiQuery({ name: 'groupId', required: false })
+  getActivitiesReport(
+    @CurrentTenant() tenantId: string,
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('groupId') groupId?: string,
+  ) {
+    return this.reportsService.getActivitiesReport(tenantId, from, to, groupId);
+  }
 }

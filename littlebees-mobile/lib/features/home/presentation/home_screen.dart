@@ -12,6 +12,8 @@ import 'widgets/ai_summary_card.dart';
 import 'widgets/timeline_feed.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../routing/route_names.dart';
+import '../../../features/auth/application/auth_provider.dart';
+import 'teacher_home_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -19,6 +21,14 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(translationsProvider);
+    final authState = ref.watch(authProvider);
+
+    // If user is a teacher, show teacher home screen
+    if (authState.isTeacher || authState.isDirector || authState.isAdmin) {
+      return const TeacherHomeScreen();
+    }
+
+    // Otherwise show parent home screen
     final childrenAsync = ref.watch(myChildrenProvider);
 
     // Auto-select first child if none selected
@@ -28,7 +38,52 @@ class HomeScreen extends ConsumerWidget {
       data: (children) {
         if (children.isEmpty) {
           return Scaffold(
-            body: SafeArea(child: Center(child: Text('No children found'))),
+            appBar: AppBar(title: const Text('Inicio'), elevation: 0),
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.baby,
+                        size: 80,
+                        color: AppColors.textTertiary,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'No tienes hijos asignados',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Contacta al administrador para que te asigne a tus hijos en el sistema.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Usuario: ${authState.user?.email ?? ""}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         }
 
@@ -44,18 +99,44 @@ class HomeScreen extends ConsumerWidget {
       },
       loading: () => const HomeShimmer(),
       error: (error, stack) => Scaffold(
+        appBar: AppBar(title: const Text('Inicio'), elevation: 0),
         body: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error loading children: $error'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.refresh(myChildrenProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    LucideIcons.alertCircle,
+                    size: 64,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error al cargar datos',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$error',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => ref.refresh(myChildrenProvider),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

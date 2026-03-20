@@ -22,6 +22,11 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
+import { MenuModule } from './modules/menu/menu.module';
+// import { ExcusesModule } from './modules/excuses/excuses.module'; // DISABLED: Model doesn't exist in Prisma
+import { AiModule } from './modules/ai/ai.module';
+// import { CustomizationModule } from './modules/customization/customization.module';
+// import { DayScheduleModule } from './modules/day-schedule/day-schedule.module';
 
 @Module({
   imports: [
@@ -72,6 +77,11 @@ import { ExercisesModule } from './modules/exercises/exercises.module';
     ReportsModule,
     AnnouncementsModule,
     ExercisesModule,
+    MenuModule,
+    // ExcusesModule, // DISABLED: Model doesn't exist in Prisma
+    AiModule,
+    // CustomizationModule, // DISABLED: Model doesn't exist in Prisma
+    // DayScheduleModule, // DISABLED: Model doesn't exist in Prisma
   ],
 })
 export class AppModule {}

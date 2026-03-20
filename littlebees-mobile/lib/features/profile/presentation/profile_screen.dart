@@ -56,7 +56,9 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             Text(
-              tr.tr('children'),
+              user?.role.value == 'teacher'
+                  ? tr.tr('my_students')
+                  : tr.tr('children'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),

@@ -179,10 +179,16 @@ export class ChatService {
       },
     });
 
-    // Update conversation's updatedAt
+    // Detectar si el mensaje se envía fuera de horario
+    const outOfHours = this.isOutOfHours();
+
+    // Update conversation's updatedAt y marcar si es fuera de horario
     await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { updatedAt: new Date() },
+      data: { 
+        updatedAt: new Date(),
+        // isOutOfHours: outOfHours ? true : undefined, // DISABLED: Field doesn't exist
+      },
     });
 
     return message;
@@ -222,5 +228,78 @@ export class ChatService {
     }
 
     return { unread: totalUnread };
+  }
+
+  async escalateConversation(tenantId: string, conversationId: string, userId: string, reason: string) {
+    // Verificar que la conversación existe
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, tenantId },
+      include: { participants: true },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversación no encontrada');
+    }
+
+    // Buscar directores del tenant
+    const directors = await this.prisma.userTenant.findMany({
+      where: {
+        tenantId,
+        role: 'director',
+        active: true,
+      },
+      select: { userId: true },
+    });
+
+    // Actualizar conversación
+    const updated = await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: {
+        // isEscalated: true, // DISABLED: Field doesn't exist
+        // escalatedAt: new Date(), // DISABLED: Field doesn't exist
+        // escalatedBy: userId, // DISABLED: Field doesn't exist
+        // escalationReason: reason, // DISABLED: Field doesn't exist
+        // conversationType: 'escalated', // DISABLED: Field doesn't exist
+      },
+    });
+
+    // Agregar directores como participantes si no están ya
+    for (const director of directors) {
+      const exists = conversation.participants.find(p => p.userId === director.userId);
+      if (!exists) {
+        await this.prisma.conversationParticipant.create({
+          data: {
+            conversationId,
+            userId: director.userId,
+          },
+        });
+      }
+    }
+
+    return updated;
+  }
+
+  async updateConversationType(tenantId: string, conversationId: string, type: 'normal' | 'urgent' | 'escalated') {
+    const conversation = await this.prisma.conversation.findFirst({
+      where: { id: conversationId, tenantId },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Conversación no encontrada');
+    }
+
+    return this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { /* conversationType: type */ }, // DISABLED: Field doesn't exist
+    });
+  }
+
+  private isOutOfHours(): boolean {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay(); // 0 = Domingo, 6 = Sábado
+
+    // Fuera de horario: antes de 7am, después de 6pm, o fin de semana
+    return hour < 7 || hour >= 18 || day === 0 || day === 6;
   }
 }

@@ -7,14 +7,48 @@
 @layer base {
   :root {
     --radius: 0.75rem;
+    
+    /* Theme colors - Default LittleBees */
+    --primary-50: #FBF6E9;
+    --primary-100: #F7EDD3;
+    --primary-200: #EFDBA7;
+    --primary-300: #E7C97B;
+    --primary-400: #DFB74F;
+    --primary-500: #D4A853;
+    --primary-600: #B8924A;
+    --primary-700: #9C7C41;
+    --primary-800: #806638;
+    --primary-900: #64502F;
+    --primary-950: #483A26;
+    
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+    
+    --bg-surface: #ffffff;
+    --bg-page: #FBF6E9;
+    --text-primary: #2C2C2C;
+    --text-secondary: #6B6B6B;
+    --border-color: #e5e7eb;
+    
+    --sidebar-bg: #1a1410;
+    --sidebar-text: #d1d5db;
+    --sidebar-active-text: #ffffff;
+    
+    --table-header-bg: #f3f4f6;
+    --table-stripe-bg: #f9fafb;
+    --table-hover-bg: #FBF6E9;
   }
 
   * {
-    border-color: #DFE6E9;
+    border-color: var(--border-color);
   }
 
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply font-body antialiased;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
   }
 
   h1, h2, h3, h4, h5, h6 {

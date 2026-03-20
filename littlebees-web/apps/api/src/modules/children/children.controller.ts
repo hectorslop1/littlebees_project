@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -9,6 +9,7 @@ import { UserRole } from '@kinderspace/shared-types';
 import { Gender } from '@prisma/client';
 import { ChildrenService } from './children.service';
 import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
+import { ChildProfileDto } from './dto/child-profile.dto';
 
 @ApiTags('children')
 @ApiBearerAuth()
@@ -38,6 +39,20 @@ export class ChildrenController {
   @ApiOperation({ summary: 'Obtener detalle de niño/a' })
   findById(@Param('id') id: string, @CurrentTenant() tenantId: string) {
     return this.childrenService.findById(id, tenantId);
+  }
+
+  @Get(':id/profile')
+  @ApiOperation({ summary: 'Obtener perfil completo del niño/a' })
+  @ApiResponse({ status: 200, description: 'Perfil completo del niño', type: ChildProfileDto })
+  @ApiResponse({ status: 403, description: 'No tienes permiso para ver este perfil' })
+  @ApiResponse({ status: 404, description: 'Niño/a no encontrado' })
+  getProfile(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ): Promise<ChildProfileDto> {
+    return this.childrenService.getProfile(id, tenantId, userId, userRole);
   }
 
   @Post()
