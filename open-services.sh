@@ -15,7 +15,7 @@ ARROW="→"
 BROWSER="🌐"
 
 # URLs de los servicios
-FRONTEND_URL="http://localhost:3000"
+FRONTEND_URL="http://localhost:3001"
 BACKEND_API_URL="http://localhost:3002"
 SWAGGER_URL="http://localhost:3002/api/docs"
 MINIO_CONSOLE_URL="http://localhost:9011"
@@ -50,10 +50,10 @@ echo ""
 
 SERVICES_RUNNING=true
 
-if check_port 3000; then
-    echo -e "${GREEN}${CHECK}${NC} Frontend Web (puerto 3000): Activo"
+if check_port 3001; then
+    echo -e "${GREEN}${CHECK}${NC} Frontend Web (puerto 3001): Activo"
 else
-    echo -e "${YELLOW}⚠${NC}  Frontend Web (puerto 3000): No está corriendo"
+    echo -e "${YELLOW}⚠${NC}  Frontend Web (puerto 3001): No está corriendo"
     SERVICES_RUNNING=false
 fi
 
@@ -98,7 +98,7 @@ echo "🌐 Abriendo servicios en el navegador..."
 echo ""
 
 # 1. Frontend Web
-if check_port 3000; then
+if check_port 3001; then
     open_url "$FRONTEND_URL" "Frontend Web"
 fi
 
