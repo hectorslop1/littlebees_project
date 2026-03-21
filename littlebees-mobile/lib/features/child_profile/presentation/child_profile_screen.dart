@@ -19,7 +19,7 @@ class ChildProfileScreen extends ConsumerWidget {
         title: childAsync.when(
           data: (child) => Text('${child.firstName} ${child.lastName}'),
           loading: () => const Text('Cargando...'),
-          error: (_, __) => const Text('Perfil'),
+          error: (_, _) => const Text('Perfil'),
         ),
         elevation: 0,
       ),

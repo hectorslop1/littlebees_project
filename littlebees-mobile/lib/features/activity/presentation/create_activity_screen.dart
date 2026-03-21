@@ -126,7 +126,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _selectedGroupId,
+                    initialValue: _selectedGroupId,
                     decoration: InputDecoration(
                       hintText: 'Selecciona un grupo',
                       border: OutlineInputBorder(
@@ -183,7 +183,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                               );
                             }
                             return DropdownButtonFormField<String>(
-                              value: _selectedChildId,
+                              initialValue: _selectedChildId,
                               decoration: InputDecoration(
                                 hintText: 'Selecciona un niño',
                                 border: OutlineInputBorder(

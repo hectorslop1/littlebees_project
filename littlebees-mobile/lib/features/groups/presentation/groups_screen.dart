@@ -48,7 +48,7 @@ class GroupsScreen extends ConsumerWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.all(24),
                 itemCount: groups.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final group = groups[index];
                   return LBCard(

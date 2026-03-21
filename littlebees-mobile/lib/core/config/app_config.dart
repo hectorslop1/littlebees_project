@@ -1,18 +1,17 @@
 class AppConfig {
   AppConfig._();
 
-  // API Configuration — apunta al backend NestJS
-  // DESARROLLO: http://localhost:3002/api/v1 (incluye global prefix)
-  // PRODUCCIÓN: Servidor IONOS desplegado
+  // API base URL for the NestJS backend.
+  // Override with --dart-define in each environment when needed.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://216.250.125.239:3002/api/v1', // ← Servidor IONOS
+    defaultValue: 'http://216.250.125.239:3002/api/v1',
   );
 
-  // WebSocket Configuration
+  // WebSocket base URL must not include the REST prefix.
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'http://216.250.125.239:3002/api/v1', // ← Servidor IONOS
+    defaultValue: 'http://216.250.125.239:3002',
   );
 
   // Timeouts

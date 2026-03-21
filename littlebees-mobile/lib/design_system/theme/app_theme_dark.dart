@@ -22,7 +22,6 @@ class AppThemeDark {
     ).apply(bodyColor: darkTextPrimary, displayColor: darkTextPrimary);
 
     return ThemeData.dark().copyWith(
-      useMaterial3: true,
       colorScheme: const ColorScheme.dark(
         primary: darkPrimary,
         secondary: darkSecondary,
@@ -36,7 +35,6 @@ class AppThemeDark {
       ),
       scaffoldBackgroundColor: darkBackground,
       canvasColor: darkSurface,
-      dialogBackgroundColor: darkSurface,
 
       // AppBar
       appBarTheme: AppBarTheme(

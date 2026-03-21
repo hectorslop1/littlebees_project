@@ -49,7 +49,7 @@ class ChildrenListScreen extends ConsumerWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.all(24),
                 itemCount: children.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final child = children[index];
                   final age =

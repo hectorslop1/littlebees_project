@@ -21,7 +21,7 @@ class GroupDetailScreen extends ConsumerWidget {
         title: groupAsync.when(
           data: (group) => Text(group.displayName),
           loading: () => const Text('Cargando...'),
-          error: (_, __) => const Text('Grupo'),
+          error: (_, _) => const Text('Grupo'),
         ),
         elevation: 0,
       ),

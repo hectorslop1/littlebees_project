@@ -31,7 +31,10 @@ class DirectorHomeScreen extends ConsumerWidget {
               expandedHeight: 120,
               actions: [
                 IconButton(
-                  icon: const Icon(LucideIcons.bell, color: AppColors.textPrimary),
+                  icon: const Icon(
+                    LucideIcons.bell,
+                    color: AppColors.textPrimary,
+                  ),
                   onPressed: () => context.push('/notifications'),
                 ),
                 Padding(
@@ -113,7 +116,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                         value: childrenAsync.when(
                           data: (children) => '${children.length}',
                           loading: () => '...',
-                          error: (_, __) => '-',
+                          error: (_, _) => '-',
                         ),
                         color: AppColors.primary,
                       ),
@@ -126,7 +129,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                         value: groupsAsync.when(
                           data: (groups) => '${groups.length}',
                           loading: () => '...',
-                          error: (_, __) => '-',
+                          error: (_, _) => '-',
                         ),
                         color: AppColors.secondary,
                       ),
@@ -319,9 +322,12 @@ class DirectorHomeScreen extends ConsumerWidget {
                                       child: LinearProgressIndicator(
                                         value: capacity.clamp(0.0, 1.0),
                                         backgroundColor: AppColors.border,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          capacity > 0.9 ? AppColors.error : AppColors.success,
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              capacity > 0.9
+                                                  ? AppColors.error
+                                                  : AppColors.success,
+                                            ),
                                         minHeight: 4,
                                       ),
                                     ),
@@ -355,7 +361,11 @@ class DirectorHomeScreen extends ConsumerWidget {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(LucideIcons.alertCircle, size: 48, color: AppColors.error),
+                        Icon(
+                          LucideIcons.alertCircle,
+                          size: 48,
+                          color: AppColors.error,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Error al cargar grupos',
@@ -425,27 +435,18 @@ class _DashboardStatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 2),
             Text(
               subtitle!,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textTertiary,
-              ),
+              style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
             ),
           ],
         ],
@@ -522,10 +523,7 @@ class _QuickActionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                LucideIcons.chevronRight,
-                color: AppColors.textTertiary,
-              ),
+              Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
             ],
           ),
         ),

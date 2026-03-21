@@ -16,11 +16,11 @@ class QuickRegisterScreen extends ConsumerStatefulWidget {
   final ActivityType? defaultType;
 
   const QuickRegisterScreen({
-    Key? key,
+    super.key,
     required this.childId,
     required this.childName,
     this.defaultType,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<QuickRegisterScreen> createState() =>

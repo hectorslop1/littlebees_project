@@ -82,12 +82,6 @@ class RoleNavigation {
       route: '/groups',
     ),
     NavigationItem(
-      icon: LucideIcons.fileText,
-      activeIcon: LucideIcons.fileText,
-      labelKey: 'excuses',
-      route: '/excuses',
-    ),
-    NavigationItem(
       icon: LucideIcons.user,
       activeIcon: LucideIcons.user,
       labelKey: 'me',
@@ -147,7 +141,7 @@ class RoleNavigation {
       icon: LucideIcons.settings,
       activeIcon: LucideIcons.settings,
       labelKey: 'settings',
-      route: '/settings',
+      route: '/profile',
     ),
     NavigationItem(
       icon: LucideIcons.messageCircle,

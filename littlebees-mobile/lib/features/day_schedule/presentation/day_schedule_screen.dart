@@ -6,7 +6,7 @@ import '../../../core/providers/groups_provider.dart';
 import '../../register_activity/presentation/quick_register_screen.dart';
 
 class DayScheduleScreen extends ConsumerStatefulWidget {
-  const DayScheduleScreen({Key? key}) : super(key: key);
+  const DayScheduleScreen({super.key});
 
   @override
   ConsumerState<DayScheduleScreen> createState() => _DayScheduleScreenState();
@@ -43,10 +43,10 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
         children: [
           // Selector de grupo
           _buildGroupSelector(groupsState),
-          
+
           // Fecha seleccionada
           _buildDateHeader(),
-          
+
           // Contenido principal
           Expanded(
             child: selectedGroupId == null
@@ -92,7 +92,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
             )
           else
             DropdownButtonFormField<String>(
-              value: selectedGroupId,
+              initialValue: selectedGroupId,
               decoration: InputDecoration(
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -114,7 +114,9 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
                   selectedGroupId = value;
                 });
                 if (value != null) {
-                  ref.read(childrenProvider.notifier).loadChildren(groupId: value);
+                  ref
+                      .read(childrenProvider.notifier)
+                      .loadChildren(groupId: value);
                 }
               },
             ),
@@ -129,7 +131,11 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       color: AppColors.surfaceVariant,
       child: Row(
         children: [
-          const Icon(Icons.calendar_today, size: 20, color: AppColors.textSecondary),
+          const Icon(
+            Icons.calendar_today,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
           const SizedBox(width: 8),
           Text(
             _formatDate(selectedDate),
@@ -149,11 +155,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.group_outlined,
-            size: 64,
-            color: AppColors.textDisabled,
-          ),
+          Icon(Icons.group_outlined, size: 64, color: AppColors.textDisabled),
           const SizedBox(height: 16),
           Text(
             AppTranslations.selectGroup,
@@ -167,10 +169,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
           Text(
             'Selecciona un grupo para ver la programación del día',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -198,9 +197,9 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
             ElevatedButton(
               onPressed: () {
                 if (selectedGroupId != null) {
-                  ref.read(childrenProvider.notifier).loadChildren(
-                    groupId: selectedGroupId!,
-                  );
+                  ref
+                      .read(childrenProvider.notifier)
+                      .loadChildren(groupId: selectedGroupId!);
                 }
               },
               child: const Text(AppTranslations.retry),
@@ -240,10 +239,10 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       children: [
         // Estadísticas
         _buildStats(children.length),
-        
+
         // Timeline del día
         _buildTimeline(),
-        
+
         // Lista de niños
         Expanded(
           child: ListView.builder(
@@ -316,10 +315,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
             ),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -417,7 +413,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
                       ),
               ),
               const SizedBox(width: 12),
-              
+
               // Nombre
               Expanded(
                 child: Text(
@@ -428,7 +424,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
                   ),
                 ),
               ),
-              
+
               // Indicadores de actividades
               _buildActivityIndicators(),
             ],
@@ -461,10 +457,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       decoration: BoxDecoration(
         color: completed ? color : Colors.transparent,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: color,
-          width: 2,
-        ),
+        border: Border.all(color: color, width: 2),
       ),
     );
   }
@@ -473,10 +466,8 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuickRegisterScreen(
-          childId: child.id,
-          childName: child.fullName,
-        ),
+        builder: (context) =>
+            QuickRegisterScreen(childId: child.id, childName: child.fullName),
       ),
     );
   }
@@ -488,26 +479,37 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
       });
       // Recargar datos para la nueva fecha
       if (selectedGroupId != null) {
-        ref.read(childrenProvider.notifier).loadChildren(groupId: selectedGroupId!);
+        ref
+            .read(childrenProvider.notifier)
+            .loadChildren(groupId: selectedGroupId!);
       }
     }
   }
 
   String _formatDate(DateTime date) {
     final months = [
-      '', AppTranslations.january, AppTranslations.february, AppTranslations.march,
-      AppTranslations.april, AppTranslations.may, AppTranslations.june,
-      AppTranslations.july, AppTranslations.august, AppTranslations.september,
-      AppTranslations.october, AppTranslations.november, AppTranslations.december,
+      '',
+      AppTranslations.january,
+      AppTranslations.february,
+      AppTranslations.march,
+      AppTranslations.april,
+      AppTranslations.may,
+      AppTranslations.june,
+      AppTranslations.july,
+      AppTranslations.august,
+      AppTranslations.september,
+      AppTranslations.october,
+      AppTranslations.november,
+      AppTranslations.december,
     ];
-    
+
     return '${date.day} de ${months[date.month]} ${date.year}';
   }
 }

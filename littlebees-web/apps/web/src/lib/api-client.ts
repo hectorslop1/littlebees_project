@@ -1,6 +1,6 @@
 import { getAccessToken, getRefreshToken, storeTokens, clearTokens } from './auth';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
 
 export interface ApiError {
   statusCode: number;
@@ -52,6 +52,10 @@ class ApiClientClass {
     endpoint: string,
     options: RequestInit & { isFormData?: boolean } = {},
   ): Promise<T> {
+    if (!this.baseUrl) {
+      throw new Error('NEXT_PUBLIC_API_URL is not configured');
+    }
+
     const { isFormData, ...fetchOptions } = options;
     const headers: Record<string, string> = {};
 
