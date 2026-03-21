@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
@@ -60,7 +59,6 @@ class ConversationsScreen extends ConsumerWidget {
                     context,
                     ref,
                     conversation,
-                    index,
                   );
                 },
               ),
@@ -82,127 +80,253 @@ class ConversationsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     conversation,
-    int index,
   ) {
     final lastMessage = conversation.lastMessage;
     final unreadCount = conversation.unreadCount;
 
-    return GestureDetector(
-          onTap: () {
-            context.push(
-              '/messages/${conversation.id}',
-              extra: {
-                'participantName': conversation.participantName,
-                'participantAvatarUrl': conversation.participantAvatarUrl,
-                'participantRole': conversation.participantRole,
-              },
-            );
-          },
-          child: Container(
+    return Dismissible(
+          key: ValueKey(conversation.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x08000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                ),
-              ],
             ),
-            child: Row(
+          ),
+          secondaryBackground: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.centerRight,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                LBAvatar(
-                  placeholder: conversation.participantName.substring(0, 1),
-                  imageUrl: conversation.participantAvatarUrl,
-                  showStatusDot: true,
-                  statusColor: AppColors.success,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              conversation.participantName,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (lastMessage != null)
-                            Text(
-                              _formatTime(lastMessage.createdAt),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: unreadCount > 0
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
-                                    fontWeight: unreadCount > 0
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              lastMessage?.content ?? 'No messages yet',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: unreadCount > 0
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
-                                    fontWeight: unreadCount > 0
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (unreadCount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                unreadCount.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+                Icon(LucideIcons.trash2, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Eliminar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
           ),
-        )
-        .animate()
-        .fadeIn(delay: (index * 50).ms, duration: 300.ms)
-        .slideY(begin: 0.1);
+          dismissThresholds: const {
+            DismissDirection.endToStart: 0.35,
+          },
+          confirmDismiss: (_) =>
+              _confirmDeleteConversation(context, ref, conversation),
+          child: GestureDetector(
+            onLongPress: () {
+              _showConversationActions(context, ref, conversation);
+            },
+            onTap: () {
+              context.push(
+                '/messages/${conversation.id}',
+                extra: {
+                  'participantName': conversation.participantName,
+                  'participantAvatarUrl': conversation.participantAvatarUrl,
+                  'participantRole': conversation.participantRole,
+                },
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x08000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  LBAvatar(
+                    placeholder: conversation.participantName.substring(0, 1),
+                    imageUrl: conversation.participantAvatarUrl,
+                    showStatusDot: true,
+                    statusColor: AppColors.success,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                conversation.participantName,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (lastMessage != null)
+                              Text(
+                                _formatTime(lastMessage.createdAt),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: unreadCount > 0
+                                          ? AppColors.primary
+                                          : AppColors.textSecondary,
+                                      fontWeight: unreadCount > 0
+                                          ? FontWeight.bold
+                                      : FontWeight.normal,
+                                    ),
+                              ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () => _showConversationActions(
+                                context,
+                                ref,
+                                conversation,
+                              ),
+                              icon: const Icon(LucideIcons.moreVertical),
+                              tooltip: 'Opciones del chat',
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                lastMessage?.content ?? 'No messages yet',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: unreadCount > 0
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                      fontWeight: unreadCount > 0
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (unreadCount > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  unreadCount.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+  }
+
+  Future<bool> _confirmDeleteConversation(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic conversation,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar chat'),
+        content: Text(
+          'Se eliminará el chat con ${conversation.participantName} de tu lista. '
+          'Esta acción no afectará a los demás participantes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return false;
+    }
+
+    try {
+      await ref
+          .read(conversationsNotifierProvider.notifier)
+          .deleteConversation(conversation.id);
+      return true;
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No fue posible eliminar el chat: $error')),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> _showConversationActions(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic conversation,
+  ) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.trash2, color: AppColors.error),
+              title: const Text('Eliminar chat'),
+              subtitle: Text('Quitar conversación con ${conversation.participantName}'),
+              onTap: () => Navigator.of(sheetContext).pop('delete'),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.x),
+              title: const Text('Cancelar'),
+              onTap: () => Navigator.of(sheetContext).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected == 'delete' && context.mounted) {
+      await _confirmDeleteConversation(context, ref, conversation);
+    }
   }
 
   String _formatTime(DateTime dateTime) {

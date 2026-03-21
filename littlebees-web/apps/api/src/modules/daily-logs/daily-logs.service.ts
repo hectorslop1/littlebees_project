@@ -8,9 +8,23 @@ import { DayScheduleResponseDto } from './dto/day-schedule.dto';
 export class DailyLogsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findByChildAndDate(tenantId: string, childId: string, date: string) {
+  async findByChildAndDate(
+    tenantId: string,
+    childId: string,
+    date: string,
+    userId: string,
+    userRole: string,
+  ) {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
     return this.prisma.dailyLogEntry.findMany({
-      where: { tenantId, childId, date: new Date(date) },
+      where: {
+        tenantId,
+        childId,
+        date: targetDate,
+        ...this.buildRoleFilter(userId, userRole),
+      },
       include: {
         child: {
           select: {
@@ -25,11 +39,24 @@ export class DailyLogsService {
     });
   }
 
-  async findByDate(tenantId: string, date: string) {
+  async findByDate(
+    tenantId: string,
+    date: string,
+    userId: string,
+    userRole: string,
+  ) {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    if (userRole === 'parent') {
+      return [];
+    }
+
     return this.prisma.dailyLogEntry.findMany({
       where: { 
         tenantId, 
-        date: new Date(date) 
+        date: targetDate,
+        ...this.buildRoleFilter(userId, userRole),
       },
       include: {
         child: {
@@ -43,6 +70,32 @@ export class DailyLogsService {
       },
       orderBy: { time: 'asc' },
     });
+  }
+
+  private buildRoleFilter(userId: string, userRole: string) {
+    if (userRole === 'parent') {
+      return {
+        child: {
+          parents: {
+            some: {
+              userId,
+            },
+          },
+        },
+      };
+    }
+
+    if (userRole === 'teacher') {
+      return {
+        child: {
+          group: {
+            teacherId: userId,
+          },
+        },
+      };
+    }
+
+    return {};
   }
 
   async create(tenantId: string, userId: string, data: {

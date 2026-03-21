@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import '../config/app_config.dart';
+import 'endpoints.dart';
 import '../storage/secure_token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -95,14 +96,13 @@ class AuthInterceptor extends Interceptor {
       final refreshToken = await SecureTokenStorage.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) return false;
 
-      final response = await Dio(BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: AppConfig.connectTimeout,
-        receiveTimeout: AppConfig.receiveTimeout,
-      )).post(
-        '/auth/refresh',
-        data: {'refreshToken': refreshToken},
-      );
+      final response = await Dio(
+        BaseOptions(
+          baseUrl: AppConfig.apiBaseUrl,
+          connectTimeout: AppConfig.connectTimeout,
+          receiveTimeout: AppConfig.receiveTimeout,
+        ),
+      ).post(Endpoints.refresh, data: {'refreshToken': refreshToken});
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;

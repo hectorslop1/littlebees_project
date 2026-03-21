@@ -73,7 +73,7 @@ class ApiClientClass {
       headers: { ...headers, ...(fetchOptions.headers as Record<string, string>) },
     });
 
-    if (response.status === 401 && token) {
+    if (response.status === 401 && (token || getRefreshToken())) {
       const refreshed = await this.tryRefreshToken();
       if (refreshed) {
         const newToken = getAccessToken();

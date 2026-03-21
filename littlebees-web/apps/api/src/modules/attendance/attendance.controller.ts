@@ -17,10 +17,21 @@ export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
   @Get()
-  @Roles('teacher', 'director', 'admin', 'super_admin')
+  @Roles('teacher', 'director', 'admin', 'super_admin', 'parent')
   @ApiOperation({ summary: 'Obtener asistencia por fecha' })
-  async getByDate(@CurrentTenant() tenantId: string, @Query('date') date: string) {
-    const records = await this.attendanceService.getByDate(tenantId, date);
+  async getByDate(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string; role: string },
+    @Query('date') date: string,
+    @Query('childId') childId?: string,
+  ) {
+    const records = await this.attendanceService.getByDate(
+      tenantId,
+      user.id,
+      user.role,
+      date,
+      childId,
+    );
     return createPaginatedResponse(records);
   }
 

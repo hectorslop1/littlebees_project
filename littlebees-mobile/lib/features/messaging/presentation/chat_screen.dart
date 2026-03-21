@@ -8,6 +8,8 @@ import '../../../design_system/theme/app_colors.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
+import '../../../shared/models/message_model.dart';
+import '../../auth/application/auth_provider.dart';
 import '../application/realtime_messaging_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -163,6 +165,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       realtimeMessagingProvider(widget.conversationId),
     );
     final connectionAsync = ref.watch(socketConnectionProvider);
+    final currentUser = ref.watch(currentUserProvider);
     final tr = ref.watch(translationsProvider);
 
     return Scaffold(
@@ -173,8 +176,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
         title: Row(
           children: [
-            const LBAvatar(
-              placeholder: 'P',
+            LBAvatar(
+              placeholder: widget.participantName.isNotEmpty
+                  ? widget.participantName.substring(0, 1)
+                  : 'U',
+              imageUrl: widget.participantAvatarUrl,
               size: LBAvatarSize.small,
               showStatusDot: true,
               statusColor: AppColors.success,
@@ -267,7 +273,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             title: tr.tr('noMessages'),
                             message: tr.tr('noMessagesMsg'),
                           )
-                        : _buildMessagesList(messages),
+                        : _buildMessagesList(messages, currentUser?.id),
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => LBErrorState(
@@ -285,14 +291,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(List messages) {
+  Widget _buildMessagesList(List<Message> messages, String? currentUserId) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(24),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final msg = messages[index];
-        final isMe = msg.senderId == 'currentUserId';
+        final isMe = msg.senderId == currentUserId;
         return Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child:

@@ -59,7 +59,7 @@ export class ChildrenService {
     });
   }
 
-  async findById(id: string, tenantId: string) {
+  async findById(id: string, tenantId: string, userId?: string, userRole?: string) {
     const child = await this.prisma.child.findFirst({
       where: { id, tenantId },
       include: {
@@ -74,6 +74,10 @@ export class ChildrenService {
 
     if (!child) {
       throw new NotFoundException('Niño/a no encontrado');
+    }
+
+    if (userId && userRole) {
+      await this.assertChildAccess(child, tenantId, userId, userRole);
     }
 
     return child;
@@ -270,26 +274,7 @@ export class ChildrenService {
       throw new NotFoundException('Niño/a no encontrado');
     }
 
-    // Validar permisos según rol
-    if (userRole === 'parent') {
-      // Padres solo pueden ver el perfil de sus propios hijos
-      const isParent = child.parents.some((p) => p.userId === userId);
-      if (!isParent) {
-        throw new ForbiddenException('No tienes permiso para ver este perfil');
-      }
-    } else if (userRole === 'teacher') {
-      // Maestras solo pueden ver perfiles de niños en sus grupos
-      const teacherGroups = await this.prisma.group.findMany({
-        where: { tenantId, teacherId: userId },
-        select: { id: true },
-      });
-      const groupIds = teacherGroups.map((g) => g.id);
-      
-      if (!groupIds.includes(child.groupId)) {
-        throw new ForbiddenException('No tienes permiso para ver este perfil');
-      }
-    }
-    // Admin, director, super_admin pueden ver todos los perfiles
+    await this.assertChildAccess(child, tenantId, userId, userRole);
 
     // Calcular edad
     const today = new Date();
@@ -347,5 +332,35 @@ export class ChildrenService {
     };
 
     return profile;
+  }
+
+  private async assertChildAccess(
+    child: {
+      groupId: string;
+      parents: Array<{ userId: string }>;
+    },
+    tenantId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    if (userRole === 'parent') {
+      const isParent = child.parents.some((parent) => parent.userId === userId);
+      if (!isParent) {
+        throw new ForbiddenException('No tienes permiso para ver este perfil');
+      }
+      return;
+    }
+
+    if (userRole === 'teacher') {
+      const teacherGroups = await this.prisma.group.findMany({
+        where: { tenantId, teacherId: userId },
+        select: { id: true },
+      });
+      const groupIds = teacherGroups.map((group) => group.id);
+
+      if (!groupIds.includes(child.groupId)) {
+        throw new ForbiddenException('No tienes permiso para ver este perfil');
+      }
+    }
   }
 }

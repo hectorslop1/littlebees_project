@@ -34,7 +34,11 @@ class RemoteHomeRepository {
           gender: json['gender'] ?? 'male',
           photoUrl: json['photoUrl'],
           groupId: json['groupId'],
-          groupName: json['groupName'],
+          groupName:
+              json['groupName'] ??
+              ((json['group'] is Map<String, dynamic>)
+                  ? json['group']['name'] as String?
+                  : null),
           enrollmentDate: json['enrollmentDate'] != null
               ? DateTime.parse(json['enrollmentDate'])
               : null,
@@ -83,7 +87,11 @@ class RemoteHomeRepository {
         gender: childJson['gender'] ?? 'male',
         photoUrl: childJson['photoUrl'],
         groupId: childJson['groupId'],
-        groupName: childJson['groupName'],
+        groupName:
+            childJson['groupName'] ??
+            ((childJson['group'] is Map<String, dynamic>)
+                ? childJson['group']['name'] as String?
+                : null),
         enrollmentDate: childJson['enrollmentDate'] != null
             ? DateTime.parse(childJson['enrollmentDate'])
             : null,

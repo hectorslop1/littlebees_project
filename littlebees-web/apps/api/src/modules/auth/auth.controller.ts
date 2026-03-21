@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { RefreshTokenRequest } from '@kinderspace/shared-types';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -17,6 +18,15 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   async login(@Body() dto: { email: string; password: string }) {
     return this.authService.login(dto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Renovar access token con refresh token' })
+  @ApiResponse({ status: 200, description: 'Tokens renovados correctamente' })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
+  async refresh(@Body() dto: RefreshTokenRequest) {
+    return this.authService.refresh(dto);
   }
 
   @Get('me')

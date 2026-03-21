@@ -274,7 +274,7 @@ fi
 echo ""
 echo -e "${BLUE}${ARROW}${NC} Verificando conectividad HTTP..."
 
-BACKEND_CHECK=$(remote_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:${BACKEND_PORT}/api/health || echo '000'")
+BACKEND_CHECK=$(remote_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:${BACKEND_PORT}/api/v1/health || echo '000'")
 FRONTEND_CHECK=$(remote_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:${FRONTEND_PORT} || echo '000'")
 
 if [ "$BACKEND_CHECK" = "200" ] || [ "$BACKEND_CHECK" = "404" ]; then

@@ -37,13 +37,14 @@ class Endpoints {
       '/development/$childId/summary';
 
   // Chat
+  static const String chatContacts = '/chat/contacts';
   static const String conversations = '/chat/conversations';
   static String messages(String convId) =>
       '/chat/conversations/$convId/messages';
 
   // Payments
   static const String payments = '/payments';
-  static String pay(String id) => '/payments/$id/pay';
+  static String pay(String id) => '/payments/$id/mark-paid';
 
   // Notifications
   static const String notifications = '/notifications';

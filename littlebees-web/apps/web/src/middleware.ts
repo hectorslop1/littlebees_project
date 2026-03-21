@@ -12,8 +12,9 @@ export function middleware(request: NextRequest) {
 
   // Check for access token
   const token = request.cookies.get('access_token')?.value;
+  const refreshToken = request.cookies.get('refresh_token')?.value;
 
-  if (!token) {
+  if (!token && !refreshToken) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

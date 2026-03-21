@@ -7,9 +7,52 @@ import { BulkCheckInDto, BulkCheckInResponseDto } from './dto/bulk-check-in.dto'
 export class AttendanceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getByDate(tenantId: string, date: string) {
+  async getByDate(
+    tenantId: string,
+    userId: string,
+    userRole: string,
+    date: string,
+    childId?: string,
+  ) {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const where: any = {
+      tenantId,
+      date: targetDate,
+      ...(childId && { childId }),
+    };
+
+    if (userRole === 'parent') {
+      if (!childId) {
+        return [];
+      }
+
+      where.child = {
+        parents: {
+          some: {
+            userId,
+          },
+        },
+      };
+    } else if (userRole === 'teacher') {
+      const teacherGroups = await this.prisma.group.findMany({
+        where: { tenantId, teacherId: userId },
+        select: { id: true },
+      });
+
+      const groupIds = teacherGroups.map((group) => group.id);
+      if (groupIds.length === 0) {
+        return [];
+      }
+
+      where.child = {
+        groupId: { in: groupIds },
+      };
+    }
+
     return this.prisma.attendanceRecord.findMany({
-      where: { tenantId, date: new Date(date) },
+      where,
       include: {
         child: { select: { id: true, firstName: true, lastName: true, photoUrl: true } },
       },

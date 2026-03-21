@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -33,6 +34,16 @@ export class ChatController {
     return this.chatService.findConversations(tenantId, userId);
   }
 
+  @Get('contacts')
+  @ApiOperation({ summary: 'Listar contactos válidos para iniciar conversación' })
+  getAvailableContacts(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.chatService.getAvailableContacts(tenantId, userId, userRole);
+  }
+
   @Get('conversations/:id')
   @ApiOperation({ summary: 'Detalle de conversación' })
   findConversationById(
@@ -47,9 +58,11 @@ export class ChatController {
   @ApiOperation({ summary: 'Crear conversación' })
   createConversation(
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Body() dto: { childId: string; participantIds: string[] },
   ) {
-    return this.chatService.createConversation(tenantId, dto);
+    return this.chatService.createConversation(tenantId, userId, userRole, dto);
   }
 
   @Get('conversations/:id/messages')
@@ -91,6 +104,16 @@ export class ChatController {
     @Param('id') id: string,
   ) {
     return this.chatService.markAsRead(tenantId, id, userId);
+  }
+
+  @Delete('conversations/:id')
+  @ApiOperation({ summary: 'Eliminar conversación para el usuario actual' })
+  deleteConversation(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.chatService.deleteConversation(tenantId, id, userId);
   }
 
   @Get('unread-count')

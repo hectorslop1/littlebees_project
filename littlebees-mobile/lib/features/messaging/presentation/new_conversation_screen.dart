@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../shared/enums/enums.dart';
 import '../../auth/application/auth_provider.dart';
-import '../../home/application/home_providers.dart';
+import '../application/conversations_provider.dart';
+import '../domain/chat_contact.dart';
 
 class NewConversationScreen extends ConsumerWidget {
   const NewConversationScreen({super.key});
@@ -13,183 +16,110 @@ class NewConversationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final childrenAsync = ref.watch(myChildrenProvider);
+    final contactsAsync = ref.watch(availableChatContactsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nueva Conversación'), elevation: 0),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // For Parents: Show teachers of their children + director
-            if (user?.role == UserRole.parent) ...[
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Maestras de mis hijos',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: contactsAsync.when(
+          data: (contacts) {
+            if (contacts.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No hay contactos disponibles para iniciar una conversación.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
-              ),
-              childrenAsync.when(
-                data: (children) {
-                  // Get unique teachers from children's groups
-                  final teachers = <String, Map<String, dynamic>>{};
-                  for (final child in children) {
-                    if (child.groupName != null &&
-                        child.groupName!.isNotEmpty) {
-                      // This is a placeholder - in real implementation,
-                      // you'd fetch teacher info from the group
-                      teachers['teacher_${child.groupName}'] = {
-                        'id': 'teacher_${child.groupName}',
-                        'name': 'Maestra de ${child.groupName}',
-                        'role': 'Maestra',
-                      };
-                    }
-                  }
+              );
+            }
 
-                  if (teachers.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'No hay maestras asignadas',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    );
-                  }
+            final groupedContacts = <String, List<ChatContact>>{
+              'teachers': [],
+              'administration': [],
+              'parents': [],
+            };
 
-                  return Column(
-                    children: teachers.values.map((teacher) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildContactCard(
-                          context,
-                          ref,
-                          teacher['id'] as String,
-                          teacher['name'] as String,
-                          teacher['role'] as String,
-                          LucideIcons.graduationCap,
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => const SizedBox(),
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Administración',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              _buildContactCard(
-                context,
-                ref,
-                'director',
-                'Director',
-                'Administración',
-                LucideIcons.briefcase,
-              ),
-            ],
+            for (final contact in contacts) {
+              groupedContacts.putIfAbsent(contact.category, () => []);
+              groupedContacts[contact.category]!.add(contact);
+            }
 
-            // For Teachers: Show parents of their students + director
-            if (user?.role == UserRole.teacher) ...[
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Padres de mis alumnos',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (groupedContacts['teachers']!.isNotEmpty) ...[
+                  _buildSectionTitle(user?.role, 'teachers'),
+                  ...groupedContacts['teachers']!.map(
+                    (contact) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildContactCard(context, ref, contact),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (groupedContacts['administration']!.isNotEmpty) ...[
+                  _buildSectionTitle(user?.role, 'administration'),
+                  ...groupedContacts['administration']!.map(
+                    (contact) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildContactCard(context, ref, contact),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (groupedContacts['parents']!.isNotEmpty) ...[
+                  _buildSectionTitle(user?.role, 'parents'),
+                  ...groupedContacts['parents']!.map(
+                    (contact) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildContactCard(context, ref, contact),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'No fue posible cargar los contactos.\n$error',
+                textAlign: TextAlign.center,
               ),
-              childrenAsync.when(
-                data: (children) {
-                  if (children.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'No hay alumnos asignados',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    );
-                  }
-
-                  return Column(
-                    children: children.map((child) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _buildContactCard(
-                          context,
-                          ref,
-                          'parent_${child.id}',
-                          'Padres de ${child.firstName} ${child.lastName}',
-                          'Familia',
-                          LucideIcons.users,
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => const SizedBox(),
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Administración',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              _buildContactCard(
-                context,
-                ref,
-                'director',
-                'Director',
-                'Administración',
-                LucideIcons.briefcase,
-              ),
-            ],
-
-            // For Director/Admin: Show all teachers and parents
-            if (user?.role == UserRole.director ||
-                user?.role == UserRole.admin ||
-                user?.role == UserRole.superAdmin) ...[
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Personal',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              _buildContactCard(
-                context,
-                ref,
-                'all_teachers',
-                'Maestras',
-                'Ver todas las maestras',
-                LucideIcons.graduationCap,
-              ),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  'Familias',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-              _buildContactCard(
-                context,
-                ref,
-                'all_parents',
-                'Padres',
-                'Ver todos los padres',
-                LucideIcons.users,
-              ),
-            ],
-          ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(UserRole? userRole, String category) {
+    String title;
+    switch (category) {
+      case 'teachers':
+        title = userRole == UserRole.parent
+            ? 'Maestras de mis hijos'
+            : 'Personal docente';
+        break;
+      case 'administration':
+        title = 'Dirección';
+        break;
+      case 'parents':
+        title = userRole == UserRole.teacher ? 'Familias' : 'Padres';
+        break;
+      default:
+        title = 'Contactos';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -197,40 +127,18 @@ class NewConversationScreen extends ConsumerWidget {
   Widget _buildContactCard(
     BuildContext context,
     WidgetRef ref,
-    String userId,
-    String name,
-    String subtitle,
-    IconData icon,
+    ChatContact contact,
   ) {
     return LBCard(
-      onTap: () {
-        // Show info dialog since backend endpoint doesn't exist yet
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Funcionalidad en desarrollo'),
-            content: Text(
-              'La mensajería con $name estará disponible próximamente.\n\n'
-              'El backend necesita implementar el endpoint POST /conversations para crear conversaciones.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-        );
-      },
+      onTap: () => _handleContactTap(context, ref, contact),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 24),
+          LBAvatar(
+            placeholder: contact.displayName.isNotEmpty
+                ? contact.displayName
+                : _roleLabel(contact.role),
+            imageUrl: contact.avatarUrl,
+            size: LBAvatarSize.normal,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -238,7 +146,7 @@ class NewConversationScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  contact.displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
@@ -246,7 +154,7 @@ class NewConversationScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
+                  _buildSubtitle(contact),
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
@@ -263,5 +171,119 @@ class NewConversationScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleContactTap(
+    BuildContext context,
+    WidgetRef ref,
+    ChatContact contact,
+  ) async {
+    final selectedChildId = await _resolveChildForContact(context, contact);
+    if (selectedChildId == null) {
+      return;
+    }
+
+    try {
+      final conversation = await ref
+          .read(conversationsNotifierProvider.notifier)
+          .createConversation(
+            participantId: contact.userId,
+            childId: selectedChildId,
+          );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      context.push(
+        '/messages/${conversation.id}',
+        extra: {
+          'participantName': conversation.participantName,
+          'participantAvatarUrl': conversation.participantAvatarUrl,
+          'participantRole': conversation.participantRole,
+        },
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No fue posible abrir la conversación: $error')),
+      );
+    }
+  }
+
+  Future<String?> _resolveChildForContact(
+    BuildContext context,
+    ChatContact contact,
+  ) async {
+    if (contact.childIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Este contacto no tiene niños asociados.'),
+        ),
+      );
+      return null;
+    }
+
+    if (contact.childIds.length == 1) {
+      return contact.childIds.first;
+    }
+
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                'Selecciona al niño relacionado',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ),
+            for (var index = 0; index < contact.childIds.length; index++)
+              ListTile(
+                leading: const Icon(LucideIcons.baby),
+                title: Text(contact.childNames[index]),
+                subtitle: index < contact.groupNames.length
+                    ? Text(contact.groupNames[index])
+                    : null,
+                onTap: () => Navigator.of(context).pop(contact.childIds[index]),
+              ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _buildSubtitle(ChatContact contact) {
+    final relatedChildren = contact.childNames.join(', ');
+    final roleLabel = _roleLabel(contact.role);
+
+    if (relatedChildren.isEmpty) {
+      return roleLabel;
+    }
+
+    return '$roleLabel • $relatedChildren';
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'teacher':
+        return 'Maestra';
+      case 'director':
+        return 'Dirección';
+      case 'admin':
+      case 'super_admin':
+        return 'Administración';
+      case 'parent':
+        return 'Familia';
+      default:
+        return 'Contacto';
+    }
   }
 }

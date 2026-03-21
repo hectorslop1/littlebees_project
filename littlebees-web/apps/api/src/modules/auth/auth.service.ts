@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { LoginRequest, JwtPayload, UserRole } from '@kinderspace/shared-types';
+import { LoginRequest, JwtPayload, RefreshTokenRequest, UserRole } from '@kinderspace/shared-types';
 
 @Injectable()
 export class AuthService {
@@ -49,6 +49,42 @@ export class AuthService {
     }
 
     return this.generateTokens(user.id, userTenant.tenantId, userTenant.role as UserRole);
+  }
+
+  async refresh(dto: RefreshTokenRequest) {
+    if (!dto.refreshToken?.trim()) {
+      throw new UnauthorizedException('Refresh token requerido');
+    }
+
+    const payload = await this.verifyRefreshToken(dto.refreshToken);
+
+    const userTenant = await this.prisma.userTenant.findFirst({
+      where: {
+        userId: payload.sub,
+        tenantId: payload.tid,
+        active: true,
+      },
+      select: {
+        tenantId: true,
+        role: true,
+      },
+    });
+
+    if (!userTenant) {
+      throw new UnauthorizedException('Acceso a institución inválido');
+    }
+
+    const storedRefreshToken = await this.findStoredRefreshToken(payload.sub, dto.refreshToken);
+    if (!storedRefreshToken) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: storedRefreshToken.id },
+      data: { revoked: true },
+    });
+
+    return this.generateTokens(payload.sub, userTenant.tenantId, userTenant.role as UserRole);
   }
 
   async generateTokens(userId: string, tenantId: string, role: UserRole) {
@@ -137,5 +173,35 @@ export class AuthService {
 
   async hashPassword(password: string): Promise<string> {
     return argon2.hash(password);
+  }
+
+  private async verifyRefreshToken(refreshToken: string): Promise<JwtPayload> {
+    try {
+      return await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      });
+    } catch {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+  }
+
+  private async findStoredRefreshToken(userId: string, refreshToken: string) {
+    const candidates = await this.prisma.refreshToken.findMany({
+      where: {
+        userId,
+        revoked: false,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    for (const candidate of candidates) {
+      const matches = await argon2.verify(candidate.tokenHash, refreshToken);
+      if (matches) {
+        return candidate;
+      }
+    }
+
+    return null;
   }
 }

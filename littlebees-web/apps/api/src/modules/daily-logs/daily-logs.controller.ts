@@ -24,6 +24,8 @@ export class DailyLogsController {
   @ApiOperation({ summary: 'Obtener entradas de bitácora por niño y/o fecha' })
   async findByChildAndDate(
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Query('childId') childId?: string,
     @Query('date') date?: string,
   ) {
@@ -33,9 +35,20 @@ export class DailyLogsController {
 
     let entries: any[];
     if (childId && date) {
-      entries = await this.dailyLogsService.findByChildAndDate(tenantId, childId, date);
+      entries = await this.dailyLogsService.findByChildAndDate(
+        tenantId,
+        childId,
+        date,
+        userId,
+        userRole,
+      );
     } else if (date) {
-      entries = await this.dailyLogsService.findByDate(tenantId, date);
+      entries = await this.dailyLogsService.findByDate(
+        tenantId,
+        date,
+        userId,
+        userRole,
+      );
     } else {
       entries = [];
     }

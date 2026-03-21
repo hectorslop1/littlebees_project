@@ -37,8 +37,13 @@ export class ChildrenController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener detalle de niño/a' })
-  findById(@Param('id') id: string, @CurrentTenant() tenantId: string) {
-    return this.childrenService.findById(id, tenantId);
+  findById(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.childrenService.findById(id, tenantId, userId, userRole);
   }
 
   @Get(':id/profile')

@@ -4,7 +4,7 @@ import { createContext, useCallback, useEffect, useState } from 'react';
 import type { UserInfo, TenantInfo, LoginResponse } from '@kinderspace/shared-types';
 import { UserRole } from '@kinderspace/shared-types';
 import { api } from '@/lib/api-client';
-import { storeTokens, clearTokens, getAccessToken, parseJwt } from '@/lib/auth';
+import { storeTokens, clearTokens, getAccessToken, getRefreshToken, parseJwt } from '@/lib/auth';
 
 export interface AuthContextType {
   user: UserInfo | null;
@@ -29,28 +29,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      const payload = parseJwt(token);
-      if (payload && payload.exp * 1000 > Date.now()) {
-        // Hydrate from token, then fetch full user data
-        api.get<{ user: UserInfo; tenant: TenantInfo }>('/auth/me')
-          .then((data) => {
-            setUser(data.user);
-            setTenant(data.tenant);
-          })
-          .catch(() => {
-            // Token invalid, try from JWT payload
-            setUser({ id: payload.sub, role: payload.role } as UserInfo);
-          })
-          .finally(() => setIsLoading(false));
-      } else {
+    let cancelled = false;
+
+    const hydrateSession = async () => {
+      const token = getAccessToken();
+      const refreshToken = getRefreshToken();
+
+      const applySession = async () => {
+        const data = await api.get<{ user: UserInfo; tenant: TenantInfo }>('/auth/me');
+        if (cancelled) return;
+        setUser(data.user);
+        setTenant(data.tenant);
+      };
+
+      try {
+        if (token) {
+          const payload = parseJwt(token);
+          if (payload && payload.exp * 1000 > Date.now()) {
+            await applySession();
+            return;
+          }
+        }
+
+        if (refreshToken) {
+          const refreshed = await api.post<LoginResponse>('/auth/refresh', { refreshToken });
+          if (cancelled) return;
+          storeTokens(refreshed.accessToken, refreshed.refreshToken);
+          setUser(refreshed.user);
+          setTenant(refreshed.tenant);
+          return;
+        }
+
         clearTokens();
-        setIsLoading(false);
+      } catch {
+        clearTokens();
+        if (!cancelled) {
+          setUser(null);
+          setTenant(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
-    } else {
-      setIsLoading(false);
-    }
+    };
+
+    hydrateSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
