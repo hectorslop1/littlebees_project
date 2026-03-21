@@ -1,6 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
 import 'auth_interceptor.dart';
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient.instance;
+});
 
 class ApiClient {
   static ApiClient? _instance;
@@ -68,10 +73,7 @@ class ApiClient {
     return response.data as T;
   }
 
-  Future<T> delete<T>(
-    String path, {
-    T Function(dynamic)? fromJson,
-  }) async {
+  Future<T> delete<T>(String path, {T Function(dynamic)? fromJson}) async {
     final response = await _dio.delete(path);
     if (fromJson != null) return fromJson(response.data);
     return response.data as T;

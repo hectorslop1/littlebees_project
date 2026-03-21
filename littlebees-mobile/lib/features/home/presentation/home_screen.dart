@@ -14,6 +14,7 @@ import '../../../../core/i18n/app_translations.dart';
 import '../../../routing/route_names.dart';
 import '../../../features/auth/application/auth_provider.dart';
 import 'teacher_home_screen.dart';
+import 'director_home_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -23,8 +24,13 @@ class HomeScreen extends ConsumerWidget {
     final tr = ref.watch(translationsProvider);
     final authState = ref.watch(authProvider);
 
+    // If user is a director/admin, show director dashboard
+    if (authState.isDirector || authState.isAdmin) {
+      return const DirectorHomeScreen();
+    }
+
     // If user is a teacher, show teacher home screen
-    if (authState.isTeacher || authState.isDirector || authState.isAdmin) {
+    if (authState.isTeacher) {
       return const TeacherHomeScreen();
     }
 
@@ -170,6 +176,13 @@ class HomeScreen extends ConsumerWidget {
                     elevation: 0,
                     floating: true,
                     actions: [
+                      IconButton(
+                        icon: const Icon(
+                          LucideIcons.bell,
+                          color: AppColors.textPrimary,
+                        ),
+                        onPressed: () => context.push('/notifications'),
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(right: 16.0),
                         child: Container(

@@ -3,16 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../design_system/theme/app_colors.dart';
-import '../../../design_system/widgets/lb_card.dart';
-import '../../../core/i18n/app_translations.dart';
 import '../../groups/application/groups_provider.dart';
-import '../../auth/application/auth_provider.dart';
 
 class CreateActivityScreen extends ConsumerStatefulWidget {
   const CreateActivityScreen({super.key});
 
   @override
-  ConsumerState<CreateActivityScreen> createState() => _CreateActivityScreenState();
+  ConsumerState<CreateActivityScreen> createState() =>
+      _CreateActivityScreenState();
 }
 
 class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
@@ -41,20 +39,36 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   }
 
   Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(images);
-      });
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al abrir galería: $e')));
+      }
     }
   }
 
   Future<void> _takePicture() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      setState(() {
-        _selectedImages.add(image);
-      });
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al abrir cámara: $e')));
+      }
     }
   }
 
@@ -66,14 +80,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tr = ref.watch(translationsProvider);
     final groupsAsync = ref.watch(groupsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registrar Actividad'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Registrar Actividad'), elevation: 0),
       body: SafeArea(
         child: groupsAsync.when(
           data: (groups) {
@@ -104,10 +114,6 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               );
             }
 
-            final selectedGroup = _selectedGroupId != null
-                ? groups.firstWhere((g) => g.id == _selectedGroupId)
-                : null;
-
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -116,10 +122,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   // Group Selection
                   const Text(
                     'Selecciona el Grupo',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -146,7 +149,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                     },
                   ),
 
-                  if (selectedGroup != null) ...[
+                  if (_selectedGroupId != null) ...[
                     const SizedBox(height: 24),
                     const Text(
                       'Selecciona el Niño',
@@ -156,37 +159,81 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Nota: Necesitas implementar la carga de niños del grupo',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Lista de niños del grupo ${selectedGroup.displayName} aparecerá aquí',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final groupDetailAsync = ref.watch(
+                          groupByIdProvider(_selectedGroupId!),
+                        );
+                        return groupDetailAsync.when(
+                          data: (groupDetail) {
+                            final children = groupDetail.children ?? [];
+                            if (children.isEmpty) {
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceVariant,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'No hay niños asignados a este grupo',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              );
+                            }
+                            return DropdownButtonFormField<String>(
+                              value: _selectedChildId,
+                              decoration: InputDecoration(
+                                hintText: 'Selecciona un niño',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                filled: true,
+                                fillColor: AppColors.surfaceVariant,
+                              ),
+                              items: children.map((child) {
+                                final id = child['id'] as String;
+                                final name =
+                                    '${child['firstName'] ?? ''} ${child['lastName'] ?? ''}'
+                                        .trim();
+                                return DropdownMenuItem(
+                                  value: id,
+                                  child: Text(name),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedChildId = value;
+                                });
+                              },
+                            );
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                          error: (e, _) => Text(
+                            'Error al cargar niños: $e',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        );
+                      },
                     ),
                   ],
 
                   const SizedBox(height: 24),
                   const Text(
                     'Tipo de Actividad',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -241,10 +288,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Notas',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -263,10 +307,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Fotos',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -349,7 +390,8 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _selectedGroupId != null &&
+                      onPressed:
+                          _selectedGroupId != null &&
                               _selectedActivityType != null
                           ? () {
                               // TODO: Implement save activity
@@ -383,11 +425,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  LucideIcons.alertCircle,
-                  size: 64,
-                  color: AppColors.error,
-                ),
+                Icon(LucideIcons.alertCircle, size: 64, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   'Error: $error',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
+import 'app_theme_dark.dart';
 import 'app_typography.dart';
 
 class AppTheme {
@@ -41,6 +42,6 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    return lightTheme; // Default to light until dark mode is implemented in Phase 6
+    return AppThemeDark.theme;
   }
 }

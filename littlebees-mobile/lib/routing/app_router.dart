@@ -21,6 +21,12 @@ import '../features/groups/presentation/groups_screen.dart';
 import '../features/children/presentation/children_list_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/excuses/presentation/excuses_list_screen.dart';
+import '../features/child_profile/presentation/child_profile_screen.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/groups/presentation/group_detail_screen.dart';
+import '../features/profile/presentation/notification_settings_screen.dart';
+import '../features/profile/presentation/my_children_screen.dart';
+import '../features/messaging/presentation/new_conversation_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthChangeNotifier(ref);
@@ -109,11 +115,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ConversationsScreen(),
             routes: [
               GoRoute(
+                path: 'new',
+                name: 'newConversation',
+                builder: (context, state) => const NewConversationScreen(),
+              ),
+              GoRoute(
                 path: ':conversationId',
                 name: RouteNames.chat,
-                builder: (context, state) => ChatScreen(
-                  conversationId: state.pathParameters['conversationId']!,
-                ),
+                builder: (context, state) {
+                  final extra = state.extra as Map<String, dynamic>?;
+                  return ChatScreen(
+                    conversationId: state.pathParameters['conversationId']!,
+                    participantName: extra?['participantName'] ?? 'User',
+                    participantAvatarUrl: extra?['participantAvatarUrl'],
+                    participantRole: extra?['participantRole'],
+                  );
+                },
               ),
               GoRoute(
                 path: 'teacher/:teacherId',
@@ -149,11 +166,31 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/groups',
             name: RouteNames.groups,
             builder: (context, state) => const GroupsScreen(),
+            routes: [
+              GoRoute(
+                path: ':groupId',
+                name: RouteNames.groupDetail,
+                builder: (context, state) {
+                  final groupId = state.pathParameters['groupId']!;
+                  return GroupDetailScreen(groupId: groupId);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/children',
             name: RouteNames.children,
             builder: (context, state) => const ChildrenListScreen(),
+            routes: [
+              GoRoute(
+                path: ':childId/profile',
+                name: RouteNames.childProfile,
+                builder: (context, state) {
+                  final childId = state.pathParameters['childId']!;
+                  return ChildProfileScreen(childId: childId);
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/reports',
@@ -164,6 +201,21 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/excuses',
             name: RouteNames.excuses,
             builder: (context, state) => const ExcusesListScreen(),
+          ),
+          GoRoute(
+            path: '/notifications',
+            name: RouteNames.notifications,
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/notification-settings',
+            name: 'notificationSettings',
+            builder: (context, state) => const NotificationSettingsScreen(),
+          ),
+          GoRoute(
+            path: '/profile/my-children',
+            name: 'myChildren',
+            builder: (context, state) => const MyChildrenScreen(),
           ),
         ],
       ),

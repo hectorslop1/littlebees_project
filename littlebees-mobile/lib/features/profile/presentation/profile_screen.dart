@@ -8,6 +8,7 @@ import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../core/i18n/locale_provider.dart';
 import '../../../routing/route_names.dart';
+import '../../../shared/enums/enums.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../home/application/home_providers.dart';
 import 'widgets/theme_switcher.dart';
@@ -67,22 +68,89 @@ class ProfileScreen extends ConsumerWidget {
                 if (children.isEmpty) {
                   return const Text('No children found');
                 }
-                return LBCard(
-                  child: Column(
-                    children: children.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final child = entry.value;
-                      return Column(
-                        children: [
-                          if (index > 0) const Divider(height: 32),
-                          _buildChildRow(
-                            '${child.firstName} ${child.lastName}',
-                            child.groupName ?? 'No Group',
-                            child.photoUrl,
+
+                // Navigate to full screen if more than 1 child
+                if (children.length > 1) {
+                  return LBCard(
+                    onTap: () => context.push('/profile/my-children'),
+                    child: Row(
+                      children: [
+                        // Stacked avatars
+                        SizedBox(
+                          height: 40,
+                          width: 40 + (children.length - 1) * 24.0,
+                          child: Stack(
+                            children: children
+                                .take(4)
+                                .toList()
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                                  final index = entry.key;
+                                  final child = entry.value;
+                                  return Positioned(
+                                    left: index * 24.0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppColors.surface,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: LBAvatar(
+                                        placeholder: child.firstName.isNotEmpty
+                                            ? child.firstName[0]
+                                            : '?',
+                                        imageUrl: child.photoUrl,
+                                        size: LBAvatarSize.small,
+                                      ),
+                                    ),
+                                  );
+                                })
+                                .toList(),
                           ),
-                        ],
-                      );
-                    }).toList(),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${children.length} ${user?.role == UserRole.parent ? 'hijos' : 'alumnos'}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Toca para ver lista',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          LucideIcons.chevronRight,
+                          color: AppColors.textTertiary,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Single child - show directly
+                final child = children.first;
+                return LBCard(
+                  onTap: () => context.push('/children/${child.id}/profile'),
+                  child: _buildChildRow(
+                    '${child.firstName} ${child.lastName}',
+                    child.groupName ?? 'No Group',
+                    child.photoUrl,
                   ),
                 );
               },

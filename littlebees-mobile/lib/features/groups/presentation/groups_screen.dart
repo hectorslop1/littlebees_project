@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../application/groups_provider.dart';
-import 'group_detail_screen.dart';
 
 class GroupsScreen extends ConsumerWidget {
   const GroupsScreen({super.key});
@@ -53,14 +53,7 @@ class GroupsScreen extends ConsumerWidget {
                   final group = groups[index];
                   return LBCard(
                     onTap: () {
-                      // Navigate to group detail screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              GroupDetailScreen(groupId: group.id),
-                        ),
-                      );
+                      context.push('/groups/${group.id}');
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -68,11 +68,13 @@ class _LBCardState extends State<LBCard> with SingleTickerProviderStateMixin {
     Widget cardContent = Container(
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E1E1E)
+            : AppColors.surface,
         borderRadius: AppRadii.borderRadiusXl,
-        boxShadow: [
-          AppShadows.shadowSm,
-        ], // Removed const here to fix lint error
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? null
+            : [AppShadows.shadowSm],
       ),
       child: widget.child,
     );

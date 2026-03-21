@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
-import '../../../core/i18n/app_translations.dart';
 import '../../../features/auth/application/auth_provider.dart';
 import '../application/excuses_provider.dart';
 import '../../../shared/enums/enums.dart';

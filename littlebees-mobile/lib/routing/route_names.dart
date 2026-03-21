@@ -13,4 +13,7 @@ class RouteNames {
   static const String children = 'children';
   static const String reports = 'reports';
   static const String excuses = 'excuses';
+  static const String childProfile = 'childProfile';
+  static const String notifications = 'notifications';
+  static const String groupDetail = 'groupDetail';
 }

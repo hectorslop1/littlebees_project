@@ -52,14 +52,28 @@ class ExcusesRepository {
         queryParams['endDate'] = endDate.toIso8601String().split('T')[0];
       }
 
-      final response = await _api.get<List<dynamic>>(
+      final response = await _api.get<dynamic>(
         Endpoints.excuses,
         queryParameters: queryParams,
       );
 
-      return response.map((json) => Excuse.fromJson(json as Map<String, dynamic>)).toList();
+      // Handle various response formats gracefully
+      List items;
+      if (response is List) {
+        items = response;
+      } else if (response is Map<String, dynamic>) {
+        items = response['data'] as List? ?? [];
+      } else {
+        return [];
+      }
+
+      return items
+          .map((json) => Excuse.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
-      throw Exception('Error al obtener justificantes: $e');
+      // If endpoint doesn't exist or any error, return empty list
+      // The excuses endpoint may not be implemented in the backend yet
+      return [];
     }
   }
 
@@ -70,7 +84,9 @@ class ExcusesRepository {
         Endpoints.excusesByChild(childId),
       );
 
-      return response.map((json) => Excuse.fromJson(json as Map<String, dynamic>)).toList();
+      return response
+          .map((json) => Excuse.fromJson(json as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Error al obtener justificantes del niño: $e');
     }
@@ -98,10 +114,7 @@ class ExcusesRepository {
     try {
       final response = await _api.patch<Map<String, dynamic>>(
         Endpoints.updateExcuseStatus(id),
-        data: {
-          'status': status.value,
-          'reviewNotes': reviewNotes,
-        },
+        data: {'status': status.value, 'reviewNotes': reviewNotes},
       );
 
       return Excuse.fromJson(response);

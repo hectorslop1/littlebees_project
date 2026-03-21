@@ -26,7 +26,40 @@ class TeacherHomeScreen extends ConsumerWidget {
               backgroundColor: Colors.transparent,
               elevation: 0,
               floating: true,
-              expandedHeight: 120,
+              expandedHeight: 140,
+              actions: [
+                IconButton(
+                  icon: const Icon(
+                    LucideIcons.bell,
+                    color: AppColors.textPrimary,
+                  ),
+                  onPressed: () => context.push('/notifications'),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withAlpha(50),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        LucideIcons.messageCircle,
+                        color: AppColors.textOnPrimary,
+                        size: 20,
+                      ),
+                      onPressed: () => context.push('/messages'),
+                    ),
+                  ),
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
@@ -117,13 +150,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(bottom: 16),
                         child: LBCard(
                           onTap: () {
-                            // TODO: Navigate to group detail with children list
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Ver ${group.name}'),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
+                            context.push('/groups/${group.id}');
                           },
                           child: Row(
                             children: [

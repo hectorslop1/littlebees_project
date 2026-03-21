@@ -1,32 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../design_system/widgets/lb_avatar.dart';
-import '../../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_avatar.dart';
+import '../../../design_system/theme/app_colors.dart';
+import '../../../core/i18n/app_translations.dart';
+import '../../../design_system/widgets/lb_empty_state.dart';
+import '../../../design_system/widgets/lb_error_state.dart';
+import '../application/realtime_messaging_provider.dart';
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
+  final String participantName;
+  final String? participantAvatarUrl;
+  final String? participantRole;
 
-  const ChatScreen({super.key, required this.conversationId});
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    required this.participantName,
+    this.participantAvatarUrl,
+    this.participantRole,
+  });
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _showCallHistory = false;
+  bool _isTyping = false;
 
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'text': 'Emma painted a beautiful butterfly today! 🦋',
-      'isMe': false,
-      'time': '2:30pm',
-    },
-    {'text': "That's wonderful! Thank you! ❤️", 'isMe': true, 'time': '2:32pm'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final text = _controller.text;
+    if (text.isNotEmpty && !_isTyping) {
+      setState(() => _isTyping = true);
+      ref
+          .read(realtimeMessagingProvider(widget.conversationId).notifier)
+          .startTyping();
+    } else if (text.isEmpty && _isTyping) {
+      setState(() => _isTyping = false);
+      ref
+          .read(realtimeMessagingProvider(widget.conversationId).notifier)
+          .stopTyping();
+    }
+  }
 
   final List<Map<String, dynamic>> _callHistory = [
     {
@@ -52,26 +79,37 @@ class _ChatScreenState extends State<ChatScreen> {
     },
   ];
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
-    setState(() {
-      _messages.add({
-        'text': _controller.text.trim(),
-        'isMe': true,
-        'time': TimeOfDay.now().format(context),
-      });
-      _controller.clear();
-    });
 
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+    final content = _controller.text.trim();
+    _controller.clear();
+    setState(() => _isTyping = false);
+
+    try {
+      await ref
+          .read(realtimeMessagingProvider(widget.conversationId).notifier)
+          .sendMessage(content);
+
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending message: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
-    });
+    }
   }
 
   void _makeVoiceCall() {
@@ -94,14 +132,39 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
+      final period = dateTime.hour >= 12 ? 'pm' : 'am';
+      return '${hour == 0 ? 12 : hour}:${dateTime.minute.toString().padLeft(2, '0')}$period';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
+    _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final messagesAsync = ref.watch(
+      realtimeMessagingProvider(widget.conversationId),
+    );
+    final connectionAsync = ref.watch(socketConnectionProvider);
+    final tr = ref.watch(translationsProvider);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -121,18 +184,22 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.conversationId == 'chat_1'
-                      ? 'Ms. Patricia'
-                      : 'Mr. David',
+                  widget.participantName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  'Butterflies Class',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                connectionAsync.when(
+                  data: (isConnected) => Text(
+                    isConnected ? 'Online' : 'Offline',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isConnected
+                          ? AppColors.success
+                          : AppColors.textTertiary,
+                    ),
                   ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -193,7 +260,24 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: _showCallHistory
                 ? _buildCallHistory()
-                : _buildMessagesList(),
+                : messagesAsync.when(
+                    data: (messages) => messages.isEmpty
+                        ? LBEmptyState(
+                            icon: LucideIcons.messageSquare,
+                            title: tr.tr('noMessages'),
+                            message: tr.tr('noMessagesMsg'),
+                          )
+                        : _buildMessagesList(messages),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => LBErrorState(
+                      title: tr.tr('errorLoadingData'),
+                      message: error.toString(),
+                      onRetry: () => ref.refresh(
+                        realtimeMessagingProvider(widget.conversationId),
+                      ),
+                    ),
+                  ),
           ),
           if (!_showCallHistory) _buildInputBar(),
         ],
@@ -201,14 +285,14 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList() {
+  Widget _buildMessagesList(List messages) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(24),
-      itemCount: _messages.length,
+      itemCount: messages.length,
       itemBuilder: (context, index) {
-        final msg = _messages[index];
-        final isMe = msg['isMe'];
+        final msg = messages[index];
+        final isMe = msg.senderId == 'currentUserId';
         return Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child:
@@ -243,7 +327,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          msg['text'],
+                          msg.content,
                           style: TextStyle(
                             color: isMe
                                 ? AppColors.textOnPrimary
@@ -257,7 +341,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              msg['time'],
+                              _formatTime(msg.createdAt),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: isMe
@@ -268,9 +352,11 @@ class _ChatScreenState extends State<ChatScreen> {
                             if (isMe) ...[
                               const SizedBox(width: 4),
                               Icon(
-                                Icons.done_all,
+                                msg.isRead ? Icons.done_all : Icons.done,
                                 size: 14,
-                                color: AppColors.textOnPrimary.withAlpha(200),
+                                color: msg.isRead
+                                    ? AppColors.success.withAlpha(200)
+                                    : AppColors.textOnPrimary.withAlpha(200),
                               ),
                             ],
                           ],

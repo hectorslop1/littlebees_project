@@ -45,9 +45,15 @@ class MainShell extends ConsumerWidget {
             currentIndex: currentIndex,
             onTap: (int idx) => _onItemTapped(idx, context, navigationItems),
             type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.surface,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.textTertiary,
+            backgroundColor: context.isDark
+                ? const Color(0xFF1E1E1E)
+                : AppColors.surface,
+            selectedItemColor: context.isDark
+                ? const Color(0xFFE5C068)
+                : AppColors.primary,
+            unselectedItemColor: context.isDark
+                ? const Color(0xFF808080)
+                : AppColors.textTertiary,
             selectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 12,

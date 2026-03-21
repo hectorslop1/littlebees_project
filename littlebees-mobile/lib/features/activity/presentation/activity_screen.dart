@@ -32,30 +32,28 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       appBar: AppBar(
         title: Text(tr.tr('activity')),
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.calendar_today,
-              color: AppColors.textPrimary,
+          if (isTeacher)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: TextButton.icon(
+                icon: const Icon(LucideIcons.plus, size: 18),
+                label: const Text('Nueva'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreateActivityScreen(),
+                    ),
+                  );
+                },
+              ),
             ),
-            onPressed: () {},
-          ),
         ],
       ),
-      floatingActionButton: isTeacher
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateActivityScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(LucideIcons.plus),
-              label: const Text('Nueva Actividad'),
-              backgroundColor: AppColors.primary,
-            )
-          : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -160,11 +158,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           return LBEmptyState(
                             icon: LucideIcons.image,
                             title: isTeacherRole
-                                ? 'Sin Actividades'
-                                : 'No Photos Yet',
+                                ? tr.tr('noPhotosTeacher')
+                                : tr.tr('noPhotosParent'),
                             message: isTeacherRole
-                                ? 'Presiona el botón "+" para registrar una nueva actividad para tus alumnos.'
-                                : 'Photos and activities will appear here when caregivers share them.',
+                                ? tr.tr('noPhotosTeacherMsg')
+                                : tr.tr('noPhotosParentMsg'),
                           );
                         }
                         return RefreshIndicator(
@@ -175,9 +173,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       loading: () =>
                           const Center(child: CircularProgressIndicator()),
                       error: (error, _) => LBErrorState(
-                        title: 'Couldn\'t Load Photos',
-                        message:
-                            'We had trouble loading the photos. Please try again.',
+                        title: tr.tr('errorLoadingPhotos'),
+                        message: tr.tr('errorLoadingPhotosMsg'),
                         onRetry: () => ref.refresh(photosProvider),
                       ),
                     )
@@ -194,9 +191,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              isTeacher
-                                  ? 'Registro de Actividades'
-                                  : 'Activity Log',
+                              tr.tr('activityLogTitle'),
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -206,8 +201,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             const SizedBox(height: 8),
                             Text(
                               isTeacher
-                                  ? 'Aquí aparecerá el historial de actividades registradas.\n\nPresiona el botón "+" para crear una nueva actividad.'
-                                  : 'Activity history will appear here.',
+                                  ? '${tr.tr('activityLogMsg')}\n\nPresiona "Nueva" para crear una actividad.'
+                                  : tr.tr('activityLogMsg'),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
