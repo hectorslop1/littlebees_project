@@ -40,12 +40,45 @@ class PaymentsRepository {
     }
   }
 
+  Future<Payment> simulatePayment({
+    required String paymentId,
+    required String cardholderName,
+    required String cardNumber,
+    required String expiryMonth,
+    required String expiryYear,
+    required String cvv,
+  }) async {
+    try {
+      final response = await _api.post<Map<String, dynamic>>(
+        Endpoints.simulatePay(paymentId),
+        data: {
+          'cardholderName': cardholderName,
+          'cardNumber': cardNumber,
+          'expiryMonth': expiryMonth,
+          'expiryYear': expiryYear,
+          'cvv': cvv,
+        },
+      );
+      return _parsePayment(response);
+    } catch (e) {
+      throw Exception('Error processing simulated payment: $e');
+    }
+  }
+
   Payment _parsePayment(Map<String, dynamic> json) {
+    final childJson = json['child'] as Map<String, dynamic>?;
+    final childNameFromRelation = childJson == null
+        ? null
+        : [
+            childJson['firstName'] as String? ?? '',
+            childJson['lastName'] as String? ?? '',
+          ].where((part) => part.isNotEmpty).join(' ').trim();
+
     return Payment(
       id: json['id'] as String,
       tenantId: json['tenantId'] as String? ?? '',
       childId: json['childId'] as String,
-      childName: json['childName'] as String?,
+      childName: (json['childName'] as String?) ?? childNameFromRelation,
       concept: json['concept'] as String,
       amount: (json['amount'] as num).toDouble(),
       currency: json['currency'] as String? ?? 'USD',

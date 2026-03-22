@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { ChildStatus, Gender } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChildProfileDto } from './dto/child-profile.dto';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class ChildrenService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async findAll(tenantId: string, userId: string, userRole: string, options?: { groupId?: string; status?: string; search?: string }) {
     // Role-based filtering
@@ -39,7 +43,7 @@ export class ChildrenService {
     }
     // Admin, director, super_admin see all children (no additional filter)
     
-    return this.prisma.child.findMany({
+    const children = await this.prisma.child.findMany({
       where: {
         tenantId,
         ...roleFilter,
@@ -57,6 +61,13 @@ export class ChildrenService {
       },
       orderBy: { firstName: 'asc' },
     });
+
+    return Promise.all(
+      children.map(async (child) => ({
+        ...child,
+        photoUrl: await this.resolvePhotoUrl(tenantId, child.photoUrl),
+      })),
+    );
   }
 
   async findById(id: string, tenantId: string, userId?: string, userRole?: string) {
@@ -80,7 +91,10 @@ export class ChildrenService {
       await this.assertChildAccess(child, tenantId, userId, userRole);
     }
 
-    return child;
+    return {
+      ...child,
+      photoUrl: await this.resolvePhotoUrl(tenantId, child.photoUrl),
+    };
   }
 
   async create(tenantId: string, data: { firstName: string; lastName: string; dateOfBirth: Date; gender: Gender; groupId: string }) {
@@ -134,10 +148,41 @@ export class ChildrenService {
     });
   }
 
+  async updateProfile(
+    childId: string,
+    tenantId: string,
+    userId: string,
+    userRole: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: Date;
+      gender?: Gender;
+      photoUrl?: string | null;
+    },
+  ) {
+    await this.findById(childId, tenantId, userId, userRole);
+
+    const updatedChild = await this.prisma.child.update({
+      where: { id: childId },
+      data,
+      include: {
+        group: { select: { id: true, name: true, color: true } },
+      },
+    });
+
+    return {
+      ...updatedChild,
+      photoUrl: await this.resolvePhotoUrl(tenantId, updatedChild.photoUrl),
+    };
+  }
+
   // Medical Info
   async upsertMedicalInfo(
     childId: string,
     tenantId: string,
+    userId: string,
+    userRole: string,
     data: {
       allergies?: string[];
       conditions?: string[];
@@ -149,7 +194,7 @@ export class ChildrenService {
       insuranceInfo?: any;
     },
   ) {
-    await this.findById(childId, tenantId);
+    await this.findById(childId, tenantId, userId, userRole);
 
     return this.prisma.childMedicalInfo.upsert({
       where: { childId },
@@ -173,15 +218,19 @@ export class ChildrenService {
   async addEmergencyContact(
     childId: string,
     tenantId: string,
+    userId: string,
+    userRole: string,
     data: {
       name: string;
       relationship: string;
       phone: string;
       email?: string;
+      photoUrl?: string;
+      idPhotoUrl?: string;
       priority?: number;
     },
   ) {
-    await this.findById(childId, tenantId);
+    await this.findById(childId, tenantId, userId, userRole);
 
     return this.prisma.emergencyContact.create({
       data: {
@@ -191,6 +240,8 @@ export class ChildrenService {
         relationship: data.relationship,
         phone: data.phone,
         email: data.email,
+        photoUrl: data.photoUrl,
+        idPhotoUrl: data.idPhotoUrl,
         priority: data.priority || 1,
       },
     });
@@ -200,14 +251,20 @@ export class ChildrenService {
     contactId: string,
     childId: string,
     tenantId: string,
+    userId: string,
+    userRole: string,
     data: {
       name?: string;
       relationship?: string;
       phone?: string;
       email?: string;
+      photoUrl?: string;
+      idPhotoUrl?: string;
       priority?: number;
     },
   ) {
+    await this.findById(childId, tenantId, userId, userRole);
+
     const contact = await this.prisma.emergencyContact.findFirst({
       where: { id: contactId, childId, tenantId },
     });
@@ -226,7 +283,11 @@ export class ChildrenService {
     contactId: string,
     childId: string,
     tenantId: string,
+    userId: string,
+    userRole: string,
   ) {
+    await this.findById(childId, tenantId, userId, userRole);
+
     const contact = await this.prisma.emergencyContact.findFirst({
       where: { id: contactId, childId, tenantId },
     });
@@ -276,6 +337,19 @@ export class ChildrenService {
 
     await this.assertChildAccess(child, tenantId, userId, userRole);
 
+    const resolvedEmergencyContacts = await Promise.all(
+      child.emergencyContacts.map(async (contact) => ({
+        id: contact.id,
+        name: contact.name,
+        relationship: contact.relationship,
+        phone: contact.phone,
+        email: contact.email,
+        photoUrl: await this.resolvePhotoUrl(tenantId, contact.photoUrl),
+        idPhotoUrl: await this.resolvePhotoUrl(tenantId, contact.idPhotoUrl),
+        priority: contact.priority,
+      })),
+    );
+
     // Calcular edad
     const today = new Date();
     const birthDate = new Date(child.dateOfBirth);
@@ -292,7 +366,7 @@ export class ChildrenService {
       lastName: child.lastName,
       dateOfBirth: child.dateOfBirth,
       gender: child.gender,
-      photoUrl: child.photoUrl,
+      photoUrl: await this.resolvePhotoUrl(tenantId, child.photoUrl),
       groupId: child.groupId,
       groupName: child.group.name,
       enrollmentDate: child.enrollmentDate,
@@ -311,14 +385,7 @@ export class ChildrenService {
             // medicalNotes: child.medicalInfo.medicalNotes, // DISABLED: Field doesn't exist
           }
         : undefined,
-      emergencyContacts: child.emergencyContacts.map((contact) => ({
-        id: contact.id,
-        name: contact.name,
-        relationship: contact.relationship,
-        phone: contact.phone,
-        email: contact.email,
-        priority: contact.priority,
-      })),
+      emergencyContacts: resolvedEmergencyContacts,
       parents: child.parents.map((parent) => ({
         userId: parent.user.id,
         firstName: parent.user.firstName,
@@ -332,6 +399,23 @@ export class ChildrenService {
     };
 
     return profile;
+  }
+
+  private async resolvePhotoUrl(tenantId: string, photoUrl?: string | null) {
+    if (!photoUrl) {
+      return photoUrl ?? undefined;
+    }
+
+    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://') || photoUrl.startsWith('data:')) {
+      return photoUrl;
+    }
+
+    try {
+      const file = await this.filesService.findById(tenantId, photoUrl);
+      return file.url;
+    } catch {
+      return photoUrl;
+    }
   }
 
   private async assertChildAccess(

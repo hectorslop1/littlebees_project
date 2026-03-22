@@ -206,6 +206,8 @@ model EmergencyContact {
   relationship String   @db.VarChar(50)
   phone        String   @db.VarChar(20)
   email        String?  @db.VarChar(255)
+  photoUrl     String?  @map("photo_url")
+  idPhotoUrl   String?  @map("id_photo_url")
   priority     Int      @default(1)
   createdAt    DateTime @default(now()) @map("created_at")
 

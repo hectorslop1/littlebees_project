@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/models/child_model.dart';
-import '../../home/application/home_providers.dart';
+import '../data/child_profile_repository.dart';
+import '../domain/child_profile_model.dart';
 
-final childProfileProvider = FutureProvider.family<Child, String>((
+final childProfileRepositoryProvider = Provider<ChildProfileRepository>((ref) {
+  return ChildProfileRepository();
+});
+
+final childProfileProvider = FutureProvider.family<ChildProfileModel, String>((
   ref,
   childId,
 ) async {
-  final repository = ref.watch(childrenRepositoryProvider);
-  return repository.getChildById(childId);
+  final repository = ref.watch(childProfileRepositoryProvider);
+  return repository.getChildProfile(childId);
 });

@@ -104,12 +104,50 @@ export class ChildrenController {
     return this.childrenService.delete(id, tenantId);
   }
 
+  @Patch(':id/profile')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.PARENT)
+  @ApiOperation({ summary: 'Actualizar perfil editable del niño/a' })
+  updateProfile(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+    @Body() dto: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: string;
+      gender?: Gender;
+      photoUrl?: string | null;
+    },
+  ) {
+    const updateData: {
+      firstName?: string;
+      lastName?: string;
+      dateOfBirth?: Date;
+      gender?: Gender;
+      photoUrl?: string | null;
+    } = {
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      gender: dto.gender,
+      photoUrl: dto.photoUrl,
+    };
+
+    if (dto.dateOfBirth) {
+      updateData.dateOfBirth = new Date(dto.dateOfBirth);
+    }
+
+    return this.childrenService.updateProfile(id, tenantId, userId, userRole, updateData);
+  }
+
   @Post(':id/medical-info')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.TEACHER)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT)
   @ApiOperation({ summary: 'Crear/actualizar información médica' })
   upsertMedicalInfo(
     @Param('id') childId: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Body() dto: {
       allergies?: string[];
       conditions?: string[];
@@ -121,52 +159,62 @@ export class ChildrenController {
       insuranceInfo?: any;
     },
   ) {
-    return this.childrenService.upsertMedicalInfo(childId, tenantId, dto);
+    return this.childrenService.upsertMedicalInfo(childId, tenantId, userId, userRole, dto);
   }
 
   @Post(':id/emergency-contacts')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.PARENT)
   @ApiOperation({ summary: 'Agregar contacto de emergencia' })
   addEmergencyContact(
     @Param('id') childId: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Body() dto: {
       name: string;
       relationship: string;
       phone: string;
       email?: string;
+      photoUrl?: string;
+      idPhotoUrl?: string;
       priority?: number;
     },
   ) {
-    return this.childrenService.addEmergencyContact(childId, tenantId, dto);
+    return this.childrenService.addEmergencyContact(childId, tenantId, userId, userRole, dto);
   }
 
   @Patch(':id/emergency-contacts/:contactId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.PARENT)
   @ApiOperation({ summary: 'Actualizar contacto de emergencia' })
   updateEmergencyContact(
     @Param('id') childId: string,
     @Param('contactId') contactId: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
     @Body() dto: {
       name?: string;
       relationship?: string;
       phone?: string;
       email?: string;
+      photoUrl?: string;
+      idPhotoUrl?: string;
       priority?: number;
     },
   ) {
-    return this.childrenService.updateEmergencyContact(contactId, childId, tenantId, dto);
+    return this.childrenService.updateEmergencyContact(contactId, childId, tenantId, userId, userRole, dto);
   }
 
   @Delete(':id/emergency-contacts/:contactId')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN, UserRole.PARENT)
   @ApiOperation({ summary: 'Eliminar contacto de emergencia' })
   deleteEmergencyContact(
     @Param('id') childId: string,
     @Param('contactId') contactId: string,
     @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
   ) {
-    return this.childrenService.deleteEmergencyContact(contactId, childId, tenantId);
+    return this.childrenService.deleteEmergencyContact(contactId, childId, tenantId, userId, userRole);
   }
 }

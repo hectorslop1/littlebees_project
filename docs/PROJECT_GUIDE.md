@@ -102,12 +102,18 @@ Responsabilidades:
 
 Los scripts que siguen vigentes despues de la limpieza del repo son:
 
-- `check-services.sh`: orquestacion local de servicios de apoyo y validacion de procesos.
-- `open-services.sh`: acceso rapido a web, Swagger, MinIO y pgAdmin.
+- `check-services.sh`: validacion del backend IONOS, arranque opcional del web local y pgAdmin si se necesita.
+- `open-services.sh`: acceso rapido a web local, Swagger de IONOS y pgAdmin.
 - `deploy-to-ionos.sh`: despliegue del sistema al servidor IONOS.
-- `littlebees-mobile/build-apk-development.sh`: build Android para pruebas locales.
+- `littlebees-mobile/build-apk-development.sh`: build Android de desarrollo apuntando a IONOS.
 - `littlebees-mobile/build-apk-production.sh`: build Android apuntando al servidor IONOS.
-- `littlebees-web/packages/api-contracts/generate-client.sh`: regeneracion del cliente Dart desde el OpenAPI real.
+- `littlebees-web/packages/api-contracts/generate-client.sh`: regeneracion del cliente Dart desde el OpenAPI real de IONOS.
+
+Regla operativa:
+
+- No se debe depender de un backend local para web o movil.
+- Si se corre la app web localmente, debe consumir el backend de IONOS.
+- Si se modifica el backend, el cambio debe desplegarse y validarse sobre el backend de IONOS.
 
 ### SQL validos que se conservan
 

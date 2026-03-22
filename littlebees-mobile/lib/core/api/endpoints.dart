@@ -12,8 +12,11 @@ class Endpoints {
   // Children
   static const String children = '/children';
   static String child(String id) => '/children/$id';
-  static String childMedical(String id) => '/children/$id/medical';
-  static String childContacts(String id) => '/children/$id/contacts';
+  static String childProfile(String id) => '/children/$id/profile';
+  static String childMedical(String id) => '/children/$id/medical-info';
+  static String childContacts(String id) => '/children/$id/emergency-contacts';
+  static String childContact(String childId, String contactId) =>
+      '/children/$childId/emergency-contacts/$contactId';
 
   // Attendance
   static const String attendance = '/attendance';
@@ -45,6 +48,7 @@ class Endpoints {
   // Payments
   static const String payments = '/payments';
   static String pay(String id) => '/payments/$id/mark-paid';
+  static String simulatePay(String id) => '/payments/$id/simulate-pay';
 
   // Notifications
   static const String notifications = '/notifications';

@@ -4,7 +4,7 @@
   "private": true,
   "description": "OpenAPI contracts and client generation for KinderSpace API",
   "scripts": {
-    "fetch:openapi": "curl http://localhost:3002/api/docs-json > openapi.json",
+    "fetch:openapi": "curl http://216.250.125.239:3002/api/docs-json > openapi.json",
     "generate:dart": "openapi-generator-cli generate -i ./openapi.json -g dart-dio -o ../../../littlebees-mobile/lib/generated/api --additional-properties=pubName=kinderspace_api,pubVersion=1.0.0,useEnumExtension=true",
     "generate:ts": "orval --config orval.config.ts",
     "generate": "pnpm fetch:openapi && pnpm generate:dart",

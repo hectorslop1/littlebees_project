@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Script para generar APK de desarrollo apuntando a localhost
-# Útil para desarrollo y testing local
+# Script para generar APK de desarrollo apuntando a IONOS
+# Útil para probar la app con el backend real en la nube
 
 echo "🔧 Generando APK de Desarrollo para Little Bees"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "⚠️  NOTA: Este APK requiere que el backend corra en tu computadora"
-echo "📍 Servidor: localhost:3002"
-echo "🌐 API URL: http://localhost:3002/api/v1"
+echo "☁️  Backend: IONOS"
+echo "📍 Servidor: 216.250.125.239:3002"
+echo "🌐 API URL: http://216.250.125.239:3002/api/v1"
 echo ""
 
 # Limpiar builds anteriores
@@ -19,12 +19,12 @@ flutter clean
 echo "📦 Obteniendo dependencias..."
 flutter pub get
 
-# Generar APK con localhost (para desarrollo)
+# Generar APK de desarrollo usando el backend real en la nube
 echo "🔨 Generando APK..."
 flutter build apk \
   --release \
-  --dart-define=API_BASE_URL=http://localhost:3002/api/v1 \
-  --dart-define=WS_BASE_URL=http://localhost:3002
+  --dart-define=API_BASE_URL=http://216.250.125.239:3002/api/v1 \
+  --dart-define=WS_BASE_URL=http://216.250.125.239:3002
 
 if [ $? -eq 0 ]; then
     echo ""
@@ -33,10 +33,9 @@ if [ $? -eq 0 ]; then
     echo "📱 Ubicación del APK:"
     echo "   build/app/outputs/flutter-apk/app-release.apk"
     echo ""
-    echo "⚠️  Recuerda:"
-    echo "   - El backend debe estar corriendo en tu computadora"
-    echo "   - El dispositivo debe estar en la misma red WiFi"
-    echo "   - Usa la IP local de tu Mac en lugar de localhost si es necesario"
+    echo "☁️  Este APK usa directamente el backend de IONOS"
+    echo "   - No requiere backend local"
+    echo "   - No requiere red local hacia tu Mac"
     echo ""
     
     # Abrir la carpeta donde está el APK

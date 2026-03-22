@@ -129,4 +129,28 @@ export class PaymentsController {
   ) {
     return this.paymentsService.markAsPaid(tenantId, id, dto.paymentMethod);
   }
+
+  @Post(':id/simulate-pay')
+  @Roles(
+    UserRole.PARENT,
+    UserRole.SUPER_ADMIN,
+    UserRole.DIRECTOR,
+    UserRole.ADMIN,
+  )
+  @ApiOperation({ summary: 'Simular pago con tarjeta dummy' })
+  simulatePay(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string; role: string },
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      cardholderName: string;
+      cardNumber: string;
+      expiryMonth: string;
+      expiryYear: string;
+      cvv: string;
+    },
+  ) {
+    return this.paymentsService.simulatePay(tenantId, id, user, dto);
+  }
 }

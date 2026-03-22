@@ -1,99 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../../design_system/theme/app_colors.dart';
-import '../application/home_providers.dart';
-import 'widgets/home_shimmer.dart';
-import 'widgets/child_header.dart';
-import 'widgets/status_card.dart';
-import 'widgets/ai_summary_card.dart';
-import 'widgets/timeline_feed.dart';
+
 import '../../../../core/i18n/app_translations.dart';
+import '../../../design_system/theme/app_colors.dart';
 import '../../../routing/route_names.dart';
-import '../../../features/auth/application/auth_provider.dart';
-import 'teacher_home_screen.dart';
+import '../../auth/application/auth_provider.dart';
+import '../application/home_providers.dart';
 import 'director_home_screen.dart';
+import 'teacher_home_screen.dart';
+import 'widgets/ai_summary_card.dart';
+import 'widgets/child_header.dart';
+import 'widgets/home_shimmer.dart';
+import 'widgets/status_card.dart';
+import 'widgets/timeline_feed.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tr = ref.watch(translationsProvider);
     final authState = ref.watch(authProvider);
 
-    // If user is a director/admin, show director dashboard
     if (authState.isDirector || authState.isAdmin) {
       return const DirectorHomeScreen();
     }
 
-    // If user is a teacher, show teacher home screen
     if (authState.isTeacher) {
       return const TeacherHomeScreen();
     }
 
-    // Otherwise show parent home screen
     final childrenAsync = ref.watch(myChildrenProvider);
-
-    // Auto-select first child if none selected
     final currentChildId = ref.watch(currentChildIdProvider);
 
     return childrenAsync.when(
       data: (children) {
         if (children.isEmpty) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Inicio'), elevation: 0),
-            body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        LucideIcons.baby,
-                        size: 80,
-                        color: AppColors.textTertiary,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No tienes hijos asignados',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Contacta al administrador para que te asigne a tus hijos en el sistema.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Usuario: ${authState.user?.email ?? ""}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
+          return _ParentHomeEmptyState(email: authState.user?.email ?? '');
         }
 
-        // Auto-select first child
         final selectedId = currentChildId ?? children.first.id;
         if (currentChildId == null) {
           Future.microtask(
@@ -101,44 +48,577 @@ class HomeScreen extends ConsumerWidget {
           );
         }
 
-        return _buildHomeContent(context, ref, selectedId, tr);
+        return _ParentHomeContent(currentChildId: selectedId);
       },
       loading: () => const HomeShimmer(),
-      error: (error, stack) => Scaffold(
-        appBar: AppBar(title: const Text('Inicio'), elevation: 0),
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.alertCircle,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error al cargar datos',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+      error: (error, _) => _ParentHomeErrorState(
+        message: '$error',
+        onRetry: () => ref.refresh(myChildrenProvider),
+      ),
+    );
+  }
+}
+
+class _ParentHomeContent extends ConsumerWidget {
+  const _ParentHomeContent({required this.currentChildId});
+
+  final String currentChildId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tr = ref.watch(translationsProvider);
+    final user = ref.watch(currentUserProvider);
+    final tenant = ref.watch(currentTenantProvider);
+    final dailyStoryAsync = ref.watch(dailyStoryProvider(currentChildId));
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: dailyStoryAsync.when(
+          data: (dailyStory) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(myChildrenProvider);
+                ref.invalidate(dailyStoryProvider(currentChildId));
+                await ref.read(dailyStoryProvider(currentChildId).future);
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                key: ValueKey(currentChildId),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _HomeTopBar(
+                            userName: user?.firstName ?? 'Familia',
+                            tenantName: tenant?.name ?? 'LittleBees',
+                            onNotificationsTap: () =>
+                                context.push('/notifications'),
+                            onMessagesTap: () =>
+                                context.pushNamed(RouteNames.messages),
+                          ).animate().fadeIn(duration: 320.ms),
+                          const SizedBox(height: 22),
+                          ChildHeader(childNode: dailyStory.child)
+                              .animate()
+                              .fadeIn(delay: 40.ms, duration: 320.ms)
+                              .slideY(begin: 0.08, duration: 320.ms),
+                          const SizedBox(height: 18),
+                          _QuickActionsStrip(
+                            onChildrenTap: () =>
+                                context.pushNamed(RouteNames.children),
+                            onPaymentsTap: () =>
+                                context.pushNamed(RouteNames.payments),
+                            onMessagesTap: () =>
+                                context.pushNamed(RouteNames.messages),
+                          ).animate().fadeIn(delay: 80.ms, duration: 320.ms),
+                          const SizedBox(height: 18),
+                          StatusCard(status: dailyStory.status)
+                              .animate()
+                              .fadeIn(delay: 120.ms, duration: 320.ms)
+                              .slideY(begin: 0.08, duration: 320.ms),
+                          if (dailyStory.aiSummary != null) ...[
+                            const SizedBox(height: 18),
+                            AiSummaryCard(summary: dailyStory.aiSummary!)
+                                .animate()
+                                .fadeIn(delay: 160.ms, duration: 320.ms),
+                          ],
+                          const SizedBox(height: 26),
+                          _TodaySectionHeader(
+                            title: tr.tr('todaySummary'),
+                            eventsCount: dailyStory.events.length,
+                          ).animate().fadeIn(delay: 200.ms, duration: 320.ms),
+                          const SizedBox(height: 16),
+                          if (dailyStory.events.isEmpty)
+                            const _EmptyTimelineState(),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$error',
+                  if (dailyStory.events.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+                      sliver: TimelineFeed(events: dailyStory.events),
+                    ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                ],
+              ),
+            );
+          },
+          loading: () => const HomeShimmer(),
+          error: (error, _) => _ParentHomeErrorState(
+            message: '$error',
+            onRetry: () => ref.refresh(dailyStoryProvider(currentChildId)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeTopBar extends StatelessWidget {
+  const _HomeTopBar({
+    required this.userName,
+    required this.tenantName,
+    required this.onNotificationsTap,
+    required this.onMessagesTap,
+  });
+
+  final String userName;
+  final String tenantName;
+  final VoidCallback onNotificationsTap;
+  final VoidCallback onMessagesTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greetingForTime(),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                userName,
+                style: const TextStyle(
+                  fontSize: 30,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                tenantName,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        _RoundActionButton(
+          icon: LucideIcons.bell,
+          onTap: onNotificationsTap,
+        ),
+        const SizedBox(width: 10),
+        _RoundActionButton(
+          icon: LucideIcons.messageCircle,
+          onTap: onMessagesTap,
+          highlighted: true,
+        ),
+      ],
+    );
+  }
+}
+
+class _RoundActionButton extends StatelessWidget {
+  const _RoundActionButton({
+    required this.icon,
+    required this.onTap,
+    this.highlighted = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: highlighted ? AppColors.primary : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      elevation: highlighted ? 4 : 0,
+      shadowColor: highlighted ? AppColors.primary.withAlpha(70) : null,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          width: 52,
+          height: 52,
+          child: Icon(
+            icon,
+            color: highlighted ? AppColors.textOnPrimary : AppColors.textPrimary,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionsStrip extends StatelessWidget {
+  const _QuickActionsStrip({
+    required this.onChildrenTap,
+    required this.onPaymentsTap,
+    required this.onMessagesTap,
+  });
+
+  final VoidCallback onChildrenTap;
+  final VoidCallback onPaymentsTap;
+  final VoidCallback onMessagesTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickActionCard(
+            icon: LucideIcons.baby,
+            title: 'Mis hijos',
+            subtitle: 'Perfiles y grupos',
+            accent: AppColors.secondary,
+            onTap: onChildrenTap,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _QuickActionCard(
+            icon: LucideIcons.creditCard,
+            title: 'Pagos',
+            subtitle: 'Estado de cuenta',
+            accent: AppColors.primary,
+            onTap: onPaymentsTap,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _QuickActionCard(
+            icon: LucideIcons.messageCircle,
+            title: 'Chat',
+            subtitle: 'Mensajes activos',
+            accent: AppColors.info,
+            onTap: onMessagesTap,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  const _QuickActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x10000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withAlpha(30),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, size: 18, color: accent),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodaySectionHeader extends StatelessWidget {
+  const _TodaySectionHeader({
+    required this.title,
+    required this.eventsCount,
+  });
+
+  final String title;
+  final int eventsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Text(
+            '$eventsCount eventos',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyTimelineState extends StatelessWidget {
+  const _EmptyTimelineState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            LucideIcons.clock3,
+            size: 36,
+            color: AppColors.textTertiary,
+          ),
+          SizedBox(height: 14),
+          Text(
+            'Aun no hay registros del dia',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Cuando la escuela registre actividades, alimentos o siestas apareceran aqui.',
+            style: TextStyle(
+              height: 1.5,
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ParentHomeEmptyState extends StatelessWidget {
+  const _ParentHomeEmptyState({required this.email});
+
+  final String email;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: const Icon(
+                      LucideIcons.baby,
+                      size: 36,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Aun no hay hijos vinculados',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Cuando el colegio relacione tu cuenta, aqui veras asistencia, actividades, pagos y mensajes.',
                     style: TextStyle(
                       fontSize: 14,
+                      height: 1.5,
                       color: AppColors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => ref.refresh(myChildrenProvider),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ParentHomeErrorState extends StatelessWidget {
+  const _ParentHomeErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x14000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    LucideIcons.alertCircle,
+                    size: 42,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'No fue posible cargar el inicio',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 22),
+                  FilledButton(
+                    onPressed: onRetry,
                     child: const Text('Reintentar'),
                   ),
                 ],
@@ -149,146 +629,11 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildHomeContent(
-    BuildContext context,
-    WidgetRef ref,
-    String currentChildId,
-    dynamic tr,
-  ) {
-    // Watch daily story for the currently selected child
-    final dailyStoryAsync = ref.watch(dailyStoryProvider(currentChildId));
-
-    return Scaffold(
-      body: SafeArea(
-        child: dailyStoryAsync.when(
-          data: (dailyStory) {
-            return RefreshIndicator(
-              onRefresh: () =>
-                  ref.refresh(dailyStoryProvider(currentChildId).future),
-              child: CustomScrollView(
-                key: ValueKey(
-                  currentChildId,
-                ), // Force rebuild when child changes
-                slivers: [
-                  SliverAppBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    floating: true,
-                    actions: [
-                      IconButton(
-                        icon: const Icon(
-                          LucideIcons.bell,
-                          color: AppColors.textPrimary,
-                        ),
-                        onPressed: () => context.push('/notifications'),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 16.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withAlpha(50),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              LucideIcons.messageCircle,
-                              color: AppColors.textOnPrimary,
-                              size: 20,
-                            ),
-                            onPressed: () =>
-                                context.pushNamed(RouteNames.messages),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 16),
-                          ChildHeader(childNode: dailyStory.child)
-                              .animate()
-                              .fadeIn(duration: 400.ms)
-                              .slideY(
-                                begin: 0.1,
-                                duration: 400.ms,
-                                curve: Curves.easeOutQuad,
-                              ),
-                          const SizedBox(height: 24),
-                          StatusCard(status: dailyStory.status)
-                              .animate()
-                              .fadeIn(delay: 50.ms, duration: 400.ms)
-                              .slideY(
-                                begin: 0.1,
-                                duration: 400.ms,
-                                curve: Curves.easeOutQuad,
-                              ),
-                          if (dailyStory.aiSummary != null) ...[
-                            const SizedBox(height: 16),
-                            AiSummaryCard(summary: dailyStory.aiSummary!)
-                                .animate()
-                                .fadeIn(delay: 100.ms, duration: 400.ms)
-                                .slideY(
-                                  begin: 0.1,
-                                  duration: 400.ms,
-                                  curve: Curves.easeOutQuad,
-                                ),
-                          ],
-                          const SizedBox(height: 32),
-                          Text(
-                            tr.tr('todaySummary'),
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ).animate().fadeIn(delay: 150.ms),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    sliver: TimelineFeed(events: dailyStory.events),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 32)),
-                ],
-              ),
-            );
-          },
-          loading: () => const HomeShimmer(),
-          error: (error, stack) {
-            print('HOME ERROR: $error'); // Debug logging
-            return Scaffold(
-              body: SafeArea(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Error loading home: $error'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => ref.refresh(
-                          dailyStoryProvider(currentChildId).future,
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
+String _greetingForTime() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'Buenos dias';
+  if (hour < 19) return 'Buenas tardes';
+  return 'Buenas noches';
 }

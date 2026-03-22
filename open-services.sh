@@ -14,11 +14,12 @@ CHECK="✓"
 ARROW="→"
 BROWSER="🌐"
 
+CLOUD_API_URL="http://216.250.125.239:3002"
+
 # URLs de los servicios
 FRONTEND_URL="http://localhost:3001"
-BACKEND_API_URL="http://localhost:3002"
-SWAGGER_URL="http://localhost:3002/api/docs"
-MINIO_CONSOLE_URL="http://localhost:9011"
+BACKEND_API_URL="${CLOUD_API_URL}"
+SWAGGER_URL="${CLOUD_API_URL}/api/docs"
 PGADMIN_URL="http://localhost:5050"
 
 echo ""
@@ -31,6 +32,13 @@ echo ""
 check_port() {
     local port=$1
     lsof -i :$port >/dev/null 2>&1
+}
+
+# Función para verificar respuesta HTTP
+check_http() {
+    local url=$1
+    local timeout=${2:-5}
+    curl -s -f -m $timeout "$url" >/dev/null 2>&1
 }
 
 # Función para abrir URL en el navegador
@@ -57,17 +65,10 @@ else
     SERVICES_RUNNING=false
 fi
 
-if check_port 3002; then
-    echo -e "${GREEN}${CHECK}${NC} Backend API (puerto 3002): Activo"
+if check_http "${CLOUD_API_URL}/api/v1/health" 5; then
+    echo -e "${GREEN}${CHECK}${NC} Backend API IONOS: Activo"
 else
-    echo -e "${YELLOW}⚠${NC}  Backend API (puerto 3002): No está corriendo"
-    SERVICES_RUNNING=false
-fi
-
-if check_port 9011; then
-    echo -e "${GREEN}${CHECK}${NC} MinIO Console (puerto 9011): Activo"
-else
-    echo -e "${YELLOW}⚠${NC}  MinIO Console (puerto 9011): No está corriendo"
+    echo -e "${YELLOW}⚠${NC}  Backend API IONOS: No responde"
     SERVICES_RUNNING=false
 fi
 
@@ -75,14 +76,13 @@ if check_port 5050; then
     echo -e "${GREEN}${CHECK}${NC} pgAdmin (puerto 5050): Activo"
 else
     echo -e "${YELLOW}⚠${NC}  pgAdmin (puerto 5050): No está corriendo"
-    SERVICES_RUNNING=false
 fi
 
 echo ""
 
 if [ "$SERVICES_RUNNING" = false ]; then
     echo -e "${YELLOW}⚠  Algunos servicios no están corriendo${NC}"
-    echo -e "${ARROW} Ejecuta primero: ${BLUE}pnpm dev${NC} o ${BLUE}./check-services.sh${NC}"
+    echo -e "${ARROW} Ejecuta primero: ${BLUE}./check-services.sh${NC}"
     echo ""
     echo "¿Deseas abrir los servicios disponibles de todos modos? (y/n)"
     read -r response
@@ -103,16 +103,11 @@ if check_port 3001; then
 fi
 
 # 2. Swagger API Docs
-if check_port 3002; then
+if check_http "${CLOUD_API_URL}/api/v1/health" 5; then
     open_url "$SWAGGER_URL" "Swagger API Docs"
 fi
 
-# 3. MinIO Console
-if check_port 9011; then
-    open_url "$MINIO_CONSOLE_URL" "MinIO Console"
-fi
-
-# 4. pgAdmin
+# 3. pgAdmin
 if check_port 5050; then
     open_url "$PGADMIN_URL" "pgAdmin"
 fi
@@ -125,17 +120,7 @@ echo "📱 URLs de los servicios:"
 echo "   • Frontend Web:    $FRONTEND_URL"
 echo "   • Backend API:     $BACKEND_API_URL"
 echo "   • Swagger Docs:    $SWAGGER_URL"
-echo "   • MinIO Console:   $MINIO_CONSOLE_URL"
 echo "   • pgAdmin:         $PGADMIN_URL"
-echo ""
-echo "🔑 Credenciales:"
-echo "   MinIO Console:"
-echo "     - Usuario: kinderspace"
-echo "     - Password: kinderspace123"
-echo ""
-echo "   pgAdmin:"
-echo "     - Email: admin@kinderspace.mx"
-echo "     - Password: kinderspace123"
 echo ""
 echo "=========================================="
 echo ""

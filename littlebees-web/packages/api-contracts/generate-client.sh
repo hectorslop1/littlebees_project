@@ -5,26 +5,23 @@
 
 set -e
 
+OPENAPI_URL="http://216.250.125.239:3002/api/docs-json"
+
 echo "🔍 Verificando que el API esté corriendo..."
 
 # Verificar si el API está disponible
-if ! curl -s http://localhost:3002/api/docs-json > /dev/null 2>&1; then
-    echo "❌ Error: El API no está corriendo en http://localhost:3002"
+if ! curl -s "$OPENAPI_URL" > /dev/null 2>&1; then
+    echo "❌ Error: No fue posible acceder al OpenAPI en $OPENAPI_URL"
     echo ""
-    echo "Por favor, inicia el API primero:"
-    echo "  cd ../../apps/api"
-    echo "  pnpm dev"
-    echo ""
-    echo "O desde la raíz del monorepo:"
-    echo "  pnpm dev:api"
+    echo "Verifica que el backend de IONOS esté disponible antes de regenerar el cliente."
     exit 1
 fi
 
-echo "✅ API detectado en http://localhost:3002"
+echo "✅ API detectado en $OPENAPI_URL"
 echo ""
 
 echo "📥 Descargando especificación OpenAPI..."
-curl -s http://localhost:3002/api/docs-json > openapi.json
+curl -s "$OPENAPI_URL" > openapi.json
 
 if [ ! -s openapi.json ]; then
     echo "❌ Error: No se pudo descargar openapi.json"

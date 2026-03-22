@@ -21,6 +21,10 @@ ROCKET="🚀"
 # Flags
 AUTO_FIX=${1:-"--auto-fix"}  # Por defecto auto-arregla
 SERVICES_STARTED=false
+DOCKER_AVAILABLE=false
+CLOUD_API_URL="http://216.250.125.239:3002"
+CLOUD_HEALTH_URL="${CLOUD_API_URL}/api/v1/health"
+CLOUD_SWAGGER_URL="${CLOUD_API_URL}/api/docs"
 
 echo ""
 echo "🐝 =========================================="
@@ -138,6 +142,7 @@ fi
 
 # Docker
 if command_exists docker; then
+    DOCKER_AVAILABLE=true
     DOCKER_VERSION=$(docker --version | cut -d' ' -f3 | tr -d ',')
     echo -e "${GREEN}${CHECK}${NC} Docker: ${DOCKER_VERSION}"
     
@@ -145,139 +150,86 @@ if command_exists docker; then
     if docker ps >/dev/null 2>&1; then
         echo -e "${GREEN}${CHECK}${NC} Docker Daemon: Corriendo"
     else
-        echo -e "${RED}${CROSS}${NC} Docker Daemon: No está corriendo"
-        echo -e "${YELLOW}${ARROW}${NC} Inicia Docker Desktop desde Applications"
-        ((ERRORS++))
+        DOCKER_AVAILABLE=false
+        echo -e "${YELLOW}${CROSS}${NC} Docker Daemon: No está corriendo"
+        echo -e "${BLUE}${ARROW}${NC} Docker Desktop solo es necesario para herramientas opcionales como pgAdmin"
     fi
 else
-    echo -e "${RED}${CROSS}${NC} Docker: No instalado"
-    ((ERRORS++))
+    echo -e "${YELLOW}${CROSS}${NC} Docker: No instalado"
+    echo -e "${BLUE}${ARROW}${NC} Se puede trabajar sin Docker si solo usaras el backend de IONOS"
 fi
 
 echo ""
-echo "🐳 2. Verificando Contenedores Docker..."
+echo "🐳 2. Verificando Servicios de Apoyo..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Verificar si algún contenedor falta (solo Redis, MinIO y pgAdmin - NO PostgreSQL)
-DOCKER_CONTAINERS_MISSING=false
-
-if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-redis"; then
-    DOCKER_CONTAINERS_MISSING=true
-fi
-if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-minio"; then
-    DOCKER_CONTAINERS_MISSING=true
-fi
-if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin"; then
-    DOCKER_CONTAINERS_MISSING=true
-fi
-
-# Si faltan contenedores y auto-fix está activado, levantarlos
-if [ "$DOCKER_CONTAINERS_MISSING" = true ] && [ "$AUTO_FIX" = "--auto-fix" ]; then
-    echo -e "${MAGENTA}${ROCKET}${NC} Iniciando contenedores Docker (Redis, MinIO, pgAdmin)..."
-    echo -e "${BLUE}${ARROW}${NC} Nota: PostgreSQL se usa desde IONOS, no local"
-    cd littlebees-web/infrastructure/docker && docker compose up -d redis minio pgadmin && cd ../../..
-    echo -e "${GREEN}${CHECK}${NC} Contenedores Docker iniciados"
-    echo ""
-    sleep 3  # Esperar a que los contenedores se inicien
-fi
-
-# PostgreSQL (IONOS - Remoto)
 echo -e "${BLUE}ℹ${NC}  PostgreSQL: Usando BD remota en IONOS (216.250.125.239:5437)"
-if docker ps --format '{{.Names}}' | grep -q "kinderspace-postgres"; then
-    echo -e "${YELLOW}⚠${NC}  PostgreSQL local detectado (no necesario, se usa IONOS)"
-fi
+echo -e "${BLUE}ℹ${NC}  Backend oficial: ${CLOUD_API_URL}"
 
-# Redis
-if docker ps --format '{{.Names}}' | grep -q "kinderspace-redis"; then
-    echo -e "${GREEN}${CHECK}${NC} Redis Container: Corriendo"
-    if check_port 6383; then
-        echo -e "${GREEN}${CHECK}${NC} Redis Puerto 6383: Activo"
+if [ "$DOCKER_AVAILABLE" = true ]; then
+    if ! docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin" && [ "$AUTO_FIX" = "--auto-fix" ]; then
+        echo -e "${MAGENTA}${ROCKET}${NC} Iniciando pgAdmin para administrar la BD de IONOS..."
+        cd littlebees-web/infrastructure/docker && docker compose up -d pgadmin && cd ../../..
+        echo -e "${GREEN}${CHECK}${NC} pgAdmin iniciado"
+        echo ""
+        sleep 2
+    fi
+
+    if docker ps --format '{{.Names}}' | grep -q "kinderspace-postgres"; then
+        echo -e "${YELLOW}⚠${NC}  PostgreSQL local detectado (no necesario, se usa IONOS)"
+    fi
+
+    if docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin"; then
+        echo -e "${GREEN}${CHECK}${NC} pgAdmin Container: Corriendo"
+        if check_port 5050; then
+            echo -e "${GREEN}${CHECK}${NC} pgAdmin Puerto 5050: Activo"
+            echo -e "${BLUE}${ARROW}${NC} Conectado a BD de IONOS (216.250.125.239:5437)"
+        else
+            echo -e "${YELLOW}${CROSS}${NC} pgAdmin Puerto 5050: No responde"
+        fi
     else
-        echo -e "${RED}${CROSS}${NC} Redis Puerto 6383: No responde"
-        ((ERRORS++))
+        echo -e "${YELLOW}${CROSS}${NC} pgAdmin Container: No está corriendo"
     fi
 else
-    echo -e "${RED}${CROSS}${NC} Redis Container: No está corriendo"
-    ((ERRORS++))
-fi
-
-# MinIO
-if docker ps --format '{{.Names}}' | grep -q "kinderspace-minio"; then
-    echo -e "${GREEN}${CHECK}${NC} MinIO Container: Corriendo"
-    if check_port 9010; then
-        echo -e "${GREEN}${CHECK}${NC} MinIO API Puerto 9010: Activo"
-    else
-        echo -e "${RED}${CROSS}${NC} MinIO API Puerto 9010: No responde"
-        ((ERRORS++))
-    fi
-    if check_port 9011; then
-        echo -e "${GREEN}${CHECK}${NC} MinIO Console Puerto 9011: Activo"
-    else
-        echo -e "${RED}${CROSS}${NC} MinIO Console Puerto 9011: No responde"
-        ((ERRORS++))
-    fi
-else
-    echo -e "${RED}${CROSS}${NC} MinIO Container: No está corriendo"
-    ((ERRORS++))
-fi
-
-# pgAdmin
-if docker ps --format '{{.Names}}' | grep -q "kinderspace-pgadmin"; then
-    echo -e "${GREEN}${CHECK}${NC} pgAdmin Container: Corriendo"
-    if check_port 5050; then
-        echo -e "${GREEN}${CHECK}${NC} pgAdmin Puerto 5050: Activo"
-        echo -e "${BLUE}${ARROW}${NC} Conectado a BD de IONOS (216.250.125.239:5437)"
-    else
-        echo -e "${RED}${CROSS}${NC} pgAdmin Puerto 5050: No responde"
-        ((ERRORS++))
-    fi
-else
-    echo -e "${YELLOW}${CROSS}${NC} pgAdmin Container: No está corriendo"
-    if [ "$AUTO_FIX" != "--auto-fix" ]; then
-        echo -e "${YELLOW}${ARROW}${NC} Recomendado para administrar la BD de IONOS"
-    fi
+    echo -e "${BLUE}${ARROW}${NC} Saltando servicios locales de apoyo; backend y BD corren en IONOS"
 fi
 
 echo ""
 echo "🚀 3. Verificando Aplicaciones..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Verificar si las aplicaciones están corriendo
-BACKEND_RUNNING=false
 FRONTEND_RUNNING=false
+CLOUD_BACKEND_RUNNING=false
 
-if check_port 3002; then
-    BACKEND_RUNNING=true
+if check_http "$CLOUD_HEALTH_URL" 5; then
+    CLOUD_BACKEND_RUNNING=true
 fi
 
 if check_port 3001; then
     FRONTEND_RUNNING=true
 fi
 
-# Si alguna aplicación no está corriendo y auto-fix está activado, iniciarlas
-if [ "$AUTO_FIX" = "--auto-fix" ] && ([ "$BACKEND_RUNNING" = false ] || [ "$FRONTEND_RUNNING" = false ]); then
-    echo -e "${MAGENTA}${ROCKET}${NC} Iniciando aplicaciones (Backend + Frontend)..."
-    echo -e "${BLUE}${ARROW}${NC} Esto puede tomar 30-60 segundos..."
+# Si el frontend no está corriendo y auto-fix está activado, iniciarlo conectado a IONOS
+if [ "$AUTO_FIX" = "--auto-fix" ] && [ "$FRONTEND_RUNNING" = false ]; then
+    echo -e "${MAGENTA}${ROCKET}${NC} Iniciando app web local conectada al backend de IONOS..."
+    echo -e "${BLUE}${ARROW}${NC} Esto puede tomar 20-40 segundos..."
     echo ""
     
-    # Iniciar en background usando nohup
-    nohup pnpm dev > /tmp/littlebees-dev.log 2>&1 &
-    DEV_PID=$!
+    nohup env NEXT_PUBLIC_API_URL="${CLOUD_API_URL}/api/v1" NEXT_PUBLIC_WS_URL="${CLOUD_API_URL}" pnpm dev:web > /tmp/littlebees-dev.log 2>&1 &
+    WEB_PID=$!
     
-    echo -e "${GREEN}${CHECK}${NC} Aplicaciones iniciadas en background (PID: $DEV_PID)"
+    echo -e "${GREEN}${CHECK}${NC} App web iniciada en background (PID: $WEB_PID)"
     echo -e "${BLUE}${ARROW}${NC} Logs: /tmp/littlebees-dev.log"
     echo ""
     
-    # Esperar a que los servicios estén disponibles (máximo 60 segundos)
-    echo -e "${YELLOW}Esperando a que los servicios estén listos...${NC}"
+    echo -e "${YELLOW}Esperando a que la app web esté lista...${NC}"
     
     WAIT_TIME=0
-    MAX_WAIT=60
+    MAX_WAIT=45
     
     while [ $WAIT_TIME -lt $MAX_WAIT ]; do
-        if check_port 3002 && check_port 3001; then
-            echo -e "${GREEN}${CHECK}${NC} Servicios listos!"
-            BACKEND_RUNNING=true
+        if check_port 3001; then
+            echo -e "${GREEN}${CHECK}${NC} App web lista!"
             FRONTEND_RUNNING=true
             SERVICES_STARTED=true
             break
@@ -294,22 +246,13 @@ if [ "$AUTO_FIX" = "--auto-fix" ] && ([ "$BACKEND_RUNNING" = false ] || [ "$FRON
     echo ""
 fi
 
-# Backend API (NestJS)
-if check_port 3002; then
-    echo -e "${GREEN}${CHECK}${NC} Backend API Puerto 3002: Activo"
-    
-    # Verificar endpoint de salud
-    if check_http "http://localhost:3002/api/v1/health" 3; then
-        echo -e "${GREEN}${CHECK}${NC} Backend API Health Check: OK"
-        echo -e "${BLUE}${ARROW}${NC} Swagger Docs: http://localhost:3002/api/docs"
-    else
-        echo -e "${YELLOW}${CROSS}${NC} Backend API Health Check: No responde (puede estar iniciando)"
-    fi
+# Backend API (IONOS)
+if [ "$CLOUD_BACKEND_RUNNING" = true ]; then
+    echo -e "${GREEN}${CHECK}${NC} Backend API IONOS: Activo"
+    echo -e "${GREEN}${CHECK}${NC} Backend API Health Check: OK"
+    echo -e "${BLUE}${ARROW}${NC} Swagger Docs: ${CLOUD_SWAGGER_URL}"
 else
-    echo -e "${RED}${CROSS}${NC} Backend API Puerto 3002: No está corriendo"
-    if [ "$AUTO_FIX" != "--auto-fix" ]; then
-        echo -e "${YELLOW}${ARROW}${NC} Ejecuta: pnpm dev (o pnpm dev:api)"
-    fi
+    echo -e "${RED}${CROSS}${NC} Backend API IONOS: No responde"
     ((ERRORS++))
 fi
 
@@ -341,17 +284,18 @@ if [ $ERRORS -eq 0 ]; then
         echo "💡 Para ver los logs en tiempo real:"
         echo "   tail -f /tmp/littlebees-dev.log"
         echo ""
-        echo "� Para detener los servicios:"
-        echo "   pkill -f 'pnpm dev'"
+        echo "💡 Para detener la app web local:"
+        echo "   pkill -f 'pnpm --filter @kinderspace/web dev'"
         echo ""
     fi
     
     echo "📱 URLs Disponibles:"
     echo "   • Frontend Web:    http://localhost:3001"
-    echo "   • Backend API:     http://localhost:3002"
-    echo "   • Swagger Docs:    http://localhost:3002/api/docs"
-    echo "   • MinIO Console:   http://localhost:9011"
-    echo "   • pgAdmin:         http://localhost:5050"
+    echo "   • Backend API:     ${CLOUD_API_URL}"
+    echo "   • Swagger Docs:    ${CLOUD_SWAGGER_URL}"
+    if check_port 5050; then
+        echo "   • pgAdmin:         http://localhost:5050"
+    fi
     echo ""
 else
     echo -e "${RED}${CROSS} Se encontraron ${ERRORS} problema(s)${NC}"
@@ -363,11 +307,11 @@ else
     fi
     
     echo "🔧 Comandos útiles:"
-    echo "   • Iniciar Docker:       Abre Docker Desktop"
-    echo "   • Iniciar contenedores: pnpm docker:up"
-    echo "   • Iniciar aplicaciones: pnpm dev"
-    echo "   • Ver logs Docker:      docker compose logs -f"
-    echo "   • Ver logs apps:        tail -f /tmp/littlebees-dev.log"
+    echo "   • Iniciar app web:      NEXT_PUBLIC_API_URL=${CLOUD_API_URL}/api/v1 NEXT_PUBLIC_WS_URL=${CLOUD_API_URL} pnpm dev:web"
+    echo "   • Ver logs app web:     tail -f /tmp/littlebees-dev.log"
+    if [ "$DOCKER_AVAILABLE" = true ]; then
+        echo "   • Iniciar pgAdmin:      cd littlebees-web/infrastructure/docker && docker compose up -d pgadmin"
+    fi
     echo ""
     echo "💡 Para ejecutar sin auto-inicio:"
     echo "   ./check-services.sh --check-only"

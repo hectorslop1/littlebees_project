@@ -1,6 +1,8 @@
 import { getAccessToken, getRefreshToken, storeTokens, clearTokens } from './auth';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ||
+  'http://216.250.125.239:3002/api/v1';
 
 export interface ApiError {
   statusCode: number;
