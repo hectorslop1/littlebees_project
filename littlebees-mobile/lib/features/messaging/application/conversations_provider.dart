@@ -245,6 +245,15 @@ final chatRealtimeSyncProvider = Provider<void>((ref) {
           ),
     );
 
+    if (!isOwnMessage && !isActiveConversation) {
+      unawaited(
+        Future<void>.delayed(const Duration(milliseconds: 250), () async {
+          if (disposed) return;
+          await ref.read(conversationsNotifierProvider.notifier).refresh();
+        }),
+      );
+    }
+
     if (!isOwnMessage && isActiveConversation) {
       ref
           .read(conversationsNotifierProvider.notifier)

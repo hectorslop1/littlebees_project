@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/resolve_image_url.dart';
+import 'full_screen_image_viewer.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
@@ -12,6 +13,7 @@ class LBAvatar extends StatelessWidget {
   final bool showStatusDot;
   final Color? statusColor;
   final VoidCallback? onTap;
+  final String? heroTag;
 
   const LBAvatar({
     super.key,
@@ -21,6 +23,7 @@ class LBAvatar extends StatelessWidget {
     this.showStatusDot = false,
     this.statusColor,
     this.onTap,
+    this.heroTag,
   });
 
   double get _sizePixels {
@@ -88,9 +91,23 @@ class LBAvatar extends StatelessWidget {
       );
     }
 
-    if (onTap != null) {
+    final effectiveOnTap = onTap ??
+        (resolvedImageUrl != null
+            ? () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => FullScreenImageViewer(
+                      imageUrl: resolvedImageUrl,
+                      heroTag: heroTag,
+                    ),
+                  ),
+                );
+              }
+            : null);
+
+    if (effectiveOnTap != null) {
       return GestureDetector(
-        onTap: onTap,
+        onTap: effectiveOnTap,
         child: avatarContent,
       );
     }

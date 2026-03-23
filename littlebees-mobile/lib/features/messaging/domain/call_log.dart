@@ -17,7 +17,10 @@ class ParsedCallLog {
 }
 
 ParsedCallLog? parseCallLog(Message message) {
-  if (message.attachmentType != 'call_log') {
+  final looksLikeLegacyCallLog =
+      message.content.startsWith('voice|') || message.content.startsWith('video|');
+
+  if (message.attachmentType != 'call_log' && !looksLikeLegacyCallLog) {
     return null;
   }
 

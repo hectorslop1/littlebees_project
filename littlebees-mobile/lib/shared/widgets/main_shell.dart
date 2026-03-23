@@ -21,16 +21,12 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   bool _incomingDialogVisible = false;
+  late final ProviderSubscription<IncomingCallInvitation?> _incomingCallSubscription;
 
   @override
-  Widget build(BuildContext context) {
-    ref.watch(callSyncProvider);
-    final tr = ref.watch(translationsProvider);
-    final authState = ref.watch(authProvider);
-    final userRole = authState.role;
-    final unreadMessages = ref.watch(unreadMessagesCountProvider);
-    ref.watch(chatRealtimeSyncProvider);
-    ref.listen<IncomingCallInvitation?>(
+  void initState() {
+    super.initState();
+    _incomingCallSubscription = ref.listenManual<IncomingCallInvitation?>(
       incomingCallProvider,
       (previous, next) {
         if (next == null || _incomingDialogVisible) {
@@ -96,6 +92,22 @@ class _MainShellState extends ConsumerState<MainShell> {
         });
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _incomingCallSubscription.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(callSyncProvider);
+    final tr = ref.watch(translationsProvider);
+    final authState = ref.watch(authProvider);
+    final userRole = authState.role;
+    final unreadMessages = ref.watch(unreadMessagesCountProvider);
+    ref.watch(chatRealtimeSyncProvider);
 
     // Obtener items de navegación según el rol
     final navigationItems = RoleNavigation.getNavigationItems(userRole);
