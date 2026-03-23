@@ -76,6 +76,16 @@ function deriveSidebarBg(primaryHex: string): string {
   return hslToHex(h, Math.min(s, 0.7), 0.12);
 }
 
+function deriveSidebarText(sidebarHex: string): string {
+  const [, , l] = hexToHsl(sidebarHex);
+  return l < 0.35 ? '#D1D5DB' : '#374151';
+}
+
+function deriveSidebarActiveText(sidebarHex: string): string {
+  const [, , l] = hexToHsl(sidebarHex);
+  return l < 0.55 ? '#FFFFFF' : '#111827';
+}
+
 // ─── Theme Config Type ────────────────────────────────────────────────────────
 
 export interface ThemeConfig {
@@ -88,6 +98,9 @@ export interface ThemeConfig {
   warning: string;
   error: string;
   info: string;
+  sidebarBg: string;
+  sidebarText: string;
+  sidebarActiveText: string;
   bgSurface: string;
   bgPage: string;
   textPrimary: string;
@@ -186,10 +199,12 @@ function applyThemeToDOM(config: ThemeConfig) {
   root.style.setProperty('--table-hover-bg', config.tableHoverBg || hexToRgba(config.bgPage, 0.6));
 
   // Sidebar
-  const sidebarBg = deriveSidebarBg(config.primary);
-  root.style.setProperty('--sidebar-bg', sidebarBg);
-  root.style.setProperty('--sidebar-text', '#d1d5db');
-  root.style.setProperty('--sidebar-active-text', '#ffffff');
+  root.style.setProperty('--sidebar-bg', config.sidebarBg || deriveSidebarBg(config.primary));
+  root.style.setProperty('--sidebar-text', config.sidebarText || deriveSidebarText(config.sidebarBg || deriveSidebarBg(config.primary)));
+  root.style.setProperty(
+    '--sidebar-active-text',
+    config.sidebarActiveText || deriveSidebarActiveText(config.sidebarBg || deriveSidebarBg(config.primary)),
+  );
 
   let styleTag = document.getElementById('tenant-custom-css');
   if (!styleTag) {
@@ -211,14 +226,17 @@ export function customizationToThemeConfig(customization: Customization): ThemeC
     warning: '#f59e0b',
     error: '#ef4444',
     info: '#3b82f6',
-    bgSurface: '#ffffff',
-    bgPage: '#FBF6E9',
-    textPrimary: '#2C2C2C',
-    textSecondary: '#6B6B6B',
-    borderColor: '#e5e7eb',
-    tableHeaderBg: '#f3f4f6',
-    tableStripeBg: '#f9fafb',
-    tableHoverBg: '#FBF6E9',
+    sidebarBg: customization.sidebarBg,
+    sidebarText: customization.sidebarText,
+    sidebarActiveText: customization.sidebarActiveText,
+    bgSurface: customization.bgSurface,
+    bgPage: customization.bgPage,
+    textPrimary: customization.textPrimary,
+    textSecondary: customization.textSecondary,
+    borderColor: customization.borderColor,
+    tableHeaderBg: customization.tableHeaderBg,
+    tableStripeBg: customization.tableStripeBg,
+    tableHoverBg: customization.tableHoverBg,
     customCss: customization.customCss,
   };
 }
