@@ -20,6 +20,30 @@
     --primary-800: #806638;
     --primary-900: #64502F;
     --primary-950: #483A26;
+
+    --secondary-50: #F0F5EF;
+    --secondary-100: #C5D9C3;
+    --secondary-200: #B5CCAF;
+    --secondary-300: #A5BF9B;
+    --secondary-400: #95B287;
+    --secondary-500: #8FAE8B;
+    --secondary-600: #7A9876;
+    --secondary-700: #658261;
+    --secondary-800: #506C4C;
+    --secondary-900: #3B5637;
+    --secondary-950: #233521;
+
+    --accent-50: #FBF6E9;
+    --accent-100: #F5E9C8;
+    --accent-200: #F0DFA8;
+    --accent-300: #EDD388;
+    --accent-400: #EAC668;
+    --accent-500: #E8B84B;
+    --accent-600: #D4A43C;
+    --accent-700: #B88A32;
+    --accent-800: #9C7028;
+    --accent-900: #80561E;
+    --accent-950: #56380F;
     
     --color-success: #10b981;
     --color-warning: #f59e0b;

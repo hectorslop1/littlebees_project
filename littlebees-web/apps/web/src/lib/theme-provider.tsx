@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useCustomization, type Customization } from '@/hooks/use-customization';
 
 // ─── Color math ──────────────────────────────────────────────────────────────
 
@@ -94,6 +96,7 @@ export interface ThemeConfig {
   tableHeaderBg?: string;
   tableStripeBg?: string;
   tableHoverBg?: string;
+  customCss?: string;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -149,9 +152,19 @@ function applyThemeToDOM(config: ThemeConfig) {
   const root = document.documentElement;
 
   // Generate primary palette from base color
-  const palette = generatePalette(config.primary);
-  for (const [shade, hex] of Object.entries(palette)) {
+  const primaryPalette = generatePalette(config.primary);
+  for (const [shade, hex] of Object.entries(primaryPalette)) {
     root.style.setProperty(`--primary-${shade}`, hex);
+  }
+
+  const secondaryPalette = generatePalette(config.secondary);
+  for (const [shade, hex] of Object.entries(secondaryPalette)) {
+    root.style.setProperty(`--secondary-${shade}`, hex);
+  }
+
+  const accentPalette = generatePalette(config.accent);
+  for (const [shade, hex] of Object.entries(accentPalette)) {
+    root.style.setProperty(`--accent-${shade}`, hex);
   }
 
   // Semantic colors
@@ -177,11 +190,44 @@ function applyThemeToDOM(config: ThemeConfig) {
   root.style.setProperty('--sidebar-bg', sidebarBg);
   root.style.setProperty('--sidebar-text', '#d1d5db');
   root.style.setProperty('--sidebar-active-text', '#ffffff');
+
+  let styleTag = document.getElementById('tenant-custom-css');
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'tenant-custom-css';
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = config.customCss || '';
+}
+
+export function customizationToThemeConfig(customization: Customization): ThemeConfig {
+  return {
+    preset: 'tenant-custom',
+    isDark: false,
+    primary: customization.primaryColor,
+    secondary: customization.secondaryColor,
+    accent: customization.accentColor || '#E8B84B',
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    info: '#3b82f6',
+    bgSurface: '#ffffff',
+    bgPage: '#FBF6E9',
+    textPrimary: '#2C2C2C',
+    textSecondary: '#6B6B6B',
+    borderColor: '#e5e7eb',
+    tableHeaderBg: '#f3f4f6',
+    tableStripeBg: '#f9fafb',
+    tableHoverBg: '#FBF6E9',
+    customCss: customization.customCss,
+  };
 }
 
 // ─── Provider Component ──────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  const { data: customization } = useCustomization({ enabled: isAuthenticated });
   const [theme, setTheme] = useState<ThemeConfig | null>(null);
 
   // Load from localStorage on mount
@@ -215,7 +261,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const applyTheme = useCallback((config: ThemeConfig) => {
     setTheme(config);
     applyThemeToDOM(config);
+    localStorage.setItem('themeConfig', JSON.stringify(config));
+    document.documentElement.classList.toggle('dark', !!config.isDark);
+    localStorage.setItem('theme', config.isDark ? 'dark' : 'light');
   }, []);
+
+  useEffect(() => {
+    if (!customization) {
+      return;
+    }
+
+    const config = customizationToThemeConfig(customization);
+    setTheme(config);
+    applyThemeToDOM(config);
+    localStorage.setItem('themeConfig', JSON.stringify(config));
+    document.documentElement.classList.toggle('dark', !!config.isDark);
+    localStorage.setItem('theme', config.isDark ? 'dark' : 'light');
+  }, [customization]);
 
   return (
     <ThemeContext.Provider value={{ theme, applyTheme }}>

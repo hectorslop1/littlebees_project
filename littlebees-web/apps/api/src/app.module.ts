@@ -25,7 +25,7 @@ import { ExercisesModule } from './modules/exercises/exercises.module';
 import { MenuModule } from './modules/menu/menu.module';
 // import { ExcusesModule } from './modules/excuses/excuses.module'; // DISABLED: Model doesn't exist in Prisma
 import { AiModule } from './modules/ai/ai.module';
-// import { CustomizationModule } from './modules/customization/customization.module';
+import { CustomizationModule } from './modules/customization/customization.module';
 // import { DayScheduleModule } from './modules/day-schedule/day-schedule.module';
 
 @Module({
@@ -80,7 +80,7 @@ import { AiModule } from './modules/ai/ai.module';
     MenuModule,
     // ExcusesModule, // DISABLED: Model doesn't exist in Prisma
     AiModule,
-    // CustomizationModule, // DISABLED: Model doesn't exist in Prisma
+    CustomizationModule,
     // DayScheduleModule, // DISABLED: Model doesn't exist in Prisma
   ],
 })

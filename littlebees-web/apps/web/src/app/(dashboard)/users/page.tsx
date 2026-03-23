@@ -156,7 +156,7 @@ export default function UsersPage() {
 
   const handleAvatarUpload = async (file: File) => {
     try {
-      const uploaded = await uploadFile.mutateAsync<{ id: string }>({ file, purpose: 'avatar' });
+      const uploaded = (await uploadFile.mutateAsync({ file, purpose: 'avatar' })) as { id: string };
       setFormData((current) => ({ ...current, avatarUrl: uploaded.id }));
       toast.success('Foto lista para guardarse');
     } catch (error: any) {
@@ -494,7 +494,7 @@ export default function UsersPage() {
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteUser.isPending}>
+            <Button variant="danger" onClick={handleDelete} disabled={deleteUser.isPending}>
               {deleteUser.isPending ? 'Desactivando...' : 'Desactivar'}
             </Button>
           </DialogFooter>

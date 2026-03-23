@@ -37,7 +37,7 @@ export function ProfileSection() {
       if (!file) return;
 
       try {
-        const uploaded = await uploadFile.mutateAsync<{ id: string }>({ file, purpose: 'avatar' });
+        const uploaded = (await uploadFile.mutateAsync({ file, purpose: 'avatar' })) as { id: string };
         await updateProfile.mutateAsync({ avatarUrl: uploaded.id });
         setAvatarUrl(uploaded.id);
         await refreshSession();

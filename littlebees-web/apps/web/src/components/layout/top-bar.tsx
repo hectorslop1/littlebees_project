@@ -26,6 +26,7 @@ const pageTitles: Record<string, string> = {
   '/payments': 'Pagos',
   '/services': 'Servicios',
   '/reports': 'Reportes',
+  '/customization': 'Personalización',
   '/settings': 'Configuración',
   '/profile': 'Mi Perfil',
 };
@@ -103,7 +104,7 @@ export function TopBar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-primary-50 transition-colors">
-              <Avatar size="sm" name={user ? `${user.firstName} ${user.lastName}` : ''}>
+              <Avatar size="sm" name={user ? `${user.firstName} ${user.lastName}` : ''} src={user?.avatarUrl ?? undefined}>
                 <AvatarFallback>
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </AvatarFallback>

@@ -27,11 +27,12 @@ export interface UpdateCustomizationDto {
   customCss?: string;
 }
 
-export function useCustomization() {
+export function useCustomization(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['customization'],
     queryFn: () => api.get<Customization>('/customization'),
     staleTime: 5 * 60 * 1000, // 5 minutos
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -43,6 +44,7 @@ export function useUpdateCustomization() {
       api.patch<Customization>('/customization', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customization'] });
+      queryClient.invalidateQueries({ queryKey: ['menu'] });
     },
   });
 }
@@ -54,6 +56,7 @@ export function useResetCustomization() {
     mutationFn: () => api.post<Customization>('/customization/reset'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customization'] });
+      queryClient.invalidateQueries({ queryKey: ['menu'] });
     },
   });
 }

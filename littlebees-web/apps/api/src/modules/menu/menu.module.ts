@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MenuController } from './menu.controller';
 import { MenuService } from './menu.service';
+import { CustomizationModule } from '../customization/customization.module';
 
 @Module({
+  imports: [CustomizationModule],
   controllers: [MenuController],
   providers: [MenuService],
   exports: [MenuService],

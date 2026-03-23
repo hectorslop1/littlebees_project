@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useCustomization } from '@/hooks/use-customization';
 import { useMenu } from '@/hooks/use-menu';
 import { useNotificationCount } from '@/hooks/use-notifications';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -54,9 +55,12 @@ const iconMap: Record<string, any> = {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, tenant, logout, isAuthenticated } = useAuth();
+  const { data: customization } = useCustomization({ enabled: isAuthenticated });
   const { data: menuConfig, isLoading } = useMenu();
   const { data: notifCount } = useNotificationCount();
+  const brandName = customization?.systemName || tenant?.name || 'LittleBees';
+  const logoUrl = customization?.logoUrl || tenant?.logoUrl || '/logo.png';
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
@@ -87,12 +91,20 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-6">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center gap-3">
             <img 
-              src="/logo.png" 
-              alt="Littlebees" 
-              className="h-10 w-auto"
+              src={logoUrl}
+              alt={brandName}
+              className="h-10 w-10 rounded-2xl object-cover"
             />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold" style={{ color: 'var(--sidebar-active-text)' }}>
+                {brandName}
+              </p>
+              <p className="truncate text-xs" style={{ color: 'var(--sidebar-text)' }}>
+                Panel institucional
+              </p>
+            </div>
           </Link>
           <button onClick={onClose} className="lg:hidden rounded-lg p-1 hover:bg-white/10" title="Cerrar menú" style={{ color: 'var(--sidebar-text)' }}>
             <X className="h-5 w-5" />
@@ -171,7 +183,11 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </Link>
 
           <div className="mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5">
-            <Avatar size="sm" name={user ? `${user.firstName} ${user.lastName}` : ''}>
+            <Avatar
+              size="sm"
+              name={user ? `${user.firstName} ${user.lastName}` : ''}
+              src={user?.avatarUrl ?? undefined}
+            >
               <AvatarFallback>
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </AvatarFallback>

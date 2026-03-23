@@ -46,8 +46,27 @@ model Tenant {
   extraServices     ExtraService[]
   announcements     Announcement[]
   exercises         Exercise[]
+  customization     Customization?
 
   @@map("tenants")
+}
+
+model Customization {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @unique @map("tenant_id") @db.Uuid
+  logoUrl        String?  @map("logo_url")
+  primaryColor   String   @default("#D4A853") @map("primary_color") @db.VarChar(7)
+  secondaryColor String   @default("#8FAE8B") @map("secondary_color") @db.VarChar(7)
+  accentColor    String?  @default("#E8B84B") @map("accent_color") @db.VarChar(7)
+  systemName     String   @default("LittleBees") @map("system_name") @db.VarChar(255)
+  menuLabels     Json     @default("{}") @map("menu_labels")
+  customCss      String?  @map("custom_css")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("customizations")
 }
 
 model DevelopmentMilestone {

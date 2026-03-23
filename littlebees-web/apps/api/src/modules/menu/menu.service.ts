@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '@kinderspace/shared-types';
 import { MenuItemDto } from './dto/menu-config.dto';
+import { CustomizationService } from '../customization/customization.service';
 
 @Injectable()
 export class MenuService {
-  getMenuByRole(role: UserRole): MenuItemDto[] {
-    switch (role) {
+  constructor(private readonly customizationService: CustomizationService) {}
+
+  async getMenuByRole(role: UserRole, tenantId: string): Promise<MenuItemDto[]> {
+    const overrides = await this.customizationService.getMenuLabelOverrides(tenantId);
+
+    const items = (() => {
+      switch (role) {
       case 'teacher':
         return this.getTeacherMenu();
       case 'director':
@@ -17,7 +23,13 @@ export class MenuService {
         return this.getParentMenu();
       default:
         return [];
-    }
+      }
+    })();
+
+    return items.map((item) => ({
+      ...item,
+      label: overrides[item.id] || item.label,
+    }));
   }
 
   private getTeacherMenu(): MenuItemDto[] {
@@ -42,8 +54,9 @@ export class MenuService {
       { id: 'reports', label: 'Reportes', icon: 'chart-bar', path: '/reports', order: 5 },
       { id: 'payments', label: 'Pagos', icon: 'credit-card', path: '/payments', order: 6 },
       { id: 'messages', label: 'Mensajes', icon: 'message-circle', path: '/chat', order: 7 },
-      { id: 'settings', label: 'Configuración', icon: 'settings', path: '/settings', order: 8 },
-      { id: 'ai-assistant', label: 'Asistente IA', icon: 'sparkles', path: '/ai-assistant', order: 9 },
+      { id: 'customization', label: 'Personalización', icon: 'palette', path: '/customization', order: 8 },
+      { id: 'settings', label: 'Configuración', icon: 'settings', path: '/settings', order: 9 },
+      { id: 'ai-assistant', label: 'Asistente IA', icon: 'sparkles', path: '/ai-assistant', order: 10 },
     ];
   }
 
@@ -55,8 +68,9 @@ export class MenuService {
       { id: 'children', label: 'Alumnos', icon: 'baby', path: '/children', order: 4 },
       { id: 'payments', label: 'Pagos', icon: 'credit-card', path: '/payments', order: 5 },
       { id: 'reports', label: 'Reportes', icon: 'chart-bar', path: '/reports', order: 6 },
-      { id: 'settings', label: 'Configuración', icon: 'settings', path: '/settings', order: 7 },
-      { id: 'ai-assistant', label: 'Asistente IA', icon: 'sparkles', path: '/ai-assistant', order: 8 },
+      { id: 'customization', label: 'Personalización', icon: 'palette', path: '/customization', order: 7 },
+      { id: 'settings', label: 'Configuración', icon: 'settings', path: '/settings', order: 8 },
+      { id: 'ai-assistant', label: 'Asistente IA', icon: 'sparkles', path: '/ai-assistant', order: 9 },
     ];
   }
 
