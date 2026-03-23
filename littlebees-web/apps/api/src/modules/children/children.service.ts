@@ -401,18 +401,129 @@ export class ChildrenService {
     return profile;
   }
 
-  private async resolvePhotoUrl(tenantId: string, photoUrl?: string | null) {
+  async getProfileSuggestions(
+    childId: string,
+    tenantId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    await this.findById(childId, tenantId, userId, userRole);
+
+    const accessibleChildren = await this.findAll(tenantId, userId, userRole);
+    const relatedChildIds = accessibleChildren
+      .map((child) => child.id)
+      .filter((id) => id !== childId);
+
+    if (relatedChildIds.length === 0) {
+      return {
+        doctors: [],
+        pickupContacts: [],
+      };
+    }
+
+    const relatedChildren = await this.prisma.child.findMany({
+      where: {
+        tenantId,
+        id: { in: relatedChildIds },
+      },
+      include: {
+        medicalInfo: true,
+        emergencyContacts: { orderBy: { priority: 'asc' } },
+      },
+      orderBy: { firstName: 'asc' },
+    });
+
+    const doctors = new Map<
+      string,
+      {
+        name: string;
+        phone?: string;
+        sourceChildId: string;
+        sourceChildName: string;
+      }
+    >();
+    const pickupContacts = new Map<
+      string,
+      {
+        name: string;
+        relationship: string;
+        phone: string;
+        email?: string | null;
+        photoUrl?: string;
+        idPhotoUrl?: string;
+        sourceChildId: string;
+        sourceChildName: string;
+      }
+    >();
+
+    for (const child of relatedChildren) {
+      const sourceChildName = `${child.firstName} ${child.lastName}`.trim();
+
+      if (child.medicalInfo) {
+        const doctorName = child.medicalInfo.doctorName?.trim();
+        const doctorPhone = child.medicalInfo.doctorPhone?.trim();
+
+        if (doctorName || doctorPhone) {
+          const key = `${doctorName?.toLowerCase() ?? ''}|${doctorPhone ?? ''}`;
+          if (!doctors.has(key)) {
+            doctors.set(key, {
+              name: doctorName ?? 'Doctor registrado',
+              phone: doctorPhone || undefined,
+              sourceChildId: child.id,
+              sourceChildName,
+            });
+          }
+        }
+      }
+
+      for (const contact of child.emergencyContacts) {
+        const key = [
+          contact.name.trim().toLowerCase(),
+          contact.phone.trim(),
+          contact.relationship.trim().toLowerCase(),
+        ].join('|');
+
+        if (pickupContacts.has(key)) {
+          continue;
+        }
+
+        pickupContacts.set(key, {
+          name: contact.name,
+          relationship: contact.relationship,
+          phone: contact.phone,
+          email: contact.email,
+          photoUrl: await this.resolvePhotoUrl(tenantId, contact.photoUrl),
+          idPhotoUrl: await this.resolvePhotoUrl(tenantId, contact.idPhotoUrl),
+          sourceChildId: child.id,
+          sourceChildName,
+        });
+      }
+    }
+
+    return {
+      doctors: Array.from(doctors.values()).sort((a, b) => a.name.localeCompare(b.name)),
+      pickupContacts: Array.from(pickupContacts.values()).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    };
+  }
+
+  private async resolvePhotoUrl(_tenantId: string, photoUrl?: string | null) {
     if (!photoUrl) {
       return photoUrl ?? undefined;
     }
 
-    if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://') || photoUrl.startsWith('data:')) {
+    if (
+      photoUrl.startsWith('http://') ||
+      photoUrl.startsWith('https://') ||
+      photoUrl.startsWith('data:') ||
+      photoUrl.startsWith('/files/public/')
+    ) {
       return photoUrl;
     }
 
     try {
-      const file = await this.filesService.findById(tenantId, photoUrl);
-      return file.url;
+      return this.filesService.getPublicFileUrl(photoUrl);
     } catch {
       return photoUrl;
     }

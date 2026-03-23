@@ -14,6 +14,18 @@ import { ChatService } from './chat.service';
 type SocketServer = any;
 type SocketClient = any;
 
+type ActiveCallSession = {
+  callId: string;
+  tenantId: string;
+  conversationId: string;
+  callerId: string;
+  participantIds: string[];
+  acceptedUserIds: Set<string>;
+  callType: 'voice' | 'video';
+  createdAt: Date;
+  acceptedAt?: Date;
+};
+
 @WebSocketGateway({
   namespace: '/chat',
   cors: { origin: '*', credentials: true },
@@ -23,6 +35,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: SocketServer;
 
   private userSockets = new Map<string, Set<string>>();
+  private activeCalls = new Map<string, ActiveCallSession>();
 
   constructor(
     private readonly jwtService: JwtService,
@@ -61,6 +74,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: SocketClient) {
     if (client.data?.userId) {
+      this.cleanupCallsForUser(client.data.userId);
       const sockets = this.userSockets.get(client.data.userId);
       if (sockets) {
         sockets.delete(client.id);
@@ -125,8 +139,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       );
 
-      // Broadcast to all participants in the conversation room
-      this.server.to(data.conversationId).emit('new_message', message);
+      const participants = await this.chatService.getConversationParticipantsForUser(
+        client.data.tenantId,
+        data.conversationId,
+        client.data.userId,
+      );
+
+      this.emitToUsers(
+        participants.map((participant) => participant.userId),
+        'new_message',
+        message,
+      );
 
       // Acknowledge to sender
       client.emit('message_sent', {
@@ -175,16 +198,294 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.data.userId,
       );
 
-      this.server.to(data.conversationId).emit('conversation_read', {
-        conversationId: data.conversationId,
-        userId: client.data.userId,
-        readAt: new Date().toISOString(),
-      });
+      const participants = await this.chatService.getConversationParticipantsForUser(
+        client.data.tenantId,
+        data.conversationId,
+        client.data.userId,
+      );
+
+      this.emitToUsers(
+        participants.map((participant) => participant.userId),
+        'conversation_read',
+        {
+          conversationId: data.conversationId,
+          userId: client.data.userId,
+          readAt: new Date().toISOString(),
+        },
+      );
     } catch {
       client.emit('error', {
         message: 'Error al marcar como leída',
         code: 'MARK_READ_FAILED',
       });
+    }
+  }
+
+  @SubscribeMessage('start_call')
+  async handleStartCall(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { conversationId: string; callType: 'voice' | 'video' },
+  ) {
+    try {
+      const participants = await this.chatService.getConversationParticipantsForUser(
+        client.data.tenantId,
+        data.conversationId,
+        client.data.userId,
+      );
+
+      const recipientIds = participants
+        .map((participant) => participant.userId)
+        .filter((userId) => userId !== client.data.userId);
+
+      if (recipientIds.length === 0) {
+        client.emit('error', {
+          message: 'No hay destinatarios disponibles para la llamada',
+          code: 'CALL_NO_RECIPIENTS',
+        });
+        return;
+      }
+
+      const caller = await this.chatService.getUserSummary(
+        client.data.tenantId,
+        client.data.userId,
+      );
+
+      const callId = `call_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      this.activeCalls.set(callId, {
+        callId,
+        tenantId: client.data.tenantId,
+        conversationId: data.conversationId,
+        callerId: client.data.userId,
+        participantIds: [
+          client.data.userId,
+          ...recipientIds,
+        ],
+        acceptedUserIds: new Set(),
+        callType: data.callType,
+        createdAt: new Date(),
+      });
+
+      client.emit('call_started', {
+        callId,
+        conversationId: data.conversationId,
+        callType: data.callType,
+      });
+
+      this.emitToUsers(recipientIds, 'incoming_call', {
+        callId,
+        conversationId: data.conversationId,
+        callType: data.callType,
+        from: caller,
+        initiatedAt: new Date().toISOString(),
+      });
+    } catch {
+      client.emit('error', {
+        message: 'No fue posible iniciar la llamada',
+        code: 'CALL_START_FAILED',
+      });
+    }
+  }
+
+  @SubscribeMessage('accept_call')
+  handleAcceptCall(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      client.emit('error', {
+        message: 'Llamada no encontrada',
+        code: 'CALL_NOT_FOUND',
+      });
+      return;
+    }
+
+    if (client.data.userId !== session.callerId) {
+      session.acceptedUserIds.add(client.data.userId);
+      session.acceptedAt ??= new Date();
+    }
+
+    this.emitToUsers(session.participantIds, 'call_accepted', {
+      callId: session.callId,
+      conversationId: session.conversationId,
+      acceptedBy: client.data.userId,
+      callType: session.callType,
+    });
+  }
+
+  @SubscribeMessage('decline_call')
+  async handleDeclineCall(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      return;
+    }
+
+    this.emitToUsers(session.participantIds, 'call_declined', {
+      callId: session.callId,
+      conversationId: session.conversationId,
+      declinedBy: client.data.userId,
+      callType: session.callType,
+    });
+
+    const callLogMessage = await this.chatService.createCallLogMessage(
+      session.tenantId,
+      session.conversationId,
+      session.callerId,
+      {
+        callType: session.callType,
+        callerId: session.callerId,
+        durationSeconds: 0,
+        status: 'declined',
+      },
+    );
+
+    this.emitToUsers(session.participantIds, 'new_message', callLogMessage);
+    this.activeCalls.delete(session.callId);
+  }
+
+  @SubscribeMessage('end_call')
+  async handleEndCall(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      return;
+    }
+
+    const status =
+      session.acceptedAt != null
+        ? 'completed'
+        : client.data.userId === session.callerId
+          ? 'cancelled'
+          : 'missed';
+    const durationSeconds = session.acceptedAt
+      ? (Date.now() - session.acceptedAt.getTime()) / 1000
+      : 0;
+
+    this.emitToUsers(session.participantIds, 'call_ended', {
+      callId: session.callId,
+      conversationId: session.conversationId,
+      endedBy: client.data.userId,
+      callType: session.callType,
+      durationSeconds: Math.max(0, Math.round(durationSeconds)),
+      status,
+    });
+
+    const callLogMessage = await this.chatService.createCallLogMessage(
+      session.tenantId,
+      session.conversationId,
+      session.callerId,
+      {
+        callType: session.callType,
+        callerId: session.callerId,
+        durationSeconds,
+        status,
+      },
+    );
+
+    this.emitToUsers(session.participantIds, 'new_message', callLogMessage);
+    this.activeCalls.delete(session.callId);
+  }
+
+  @SubscribeMessage('webrtc_offer')
+  handleWebrtcOffer(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string; sdp: Record<string, unknown> },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      return;
+    }
+
+    this.emitToUsers(
+      session.participantIds.filter((userId) => userId !== client.data.userId),
+      'webrtc_offer',
+      {
+        callId: session.callId,
+        conversationId: session.conversationId,
+        fromUserId: client.data.userId,
+        sdp: data.sdp,
+      },
+    );
+  }
+
+  @SubscribeMessage('webrtc_answer')
+  handleWebrtcAnswer(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string; sdp: Record<string, unknown> },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      return;
+    }
+
+    this.emitToUsers(
+      session.participantIds.filter((userId) => userId !== client.data.userId),
+      'webrtc_answer',
+      {
+        callId: session.callId,
+        conversationId: session.conversationId,
+        fromUserId: client.data.userId,
+        sdp: data.sdp,
+      },
+    );
+  }
+
+  @SubscribeMessage('webrtc_ice_candidate')
+  handleWebrtcIceCandidate(
+    @ConnectedSocket() client: SocketClient,
+    @MessageBody() data: { callId: string; candidate: Record<string, unknown> },
+  ) {
+    const session = this.activeCalls.get(data.callId);
+    if (!session || !session.participantIds.includes(client.data.userId)) {
+      return;
+    }
+
+    this.emitToUsers(
+      session.participantIds.filter((userId) => userId !== client.data.userId),
+      'webrtc_ice_candidate',
+      {
+        callId: session.callId,
+        conversationId: session.conversationId,
+        fromUserId: client.data.userId,
+        candidate: data.candidate,
+      },
+    );
+  }
+
+  private emitToUsers(userIds: string[], event: string, payload: unknown) {
+    for (const userId of [...new Set(userIds)]) {
+      const sockets = this.userSockets.get(userId);
+      if (!sockets) continue;
+
+      for (const socketId of sockets) {
+        this.server.to(socketId).emit(event, payload);
+      }
+    }
+  }
+
+  private cleanupCallsForUser(userId: string) {
+    for (const session of this.activeCalls.values()) {
+      if (!session.participantIds.includes(userId)) {
+        continue;
+      }
+
+      this.emitToUsers(session.participantIds, 'call_ended', {
+        callId: session.callId,
+        conversationId: session.conversationId,
+        endedBy: userId,
+        callType: session.callType,
+        durationSeconds: session.acceptedAt
+          ? Math.max(0, Math.round((Date.now() - session.acceptedAt.getTime()) / 1000))
+          : 0,
+        status: session.acceptedAt ? 'completed' : 'missed',
+      });
+
+      this.activeCalls.delete(session.callId);
     }
   }
 }

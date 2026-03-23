@@ -6,6 +6,7 @@ class RouteNames {
   static const String photoViewer = 'photoViewer';
   static const String messages = 'messages';
   static const String chat = 'chat';
+  static const String chatCall = 'chatCall';
   static const String calendar = 'calendar';
   static const String profile = 'profile';
   static const String payments = 'payments';

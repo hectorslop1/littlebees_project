@@ -19,6 +19,9 @@ class RealtimeMessagingNotifier
   final String conversationId;
   final ConversationsRepository _repository;
   StreamSubscription? _messageSubscription;
+  void Function(dynamic)? _newMessageHandler;
+  void Function(dynamic)? _typingHandler;
+  void Function(dynamic)? _stopTypingHandler;
 
   Future<void> _initialize() async {
     try {
@@ -29,11 +32,7 @@ class RealtimeMessagingNotifier
       socket.emit('join_conversation', {'conversationId': conversationId});
       socket.emit('mark_read', {'conversationId': conversationId});
 
-      socket.off('new_message');
-      socket.off('user_typing');
-      socket.off('user_stop_typing');
-
-      socket.on('new_message', (data) {
+      _newMessageHandler = (data) {
         final payload = Map<String, dynamic>.from(data as Map);
         final message = Message.fromJson(payload);
         if (message.conversationId != conversationId) return;
@@ -45,10 +44,18 @@ class RealtimeMessagingNotifier
           if (alreadyExists) return;
           state = AsyncValue.data([...messages, message]);
         });
-      });
+      };
 
-      socket.on('user_typing', (_) {});
-      socket.on('user_stop_typing', (_) {});
+      _typingHandler = (_) {};
+      _stopTypingHandler = (_) {};
+
+      socket.off('new_message', _newMessageHandler);
+      socket.off('user_typing', _typingHandler);
+      socket.off('user_stop_typing', _stopTypingHandler);
+
+      socket.on('new_message', _newMessageHandler!);
+      socket.on('user_typing', _typingHandler!);
+      socket.on('user_stop_typing', _stopTypingHandler!);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
@@ -84,6 +91,15 @@ class RealtimeMessagingNotifier
     _messageSubscription?.cancel();
     SocketClient.getSocket().then((socket) {
       socket.emit('leave_conversation', {'conversationId': conversationId});
+      if (_newMessageHandler != null) {
+        socket.off('new_message', _newMessageHandler);
+      }
+      if (_typingHandler != null) {
+        socket.off('user_typing', _typingHandler);
+      }
+      if (_stopTypingHandler != null) {
+        socket.off('user_stop_typing', _stopTypingHandler);
+      }
     });
     super.dispose();
   }

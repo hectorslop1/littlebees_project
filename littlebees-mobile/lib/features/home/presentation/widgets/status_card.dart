@@ -39,17 +39,14 @@ class StatusCard extends ConsumerWidget {
       ChildPresenceStatus.absent =>
         'No hay check-in para este dia en el sistema.',
       ChildPresenceStatus.expected =>
-        'Se espera la llegada del nino durante el dia.',
+        'Se espera la llegada del niño durante el dia.',
     };
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            theme.surface,
-            Colors.white,
-          ],
+          colors: [theme.surface, Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

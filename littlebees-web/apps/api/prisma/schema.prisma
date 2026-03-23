@@ -492,7 +492,7 @@ model File {
   mimeType   String   @map("mime_type") @db.VarChar(100)
   sizeBytes  BigInt   @map("size_bytes")
   storageKey String   @map("storage_key")
-  purpose    String   @db.VarChar(20) // FilePurpose enum
+  purpose    String   @db.VarChar(64) // FilePurpose enum
   createdAt  DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])

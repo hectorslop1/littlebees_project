@@ -9,6 +9,7 @@ import '../features/activity/presentation/activity_screen.dart';
 import '../features/activity/presentation/photo_viewer_screen.dart';
 import '../features/messaging/presentation/conversations_screen.dart';
 import '../features/messaging/presentation/chat_screen.dart';
+import '../features/messaging/presentation/call_screen.dart';
 import '../features/messaging/presentation/teacher_chat_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
@@ -131,6 +132,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                     participantRole: extra?['participantRole'],
                   );
                 },
+                routes: [
+                  GoRoute(
+                    path: 'call',
+                    name: RouteNames.chatCall,
+                    builder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>? ?? {};
+                      return CallScreen(
+                        conversationId: state.pathParameters['conversationId']!,
+                        participantName: extra['participantName'] as String? ?? 'Usuario',
+                        participantAvatarUrl: extra['participantAvatarUrl'] as String?,
+                        participantRole: extra['participantRole'] as String?,
+                        callType: extra['callType'] as String? ?? 'voice',
+                        isOutgoing: extra['isOutgoing'] as bool? ?? true,
+                        callId: extra['callId'] as String?,
+                      );
+                    },
+                  ),
+                ],
               ),
               GoRoute(
                 path: 'teacher/:teacherId',

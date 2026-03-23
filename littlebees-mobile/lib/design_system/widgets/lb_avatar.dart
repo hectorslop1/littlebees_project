@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/resolve_image_url.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
@@ -36,6 +37,10 @@ class LBAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarSize = _sizePixels;
+    final resolvedImageUrl = resolveImageUrl(imageUrl);
+    final initial = placeholder.isNotEmpty
+        ? placeholder.substring(0, 1).toUpperCase()
+        : '';
 
     Widget avatarContent = Container(
       width: avatarSize,
@@ -44,23 +49,20 @@ class LBAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.primaryLight, width: 2),
         color: AppColors.primarySurface,
-        image: imageUrl != null && imageUrl!.isNotEmpty
-            ? DecorationImage(
-                image: NetworkImage(imageUrl!),
-                fit: BoxFit.cover,
-              )
-            : null,
       ),
       alignment: Alignment.center,
-      child: (imageUrl == null || imageUrl!.isEmpty) && placeholder.isNotEmpty
-          ? Text(
-              placeholder.substring(0, 1).toUpperCase(),
-              style: AppTypography.textTheme.labelLarge?.copyWith(
-                color: AppColors.primary,
-                fontSize: avatarSize * 0.4,
-              ),
-            )
-          : null,
+      child: ClipOval(
+        child: resolvedImageUrl != null
+            ? Image.network(
+                resolvedImageUrl,
+                width: avatarSize,
+                height: avatarSize,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    _AvatarPlaceholder(initial: initial, size: avatarSize),
+              )
+            : _AvatarPlaceholder(initial: initial, size: avatarSize),
+      ),
     );
 
     if (showStatusDot) {
@@ -94,5 +96,34 @@ class LBAvatar extends StatelessWidget {
     }
 
     return avatarContent;
+  }
+}
+
+class _AvatarPlaceholder extends StatelessWidget {
+  const _AvatarPlaceholder({
+    required this.initial,
+    required this.size,
+  });
+
+  final String initial;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      color: AppColors.primarySurface,
+      alignment: Alignment.center,
+      child: initial.isNotEmpty
+          ? Text(
+              initial,
+              style: AppTypography.textTheme.labelLarge?.copyWith(
+                color: AppColors.primary,
+                fontSize: size * 0.4,
+              ),
+            )
+          : null,
+    );
   }
 }

@@ -13,6 +13,8 @@ class Endpoints {
   static const String children = '/children';
   static String child(String id) => '/children/$id';
   static String childProfile(String id) => '/children/$id/profile';
+  static String childProfileSuggestions(String id) =>
+      '/children/$id/profile-suggestions';
   static String childMedical(String id) => '/children/$id/medical-info';
   static String childContacts(String id) => '/children/$id/emergency-contacts';
   static String childContact(String childId, String contactId) =>

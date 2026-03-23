@@ -16,6 +16,17 @@ class ChildProfileRepository {
     }
   }
 
+  Future<ChildProfileSuggestions> getProfileSuggestions(String childId) async {
+    try {
+      final response = await _api.get<Map<String, dynamic>>(
+        Endpoints.childProfileSuggestions(childId),
+      );
+      return ChildProfileSuggestions.fromJson(response);
+    } catch (e) {
+      throw Exception('Error loading profile suggestions: $e');
+    }
+  }
+
   Future<ChildProfileModel> updateProfile(
     String childId, {
     String? firstName,

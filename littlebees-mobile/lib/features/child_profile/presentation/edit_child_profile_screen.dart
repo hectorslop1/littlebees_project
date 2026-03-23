@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/services/file_upload_service.dart';
 import '../../../core/services/image_service.dart';
+import '../../../core/utils/resolve_image_url.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../application/child_profile_provider.dart';
@@ -90,6 +91,10 @@ class _EditChildProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+    final suggestionsAsync = ref.watch(
+      childProfileSuggestionsProvider(widget.profile.id),
+    );
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -257,6 +262,35 @@ class _EditChildProfileScreenState
                         prefixIcon: Icon(LucideIcons.phone),
                       ),
                     ),
+                    suggestionsAsync.when(
+                      data: (suggestions) {
+                        if (suggestions.doctors.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 14),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.tonalIcon(
+                              onPressed: () => _pickRegisteredDoctor(
+                                suggestions.doctors,
+                              ),
+                              icon: const Icon(
+                                LucideIcons.stethoscope,
+                                size: 16,
+                              ),
+                              label: const Text('Usar doctor ya registrado'),
+                            ),
+                          ),
+                        );
+                      },
+                      loading: () => const Padding(
+                        padding: EdgeInsets.only(top: 14),
+                        child: LinearProgressIndicator(minHeight: 2),
+                      ),
+                      error: (_, _) => const SizedBox.shrink(),
+                    ),
                     const SizedBox(height: 14),
                     TextFormField(
                       controller: _allergiesController,
@@ -306,9 +340,32 @@ class _EditChildProfileScreenState
                         FilledButton.tonalIcon(
                           onPressed: _addContact,
                           icon: const Icon(LucideIcons.plus, size: 16),
-                          label: const Text('Agregar'),
+                          label: const Text('Nuevo'),
                         ),
                       ],
+                    ),
+                    suggestionsAsync.when(
+                      data: (suggestions) {
+                        if (suggestions.pickupContacts.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.tonalIcon(
+                              onPressed: () => _pickRegisteredContact(
+                                suggestions.pickupContacts,
+                              ),
+                              icon: const Icon(LucideIcons.users, size: 16),
+                              label: const Text('Usar persona ya registrada'),
+                            ),
+                          ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
                     const SizedBox(height: 12),
                     const Text(
@@ -391,6 +448,70 @@ class _EditChildProfileScreenState
 
     setState(() {
       _contacts = [..._contacts, contact.copyWith(priority: _contacts.length + 1)];
+    });
+  }
+
+  Future<void> _pickRegisteredDoctor(
+    List<ChildDoctorSuggestion> suggestions,
+  ) async {
+    final selected = await showModalBottomSheet<ChildDoctorSuggestion>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: AppColors.background,
+      builder: (context) => _DoctorSuggestionSheet(suggestions: suggestions),
+    );
+
+    if (selected == null) return;
+
+    _doctorNameController.text = selected.name;
+    _doctorPhoneController.text = selected.phone ?? '';
+    setState(() {});
+  }
+
+  Future<void> _pickRegisteredContact(
+    List<ChildPickupSuggestion> suggestions,
+  ) async {
+    final selected = await showModalBottomSheet<ChildPickupSuggestion>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: AppColors.background,
+      builder: (context) => _PickupSuggestionSheet(suggestions: suggestions),
+    );
+
+    if (selected == null) return;
+
+    final newContact = selected.toPickupContact();
+    final existingIndex = _contacts.indexWhere(
+      (contact) => _contactLookupKey(contact) == _contactLookupKey(newContact),
+    );
+
+    if (existingIndex >= 0) {
+      final existingContact = _contacts[existingIndex];
+      final mergedContact = _mergeContactWithSuggestion(
+        existingContact,
+        selected,
+      ).copyWith(priority: existingContact.priority);
+
+      setState(() {
+        _contacts = [..._contacts]..[existingIndex] = mergedContact;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La persona ya existía y se actualizó con la información registrada.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _contacts = [
+        ..._contacts,
+        newContact.copyWith(priority: _contacts.length + 1),
+      ];
     });
   }
 
@@ -591,8 +712,8 @@ class _PhotoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final previewImage = selectedPhoto != null
         ? FileImage(selectedPhoto!)
-        : profile.photoUrl != null
-            ? NetworkImage(profile.photoUrl!)
+        : resolveImageUrl(profile.photoUrl) != null
+            ? NetworkImage(resolveImageUrl(profile.photoUrl)!)
             : null;
 
     return LBCard(
@@ -662,8 +783,8 @@ class _EditableContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final previewImage = contact.localPhotoFile != null
         ? FileImage(contact.localPhotoFile!)
-        : contact.photoUrl != null
-            ? NetworkImage(contact.photoUrl!)
+        : resolveImageUrl(contact.photoUrl) != null
+            ? NetworkImage(resolveImageUrl(contact.photoUrl)!)
             : null;
 
     return Container(
@@ -757,6 +878,187 @@ class _AssetBadge extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: AppColors.primary,
         ),
+      ),
+    );
+  }
+}
+
+class _DoctorSuggestionSheet extends StatelessWidget {
+  const _DoctorSuggestionSheet({required this.suggestions});
+
+  final List<ChildDoctorSuggestion> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxListHeight = MediaQuery.of(context).size.height * 0.32;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Doctores ya registrados',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Elige un doctor ya usado en otro perfil o captura uno nuevo manualmente.',
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxListHeight),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final doctor = suggestions[index];
+                return LBCard(
+                  onTap: () => Navigator.of(context).pop(doctor),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.stethoscope, color: AppColors.info),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doctor.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            if (doctor.phone?.isNotEmpty ?? false) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                doctor.phone!,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'Usado en ${doctor.sourceChildName}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PickupSuggestionSheet extends StatelessWidget {
+  const _PickupSuggestionSheet({required this.suggestions});
+
+  final List<ChildPickupSuggestion> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxListHeight = MediaQuery.of(context).size.height * 0.32;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Personas ya registradas',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Puedes reutilizar una persona autorizada ya capturada en otro perfil o registrar una nueva.',
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxListHeight),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: suggestions.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final suggestion = suggestions[index];
+                return LBCard(
+                  onTap: () => Navigator.of(context).pop(suggestion),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: AppColors.primarySurface,
+                        backgroundImage: resolveImageUrl(suggestion.photoUrl) != null
+                            ? NetworkImage(resolveImageUrl(suggestion.photoUrl)!)
+                            : null,
+                        child: resolveImageUrl(suggestion.photoUrl) == null
+                            ? Text(
+                                suggestion.name.isNotEmpty
+                                    ? suggestion.name[0]
+                                    : 'P',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              suggestion.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${suggestion.relationship} • ${suggestion.phone}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Registrada en ${suggestion.sourceChildName}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -982,8 +1284,8 @@ class _ContactAssetPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final previewImage = localFile != null
         ? FileImage(localFile!)
-        : remoteUrl != null
-            ? NetworkImage(remoteUrl!)
+        : resolveImageUrl(remoteUrl) != null
+            ? NetworkImage(resolveImageUrl(remoteUrl)!)
             : null;
 
     return Container(
@@ -1076,4 +1378,28 @@ bool _contactsEqual(ChildPickupContact a, ChildPickupContact b) {
       a.photoUrl == b.photoUrl &&
       a.idPhotoUrl == b.idPhotoUrl &&
       a.priority == b.priority;
+}
+
+String _contactLookupKey(ChildPickupContact contact) {
+  return [
+    contact.name.trim().toLowerCase(),
+    contact.phone.trim(),
+    contact.relationship.trim().toLowerCase(),
+  ].join('|');
+}
+
+ChildPickupContact _mergeContactWithSuggestion(
+  ChildPickupContact existing,
+  ChildPickupSuggestion suggestion,
+) {
+  return existing.copyWith(
+    name: existing.name.isNotEmpty ? existing.name : suggestion.name,
+    relationship: existing.relationship.isNotEmpty
+        ? existing.relationship
+        : suggestion.relationship,
+    phone: existing.phone.isNotEmpty ? existing.phone : suggestion.phone,
+    email: existing.email ?? suggestion.email,
+    photoUrl: existing.photoUrl ?? suggestion.photoUrl,
+    idPhotoUrl: existing.idPhotoUrl ?? suggestion.idPhotoUrl,
+  );
 }

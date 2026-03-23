@@ -60,6 +60,27 @@ export class ChildrenController {
     return this.childrenService.getProfile(id, tenantId, userId, userRole);
   }
 
+  @Get(':id/profile-suggestions')
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.DIRECTOR,
+    UserRole.ADMIN,
+    UserRole.TEACHER,
+    UserRole.PARENT,
+  )
+  @ApiOperation({
+    summary:
+        'Obtener personas autorizadas y doctores ya registrados en otros perfiles accesibles',
+  })
+  getProfileSuggestions(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.childrenService.getProfileSuggestions(id, tenantId, userId, userRole);
+  }
+
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Registrar nuevo niño/a' })

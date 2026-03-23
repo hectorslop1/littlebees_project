@@ -241,7 +241,7 @@ class _OverviewGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       (
-        'Edad exacta',
+        'Edad',
         _formatExactAge(child.dateOfBirth),
         LucideIcons.cake,
         AppColors.primary,
@@ -276,35 +276,43 @@ class _OverviewGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.18,
+        childAspectRatio: 1.95,
       ),
       itemBuilder: (context, index) {
         final item = items[index];
         return LBCard(
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(item.$3, size: 18, color: item.$4),
-              const Spacer(),
+              Row(
+                children: [
+                  Icon(item.$3, size: 16, color: item.$4),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.$1,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               Text(
                 item.$2,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                item.$1,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
+              const Spacer(),
             ],
           ),
         );

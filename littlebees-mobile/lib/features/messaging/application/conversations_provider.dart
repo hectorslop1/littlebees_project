@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
+import '../../../core/api/socket_client.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
 import '../data/conversations_repository.dart';
@@ -48,6 +51,8 @@ final availableChatContactsProvider = FutureProvider<List<ChatContact>>((
   final repository = ref.watch(conversationsRepositoryProvider);
   return repository.getAvailableContacts();
 });
+
+final activeConversationIdProvider = StateProvider<String?>((ref) => null);
 
 class ConversationsNotifier
     extends StateNotifier<AsyncValue<List<Conversation>>> {
@@ -141,27 +146,54 @@ class ConversationsNotifier
     }
   }
 
-  void updateLastMessage(String conversationId, Message message) {
+  void markConversationAsReadLocally(String conversationId) {
     state.whenData((conversations) {
       final updated = conversations.map((conv) {
         if (conv.id == conversationId) {
-          return conv.copyWith(
-            lastMessage: message,
-            lastMessageAt: message.createdAt,
-            unreadCount: conv.unreadCount + 1,
-          );
+          return conv.copyWith(unreadCount: 0);
         }
         return conv;
       }).toList();
 
-      updated.sort((a, b) {
-        final aTime = a.lastMessageAt ?? DateTime(2000);
-        final bTime = b.lastMessageAt ?? DateTime(2000);
-        return bTime.compareTo(aTime);
-      });
-
       state = AsyncValue.data(updated);
     });
+  }
+
+  Future<void> syncIncomingMessage(
+    Message message, {
+    required bool incrementUnread,
+  }) async {
+    final currentState = state;
+    final conversations = currentState.valueOrNull;
+    if (conversations == null) {
+      await loadConversations();
+      return;
+    }
+
+    final exists = conversations.any((conv) => conv.id == message.conversationId);
+    if (!exists) {
+      await loadConversations();
+      return;
+    }
+
+    final updated = conversations.map((conv) {
+      if (conv.id == message.conversationId) {
+        return conv.copyWith(
+          lastMessage: message,
+          lastMessageAt: message.createdAt,
+          unreadCount: incrementUnread ? conv.unreadCount + 1 : conv.unreadCount,
+        );
+      }
+      return conv;
+    }).toList();
+
+    updated.sort((a, b) {
+      final aTime = a.lastMessageAt ?? DateTime(2000);
+      final bTime = b.lastMessageAt ?? DateTime(2000);
+      return bTime.compareTo(aTime);
+    });
+
+    state = AsyncValue.data(updated);
   }
 }
 
@@ -174,3 +206,86 @@ final conversationsNotifierProvider =
       final user = ref.watch(currentUserProvider);
       return ConversationsNotifier(repository, user?.id);
     });
+
+final unreadMessagesCountProvider = Provider<int>((ref) {
+  final conversationsAsync = ref.watch(conversationsNotifierProvider);
+  return conversationsAsync.maybeWhen(
+    data: (conversations) => conversations.fold<int>(
+      0,
+      (total, conversation) => total + conversation.unreadCount,
+    ),
+    orElse: () => 0,
+  );
+});
+
+final chatRealtimeSyncProvider = Provider<void>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return;
+  }
+
+  ref.watch(conversationsNotifierProvider);
+  var disposed = false;
+
+  void handleNewMessage(dynamic data) {
+    if (data is! Map) return;
+
+    final payload = Map<String, dynamic>.from(data);
+    final message = Message.fromJson(payload);
+    final isOwnMessage = message.senderId == user.id;
+    final activeConversationId = ref.read(activeConversationIdProvider);
+    final isActiveConversation = activeConversationId == message.conversationId;
+
+    unawaited(
+      ref
+          .read(conversationsNotifierProvider.notifier)
+          .syncIncomingMessage(
+            message,
+            incrementUnread: !isOwnMessage && !isActiveConversation,
+          ),
+    );
+
+    if (!isOwnMessage && isActiveConversation) {
+      ref
+          .read(conversationsNotifierProvider.notifier)
+          .markConversationAsReadLocally(message.conversationId);
+      unawaited(
+        SocketClient.getSocket().then((socket) {
+          socket.emit('mark_read', {'conversationId': message.conversationId});
+        }),
+      );
+    }
+  }
+
+  void handleConversationRead(dynamic data) {
+    if (data is! Map) return;
+
+    final payload = Map<String, dynamic>.from(data);
+    if (payload['userId'] != user.id) return;
+
+    final conversationId = payload['conversationId'] as String?;
+    if (conversationId == null) return;
+
+    ref
+        .read(conversationsNotifierProvider.notifier)
+        .markConversationAsReadLocally(conversationId);
+  }
+
+  Future<void>.microtask(() async {
+    final socket = await SocketClient.connect();
+    if (disposed) return;
+
+    socket.off('new_message', handleNewMessage);
+    socket.off('conversation_read', handleConversationRead);
+    socket.on('new_message', handleNewMessage);
+    socket.on('conversation_read', handleConversationRead);
+  });
+
+  ref.onDispose(() {
+    disposed = true;
+    SocketClient.getSocket().then((socket) {
+      socket.off('new_message', handleNewMessage);
+      socket.off('conversation_read', handleConversationRead);
+    });
+  });
+});

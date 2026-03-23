@@ -145,6 +145,104 @@ class ChildPickupContact {
   }
 }
 
+class ChildDoctorSuggestion {
+  const ChildDoctorSuggestion({
+    required this.name,
+    this.phone,
+    required this.sourceChildId,
+    required this.sourceChildName,
+  });
+
+  final String name;
+  final String? phone;
+  final String sourceChildId;
+  final String sourceChildName;
+
+  factory ChildDoctorSuggestion.fromJson(Map<String, dynamic> json) {
+    return ChildDoctorSuggestion(
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String?,
+      sourceChildId: json['sourceChildId'] as String? ?? '',
+      sourceChildName: json['sourceChildName'] as String? ?? '',
+    );
+  }
+}
+
+class ChildPickupSuggestion {
+  const ChildPickupSuggestion({
+    required this.name,
+    required this.relationship,
+    required this.phone,
+    this.email,
+    this.photoUrl,
+    this.idPhotoUrl,
+    required this.sourceChildId,
+    required this.sourceChildName,
+  });
+
+  final String name;
+  final String relationship;
+  final String phone;
+  final String? email;
+  final String? photoUrl;
+  final String? idPhotoUrl;
+  final String sourceChildId;
+  final String sourceChildName;
+
+  factory ChildPickupSuggestion.fromJson(Map<String, dynamic> json) {
+    return ChildPickupSuggestion(
+      name: json['name'] as String? ?? '',
+      relationship: json['relationship'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      email: json['email'] as String?,
+      photoUrl: json['photoUrl'] as String?,
+      idPhotoUrl: json['idPhotoUrl'] as String?,
+      sourceChildId: json['sourceChildId'] as String? ?? '',
+      sourceChildName: json['sourceChildName'] as String? ?? '',
+    );
+  }
+
+  ChildPickupContact toPickupContact() {
+    return ChildPickupContact(
+      name: name,
+      relationship: relationship,
+      phone: phone,
+      email: email,
+      photoUrl: photoUrl,
+      idPhotoUrl: idPhotoUrl,
+    );
+  }
+}
+
+class ChildProfileSuggestions {
+  const ChildProfileSuggestions({
+    this.doctors = const [],
+    this.pickupContacts = const [],
+  });
+
+  final List<ChildDoctorSuggestion> doctors;
+  final List<ChildPickupSuggestion> pickupContacts;
+
+  factory ChildProfileSuggestions.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const ChildProfileSuggestions();
+
+    return ChildProfileSuggestions(
+      doctors: (json['doctors'] as List<dynamic>? ?? const [])
+          .map(
+            (item) =>
+                ChildDoctorSuggestion.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      pickupContacts: (json['pickupContacts'] as List<dynamic>? ?? const [])
+          .map(
+            (item) =>
+                ChildPickupSuggestion.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+}
+
 class ChildProfileModel {
   const ChildProfileModel({
     required this.id,

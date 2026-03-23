@@ -7,7 +7,9 @@ import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
+import '../../auth/application/auth_provider.dart';
 import '../application/conversations_provider.dart';
+import '../domain/call_log.dart';
 import 'package:intl/intl.dart';
 
 class ConversationsScreen extends ConsumerWidget {
@@ -17,6 +19,7 @@ class ConversationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(translationsProvider);
     final conversationsAsync = ref.watch(conversationsNotifierProvider);
+    final currentUserId = ref.watch(currentUserProvider)?.id;
 
     return Scaffold(
       appBar: AppBar(
@@ -59,6 +62,7 @@ class ConversationsScreen extends ConsumerWidget {
                     context,
                     ref,
                     conversation,
+                    currentUserId,
                   );
                 },
               ),
@@ -80,9 +84,14 @@ class ConversationsScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     conversation,
+    String? currentUserId,
   ) {
     final lastMessage = conversation.lastMessage;
     final unreadCount = conversation.unreadCount;
+    final callLog = lastMessage != null ? parseCallLog(lastMessage) : null;
+    final previewText = callLog != null && currentUserId != null
+        ? '${buildCallTitle(callLog, currentUserId)} • ${buildCallSubtitle(callLog)}'
+        : (lastMessage?.content ?? 'No messages yet');
 
     return Dismissible(
           key: ValueKey(conversation.id),
@@ -207,7 +216,7 @@ class ConversationsScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                lastMessage?.content ?? 'No messages yet',
+                                previewText,
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       color: unreadCount > 0

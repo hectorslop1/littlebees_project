@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
@@ -10,6 +11,8 @@ import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
+import '../application/conversations_provider.dart';
+import '../domain/call_log.dart';
 import '../application/realtime_messaging_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -40,6 +43,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    Future.microtask(() {
+      ref.read(activeConversationIdProvider.notifier).state =
+          widget.conversationId;
+      ref
+          .read(conversationsNotifierProvider.notifier)
+          .markAsRead(widget.conversationId);
+    });
   }
 
   void _onTextChanged() {
@@ -56,30 +66,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .stopTyping();
     }
   }
-
-  final List<Map<String, dynamic>> _callHistory = [
-    {
-      'type': 'video',
-      'direction': 'outgoing',
-      'duration': '5:32',
-      'time': 'Today, 10:30 AM',
-      'answered': true,
-    },
-    {
-      'type': 'voice',
-      'direction': 'incoming',
-      'duration': '2:15',
-      'time': 'Yesterday, 3:45 PM',
-      'answered': true,
-    },
-    {
-      'type': 'voice',
-      'direction': 'incoming',
-      'duration': null,
-      'time': 'Mar 1, 11:20 AM',
-      'answered': false,
-    },
-  ];
 
   Future<void> _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
@@ -115,22 +101,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _makeVoiceCall() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice call feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
+    context.push(
+      '/messages/${widget.conversationId}/call',
+      extra: {
+        'participantName': widget.participantName,
+        'participantAvatarUrl': widget.participantAvatarUrl,
+        'participantRole': widget.participantRole,
+        'callType': 'voice',
+        'isOutgoing': true,
+      },
     );
   }
 
   void _makeVideoCall() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Video call feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
+    context.push(
+      '/messages/${widget.conversationId}/call',
+      extra: {
+        'participantName': widget.participantName,
+        'participantAvatarUrl': widget.participantAvatarUrl,
+        'participantRole': widget.participantRole,
+        'callType': 'video',
+        'isOutgoing': true,
+      },
     );
   }
 
@@ -153,6 +145,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    final activeConversationId = ref.read(activeConversationIdProvider);
+    if (activeConversationId == widget.conversationId) {
+      ref.read(activeConversationIdProvider.notifier).state = null;
+    }
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scrollController.dispose();
@@ -265,7 +261,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           Expanded(
             child: _showCallHistory
-                ? _buildCallHistory()
+                ? messagesAsync.when(
+                    data: (messages) =>
+                        _buildCallHistory(messages, currentUser?.id),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => LBErrorState(
+                      title: tr.tr('errorLoadingData'),
+                      message: error.toString(),
+                      onRetry: () => ref.refresh(
+                        realtimeMessagingProvider(widget.conversationId),
+                      ),
+                    ),
+                  )
                 : messagesAsync.when(
                     data: (messages) => messages.isEmpty
                         ? LBEmptyState(
@@ -299,6 +307,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemBuilder: (context, index) {
         final msg = messages[index];
         final isMe = msg.senderId == currentUserId;
+        final callLog = parseCallLog(msg);
+
+        if (callLog != null && currentUserId != null) {
+          return _buildCallLogBubble(msg, callLog, currentUserId, isMe);
+        }
+
         return Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child:
@@ -378,7 +392,95 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildCallHistory() {
+  Widget _buildCallLogBubble(
+    Message message,
+    ParsedCallLog callLog,
+    String currentUserId,
+    bool isMe,
+  ) {
+    final title = buildCallTitle(callLog, currentUserId);
+    final subtitle = buildCallSubtitle(callLog);
+    final isVideo = callLog.isVideo;
+
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(14),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.78,
+            ),
+            decoration: BoxDecoration(
+              color: isMe ? AppColors.primarySurface : AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isMe ? AppColors.primaryLight : AppColors.divider,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: (isVideo ? AppColors.info : AppColors.primary)
+                        .withAlpha(24),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    isVideo ? LucideIcons.video : LucideIcons.phoneCall,
+                    color: isVideo ? AppColors.info : AppColors.primary,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _formatTime(message.createdAt),
+                        style: const TextStyle(
+                          color: AppColors.textTertiary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+          .animate()
+          .fadeIn(duration: 250.ms)
+          .slideX(begin: isMe ? 0.1 : -0.1, end: 0),
+    );
+  }
+
+  Widget _buildCallHistory(List<Message> messages, String? currentUserId) {
+    final callMessages = messages
+        .where((message) => message.attachmentType == 'call_log')
+        .toList()
+        .reversed
+        .toList();
+
     return Column(
       children: [
         Container(
@@ -398,7 +500,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Call History',
+                'Historial de llamadas',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -408,14 +510,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0),
         Expanded(
-          child: ListView.builder(
+          child: callMessages.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Aun no hay llamadas registradas.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                )
+              : ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: _callHistory.length,
+            itemCount: callMessages.length,
             itemBuilder: (context, index) {
-              final call = _callHistory[index];
-              final isVideo = call['type'] == 'video';
-              final isIncoming = call['direction'] == 'incoming';
-              final wasAnswered = call['answered'];
+              final message = callMessages[index];
+              final callLog = parseCallLog(message);
+              if (callLog == null || currentUserId == null) {
+                return const SizedBox.shrink();
+              }
+
+              final isIncoming = callLog.callerId != currentUserId;
+              final wasAnswered = callLog.status == 'completed';
+              final isVideo = callLog.isVideo;
 
               return Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -467,7 +581,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    isIncoming ? 'Incoming' : 'Outgoing',
+                                    isIncoming ? 'Entrante' : 'Saliente',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium
@@ -479,7 +593,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   if (!wasAnswered) ...[
                                     const SizedBox(width: 6),
                                     Text(
-                                      '(Missed)',
+                                      '(${buildCallSubtitle(callLog)})',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -490,14 +604,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                call['time'],
+                                DateFormat(
+                                  'dd MMM, hh:mm a',
+                                ).format(message.createdAt),
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: AppColors.textSecondary),
                               ),
                             ],
                           ),
                         ),
-                        if (call['duration'] != null)
+                        if (callLog.durationSeconds > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
@@ -508,7 +624,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              call['duration'],
+                              formatCallDuration(callLog.durationSeconds),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     fontWeight: FontWeight.w600,

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -10,12 +15,13 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '../prisma/prisma.service';
-import { randomUUID } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 
 @Injectable()
 export class FilesService implements OnModuleInit {
   private s3: S3Client;
   private bucket: string;
+  private readonly fileLinkSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -25,6 +31,10 @@ export class FilesService implements OnModuleInit {
     const accessKey = this.config.get<string>('MINIO_ACCESS_KEY', 'kinderspace');
     const secretKey = this.config.get<string>('MINIO_SECRET_KEY', 'kinderspace123');
     this.bucket = this.config.get<string>('MINIO_BUCKET', 'kinderspace-files');
+    this.fileLinkSecret = this.config.get<string>(
+      'FILE_LINK_SECRET',
+      this.config.get<string>('JWT_SECRET', 'littlebees-file-links'),
+    );
 
     this.s3 = new S3Client({
       endpoint,
@@ -67,7 +77,7 @@ export class FilesService implements OnModuleInit {
       }),
     );
 
-    return this.prisma.file.create({
+    const createdFile = await this.prisma.file.create({
       data: {
         tenantId,
         uploadedBy: userId,
@@ -78,6 +88,8 @@ export class FilesService implements OnModuleInit {
         purpose,
       },
     });
+
+    return this.serializeFile(createdFile);
   }
 
   async getPresignedUploadUrl(
@@ -133,7 +145,62 @@ export class FilesService implements OnModuleInit {
 
     const url = await getSignedUrl(this.s3, command, { expiresIn: 900 });
 
-    return { ...file, url };
+    return { ...this.serializeFile(file), url };
+  }
+
+  getPublicFileUrl(fileId: string) {
+    const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+    const signature = this.signFileUrl(fileId, expiresAt);
+    return `/files/public/${fileId}?expires=${expiresAt}&signature=${signature}`;
+  }
+
+  async getPublicFile(fileId: string, expires: string, signature: string) {
+    const expiresAt = Number(expires);
+    if (!Number.isFinite(expiresAt)) {
+      throw new BadRequestException('Enlace de archivo inválido');
+    }
+
+    if (expiresAt < Math.floor(Date.now() / 1000)) {
+      throw new BadRequestException('Enlace de archivo expirado');
+    }
+
+    const expectedSignature = this.signFileUrl(fileId, expiresAt);
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+    const actualBuffer = Buffer.from(signature, 'hex');
+
+    if (
+      expectedBuffer.length !== actualBuffer.length ||
+      !timingSafeEqual(expectedBuffer, actualBuffer)
+    ) {
+      throw new BadRequestException('Firma de archivo inválida');
+    }
+
+    const file = await this.prisma.file.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!file) {
+      throw new NotFoundException('Archivo no encontrado');
+    }
+
+    const object = await this.s3.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: file.storageKey,
+      }),
+    );
+
+    const body = object.Body;
+    if (!body || typeof body.transformToByteArray !== 'function') {
+      throw new NotFoundException('No fue posible abrir el archivo');
+    }
+
+    const bytes = await body.transformToByteArray();
+
+    return {
+      ...this.serializeFile(file),
+      buffer: Buffer.from(bytes),
+    };
   }
 
   async findAll(
@@ -158,7 +225,7 @@ export class FilesService implements OnModuleInit {
     ]);
 
     return {
-      data,
+      data: data.map((file) => this.serializeFile(file)),
       meta: {
         total,
         page,
@@ -189,5 +256,18 @@ export class FilesService implements OnModuleInit {
     await this.prisma.file.delete({ where: { id: fileId } });
 
     return { success: true, message: 'Archivo eliminado' };
+  }
+
+  private serializeFile<T extends { sizeBytes: bigint | number }>(file: T) {
+    return {
+      ...file,
+      sizeBytes: Number(file.sizeBytes),
+    };
+  }
+
+  private signFileUrl(fileId: string, expiresAt: number) {
+    return createHmac('sha256', this.fileLinkSecret)
+      .update(`${fileId}:${expiresAt}`)
+      .digest('hex');
   }
 }

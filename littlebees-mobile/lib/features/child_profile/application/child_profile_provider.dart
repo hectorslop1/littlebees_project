@@ -13,3 +13,9 @@ final childProfileProvider = FutureProvider.family<ChildProfileModel, String>((
   final repository = ref.watch(childProfileRepositoryProvider);
   return repository.getChildProfile(childId);
 });
+
+final childProfileSuggestionsProvider =
+    FutureProvider.family<ChildProfileSuggestions, String>((ref, childId) async {
+      final repository = ref.watch(childProfileRepositoryProvider);
+      return repository.getProfileSuggestions(childId);
+    });

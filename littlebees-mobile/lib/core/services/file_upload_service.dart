@@ -35,7 +35,7 @@ class FileUploadService {
         filename: response['filename'] as String,
         url: response['storageKey'] as String?,
         mimeType: response['mimeType'] as String,
-        sizeBytes: response['sizeBytes'] as int,
+        sizeBytes: _parseSizeBytes(response['sizeBytes']),
       );
     } catch (e) {
       throw Exception('Error al subir archivo: $e');
@@ -56,6 +56,13 @@ class FileUploadService {
   Future<FileUploadResult> uploadDocument(File file) async {
     return uploadFile(file: file, purpose: 'document');
   }
+}
+
+int _parseSizeBytes(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
 }
 
 class FileUploadResult {

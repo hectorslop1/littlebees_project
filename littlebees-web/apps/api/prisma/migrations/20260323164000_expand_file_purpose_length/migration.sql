@@ -1,0 +1,2 @@
+ALTER TABLE "files"
+ALTER COLUMN "purpose" TYPE VARCHAR(64);

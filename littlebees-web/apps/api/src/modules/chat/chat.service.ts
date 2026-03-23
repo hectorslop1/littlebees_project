@@ -28,6 +28,8 @@ type ChatContactOption = {
   groupNames: string[];
 };
 
+type CallLogStatus = 'completed' | 'declined' | 'missed' | 'cancelled';
+
 @Injectable()
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
@@ -282,6 +284,43 @@ export class ChatService {
     return this.enrichMessageWithSender(message, usersById);
   }
 
+  async createCallLogMessage(
+    tenantId: string,
+    conversationId: string,
+    senderId: string,
+    data: {
+      callType: 'voice' | 'video';
+      callerId: string;
+      durationSeconds: number;
+      status: CallLogStatus;
+    },
+  ) {
+    await this.findConversationById(tenantId, conversationId, senderId);
+
+    const message = await this.prisma.message.create({
+      data: {
+        tenantId,
+        conversationId,
+        senderId,
+        messageType: 'call_log',
+        content: [
+          data.callType,
+          data.callerId,
+          data.status,
+          Math.max(0, Math.round(data.durationSeconds)).toString(),
+        ].join('|'),
+      },
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    });
+
+    const usersById = await this.getUsersMap([senderId], tenantId);
+    return this.enrichMessageWithSender(message, usersById);
+  }
+
   async markAsRead(tenantId: string, conversationId: string, userId: string) {
     await this.findConversationById(tenantId, conversationId, userId);
 
@@ -426,6 +465,37 @@ export class ChatService {
       where: { id: conversationId },
       data: { /* conversationType: type */ }, // DISABLED: Field doesn't exist
     });
+  }
+
+  async getConversationParticipantsForUser(
+    tenantId: string,
+    conversationId: string,
+    userId: string,
+  ) {
+    const conversation = await this.findConversationById(
+      tenantId,
+      conversationId,
+      userId,
+    );
+
+    return conversation.participants;
+  }
+
+  async getUserSummary(tenantId: string, userId: string) {
+    const usersById = await this.getUsersMap([userId], tenantId);
+    const user = usersById.get(userId);
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return {
+      userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    };
   }
 
   private async getUsersMap(userIds: string[], tenantId: string) {

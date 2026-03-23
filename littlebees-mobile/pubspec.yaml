@@ -53,6 +53,7 @@ dependencies:
 
   # WebSockets (alineado con web: socket.io-client)
   socket_io_client: ^3.0.2
+  flutter_webrtc: ^1.4.0
 
   # Utilities
   intl: ^0.20.2

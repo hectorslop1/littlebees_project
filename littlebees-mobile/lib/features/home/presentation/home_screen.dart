@@ -8,6 +8,7 @@ import '../../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../routing/route_names.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../messaging/application/conversations_provider.dart';
 import '../application/home_providers.dart';
 import 'director_home_screen.dart';
 import 'teacher_home_screen.dart';
@@ -70,6 +71,7 @@ class _ParentHomeContent extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final dailyStoryAsync = ref.watch(dailyStoryProvider(currentChildId));
+    final unreadMessages = ref.watch(unreadMessagesCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -95,6 +97,7 @@ class _ParentHomeContent extends ConsumerWidget {
                           _HomeTopBar(
                             userName: user?.firstName ?? 'Familia',
                             tenantName: tenant?.name ?? 'LittleBees',
+                            unreadMessages: unreadMessages,
                             onNotificationsTap: () =>
                                 context.push('/notifications'),
                             onMessagesTap: () =>
@@ -113,6 +116,7 @@ class _ParentHomeContent extends ConsumerWidget {
                                 context.pushNamed(RouteNames.payments),
                             onMessagesTap: () =>
                                 context.pushNamed(RouteNames.messages),
+                            unreadMessages: unreadMessages,
                           ).animate().fadeIn(delay: 80.ms, duration: 320.ms),
                           const SizedBox(height: 18),
                           StatusCard(status: dailyStory.status)
@@ -162,12 +166,14 @@ class _HomeTopBar extends StatelessWidget {
   const _HomeTopBar({
     required this.userName,
     required this.tenantName,
+    required this.unreadMessages,
     required this.onNotificationsTap,
     required this.onMessagesTap,
   });
 
   final String userName;
   final String tenantName;
+  final int unreadMessages;
   final VoidCallback onNotificationsTap;
   final VoidCallback onMessagesTap;
 
@@ -219,6 +225,7 @@ class _HomeTopBar extends StatelessWidget {
           icon: LucideIcons.messageCircle,
           onTap: onMessagesTap,
           highlighted: true,
+          badgeCount: unreadMessages,
         ),
       ],
     );
@@ -230,11 +237,13 @@ class _RoundActionButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.highlighted = false,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final bool highlighted;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -249,10 +258,25 @@ class _RoundActionButton extends StatelessWidget {
         child: SizedBox(
           width: 52,
           height: 52,
-          child: Icon(
-            icon,
-            color: highlighted ? AppColors.textOnPrimary : AppColors.textPrimary,
-            size: 20,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Center(
+                child: Icon(
+                  icon,
+                  color: highlighted
+                      ? AppColors.textOnPrimary
+                      : AppColors.textPrimary,
+                  size: 20,
+                ),
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: _UnreadBadge(count: badgeCount),
+                ),
+            ],
           ),
         ),
       ),
@@ -265,11 +289,13 @@ class _QuickActionsStrip extends StatelessWidget {
     required this.onChildrenTap,
     required this.onPaymentsTap,
     required this.onMessagesTap,
+    required this.unreadMessages,
   });
 
   final VoidCallback onChildrenTap;
   final VoidCallback onPaymentsTap;
   final VoidCallback onMessagesTap;
+  final int unreadMessages;
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +328,7 @@ class _QuickActionsStrip extends StatelessWidget {
             subtitle: 'Mensajes activos',
             accent: AppColors.info,
             onTap: onMessagesTap,
+            badgeCount: unreadMessages,
           ),
         ),
       ],
@@ -316,6 +343,7 @@ class _QuickActionCard extends StatelessWidget {
     required this.subtitle,
     required this.accent,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -323,6 +351,7 @@ class _QuickActionCard extends StatelessWidget {
   final String subtitle;
   final Color accent;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -347,14 +376,25 @@ class _QuickActionCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: accent.withAlpha(30),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, size: 18, color: accent),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withAlpha(30),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, size: 18, color: accent),
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -8,
+                      top: -8,
+                      child: _UnreadBadge(count: badgeCount),
+                    ),
+                ],
               ),
               const SizedBox(height: 18),
               Text(
@@ -376,6 +416,36 @@ class _QuickActionCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : count.toString();
+    return Container(
+      constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          height: 1,
         ),
       ),
     );
