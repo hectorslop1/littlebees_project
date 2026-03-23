@@ -4,13 +4,17 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
 import * as bcrypt from 'bcrypt';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async findAll(tenantId: string) {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: {
         userTenants: { some: { tenantId, active: true } },
         deletedAt: null,
@@ -23,6 +27,8 @@ export class UsersService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return users.map((user) => this.serializeUser(user));
   }
 
   async findById(id: string, tenantId: string) {
@@ -44,7 +50,7 @@ export class UsersService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    return user;
+    return this.serializeUser(user);
   }
 
   async create(tenantId: string, createUserDto: CreateUserDto) {
@@ -65,6 +71,7 @@ export class UsersService {
         firstName: createUserDto.firstName,
         lastName: createUserDto.lastName,
         phone: createUserDto.phone,
+        avatarUrl: createUserDto.avatarUrl,
         userTenants: {
           create: {
             tenantId,
@@ -81,7 +88,7 @@ export class UsersService {
       },
     });
 
-    return user;
+    return this.serializeUser(user);
   }
 
   async update(id: string, tenantId: string, updateUserDto: UpdateUserDto) {
@@ -123,7 +130,7 @@ export class UsersService {
       },
     });
 
-    return user;
+    return this.serializeUser(user);
   }
 
   async remove(id: string, tenantId: string) {
@@ -153,5 +160,12 @@ export class UsersService {
     });
 
     return this.findById(id, tenantId);
+  }
+
+  private serializeUser<T extends { avatarUrl?: string | null }>(user: T) {
+    return {
+      ...user,
+      avatarUrl: this.filesService.resolveStoredFileUrl(user.avatarUrl),
+    };
   }
 }

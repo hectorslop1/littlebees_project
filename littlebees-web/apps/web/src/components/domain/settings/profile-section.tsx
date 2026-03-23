@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export function ProfileSection() {
-  const { user } = useAuth();
+  const { user, refreshSession } = useAuth();
   const updateProfile = useUpdateProfile();
   const uploadFile = useUploadFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -19,15 +19,17 @@ export function ProfileSection() {
   const [firstName, setFirstName] = useState(user?.firstName ?? '');
   const [lastName, setLastName] = useState(user?.lastName ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
 
   const handleSave = useCallback(async () => {
     try {
       await updateProfile.mutateAsync({ firstName, lastName, phone });
+      await refreshSession();
       toast.success('Perfil actualizado exitosamente');
     } catch {
       toast.error('Error al actualizar el perfil. Intenta de nuevo.');
     }
-  }, [firstName, lastName, phone, updateProfile]);
+  }, [firstName, lastName, phone, refreshSession, updateProfile]);
 
   const handleAvatarUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +37,16 @@ export function ProfileSection() {
       if (!file) return;
 
       try {
-        await uploadFile.mutateAsync({ file, purpose: 'avatar' });
+        const uploaded = await uploadFile.mutateAsync<{ id: string }>({ file, purpose: 'avatar' });
+        await updateProfile.mutateAsync({ avatarUrl: uploaded.id });
+        setAvatarUrl(uploaded.id);
+        await refreshSession();
         toast.success('Foto de perfil actualizada');
       } catch {
         toast.error('Error al subir la imagen. Intenta de nuevo.');
       }
     },
-    [uploadFile],
+    [refreshSession, updateProfile, uploadFile],
   );
 
   return (
@@ -57,14 +62,14 @@ export function ProfileSection() {
           <Avatar
             size="xl"
             name={user ? `${user.firstName} ${user.lastName}` : undefined}
-            src={user?.avatarUrl ?? undefined}
+            src={avatarUrl || undefined}
           />
           <div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              loading={uploadFile.isPending}
+              loading={uploadFile.isPending || updateProfile.isPending}
             >
               Cambiar foto
             </Button>

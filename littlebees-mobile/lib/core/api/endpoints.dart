@@ -61,6 +61,9 @@ class Endpoints {
   // Reports
   static const String reports = '/reports';
 
+  // Users
+  static const String usersMe = '/users/me';
+
   // Excuses/Justificantes
   static const String excuses = '/excuses';
   static String excuse(String id) => '/excuses/$id';

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FilesService } from '../files/files.service';
 
 type UserDisplay = {
   firstName: string;
@@ -32,7 +33,10 @@ type CallLogStatus = 'completed' | 'declined' | 'missed' | 'cancelled';
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async findConversations(tenantId: string, userId: string) {
     const participations = await this.prisma.conversationParticipant.findMany({
@@ -525,7 +529,7 @@ export class ChatService {
         {
           firstName: user.firstName,
           lastName: user.lastName,
-          avatarUrl: user.avatarUrl,
+          avatarUrl: this.filesService.resolveStoredFileUrl(user.avatarUrl),
           role: user.userTenants[0]?.role ?? null,
         },
       ]),
@@ -928,7 +932,7 @@ export class ChatService {
       userId: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
-      avatarUrl: user.avatarUrl,
+      avatarUrl: this.filesService.resolveStoredFileUrl(user.avatarUrl),
       role,
       category,
       childIds: [],

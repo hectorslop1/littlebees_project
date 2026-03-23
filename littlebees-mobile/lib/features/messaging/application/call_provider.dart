@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vibration/vibration.dart';
 
 import '../../../core/api/socket_client.dart';
 import '../../auth/application/auth_provider.dart';
@@ -27,6 +29,29 @@ class IncomingCallInvitation {
 
 final incomingCallProvider = StateProvider<IncomingCallInvitation?>((ref) => null);
 final activeCallIdProvider = StateProvider<String?>((ref) => null);
+
+Future<void> _startIncomingCallAlert() async {
+  FlutterRingtonePlayer().play(
+    android: AndroidSounds.ringtone,
+    ios: const IosSound(1003),
+    looping: true,
+    volume: 0.8,
+    asAlarm: false,
+  );
+
+  if (await Vibration.hasVibrator()) {
+    Vibration.vibrate(
+      pattern: [0, 700, 500, 700],
+      repeat: 0,
+      intensities: [180, 255],
+    );
+  }
+}
+
+Future<void> _stopIncomingCallAlert() async {
+  FlutterRingtonePlayer().stop();
+  await Vibration.cancel();
+}
 
 final callSyncProvider = Provider<void>((ref) {
   final user = ref.watch(currentUserProvider);
@@ -56,6 +81,7 @@ final callSyncProvider = Provider<void>((ref) {
       fromAvatarUrl: from['avatarUrl'] as String?,
       fromRole: from['role'] as String?,
     );
+    unawaited(_startIncomingCallAlert());
   }
 
   void handleCallCompleted(dynamic data) {
@@ -71,6 +97,8 @@ final callSyncProvider = Provider<void>((ref) {
     if (ref.read(activeCallIdProvider) == callId) {
       ref.read(activeCallIdProvider.notifier).state = null;
     }
+
+    unawaited(_stopIncomingCallAlert());
   }
 
   Future<void>.microtask(() async {
@@ -88,6 +116,7 @@ final callSyncProvider = Provider<void>((ref) {
 
   ref.onDispose(() {
     disposed = true;
+    unawaited(_stopIncomingCallAlert());
     SocketClient.getSocket().then((socket) {
       socket.off('incoming_call', handleIncomingCall);
       socket.off('call_declined', handleCallCompleted);

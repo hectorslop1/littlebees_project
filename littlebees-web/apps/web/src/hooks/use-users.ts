@@ -19,6 +19,7 @@ export function useCreateUser() {
       firstName: string;
       lastName: string;
       phone?: string;
+      avatarUrl?: string;
       role: string;
     }) => api.post('/users', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
@@ -33,6 +34,7 @@ export function useUpdateUser() {
       firstName?: string;
       lastName?: string;
       phone?: string;
+      avatarUrl?: string;
       password?: string;
     }}) => api.patch(`/users/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
@@ -59,8 +61,8 @@ export function useChangeUserRole() {
 export function useUpdateProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { firstName?: string; lastName?: string; phone?: string }) =>
-      api.patch('/users/profile', data),
+    mutationFn: (data: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string }) =>
+      api.patch('/users/me', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 }

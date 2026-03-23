@@ -31,6 +31,26 @@ class AuthRepository {
     return MeResponse.fromJson(data);
   }
 
+  Future<UserInfo> updateMyProfile({
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatarUrl,
+  }) async {
+    await _api.patch<Map<String, dynamic>>(
+      Endpoints.usersMe,
+      data: {
+        'firstName': firstName,
+        'lastName': lastName,
+        'phone': phone,
+        'avatarUrl': avatarUrl,
+      },
+    );
+
+    final me = await getMe();
+    return me.user;
+  }
+
   Future<void> logout() async {
     await SecureTokenStorage.clearTokens();
   }

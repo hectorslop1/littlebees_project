@@ -19,6 +19,7 @@ export interface AuthContextType {
   isStaff: boolean;
   login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
+  refreshSession: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -96,6 +97,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/login';
   }, []);
 
+  const refreshSession = useCallback(async () => {
+    const data = await api.get<{ user: UserInfo; tenant: TenantInfo }>('/auth/me');
+    setUser(data.user);
+    setTenant(data.tenant);
+  }, []);
+
   const role = user?.role ?? null;
   const isDirector = role === UserRole.DIRECTOR;
   const isAdmin = role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
@@ -118,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isStaff,
         login,
         logout,
+        refreshSession,
       }}
     >
       {children}

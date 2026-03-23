@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/file_upload_service.dart';
+import '../../../core/services/image_service.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
@@ -147,7 +149,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _ProfileHero extends StatelessWidget {
+class _ProfileHero extends ConsumerStatefulWidget {
   const _ProfileHero({
     required this.user,
     required this.tenant,
@@ -159,10 +161,81 @@ class _ProfileHero extends StatelessWidget {
   final int childrenCount;
 
   @override
+  ConsumerState<_ProfileHero> createState() => _ProfileHeroState();
+}
+
+class _ProfileHeroState extends ConsumerState<_ProfileHero> {
+  final ImageService _imageService = ImageService();
+  final FileUploadService _fileUploadService = FileUploadService();
+  bool _isUploadingAvatar = false;
+
+  Future<void> _changeAvatar() async {
+    final option = await showModalBottomSheet<_AvatarSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.camera),
+              title: const Text('Tomar foto'),
+              onTap: () => Navigator.of(sheetContext).pop(_AvatarSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.image),
+              title: const Text('Elegir de galería'),
+              onTap: () => Navigator.of(sheetContext).pop(_AvatarSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (option == null) return;
+
+    try {
+      final file = option == _AvatarSource.camera
+          ? await _imageService.capturePhoto()
+          : await _imageService.pickFromGallery();
+      if (file == null) return;
+
+      setState(() {
+        _isUploadingAvatar = true;
+      });
+
+      final uploaded = await _fileUploadService.uploadFile(
+        file: file,
+        purpose: 'user_avatar',
+      );
+
+      await ref.read(authProvider.notifier).updateAvatar(uploaded.fileId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto de perfil actualizada')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No fue posible actualizar la foto: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
+    final tenant = widget.tenant;
+    final childrenCount = widget.childrenCount;
     final initials = user == null
         ? 'U'
-        : '${user!.firstName.isNotEmpty ? user!.firstName[0] : 'U'}${user!.lastName.isNotEmpty ? user!.lastName[0] : ''}';
+        : '${user.firstName.isNotEmpty ? user.firstName[0] : 'U'}${user.lastName.isNotEmpty ? user.lastName[0] : ''}';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -226,10 +299,47 @@ class _ProfileHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          LBAvatar(
-            placeholder: initials,
-            size: LBAvatarSize.large,
-            imageUrl: user?.avatarUrl,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              LBAvatar(
+                placeholder: initials,
+                size: LBAvatarSize.large,
+                imageUrl: user?.avatarUrl,
+                heroTag: 'profile-avatar-${user?.id ?? 'guest'}',
+              ),
+              Positioned(
+                right: -4,
+                bottom: -4,
+                child: Material(
+                  color: AppColors.primary,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _isUploadingAvatar ? null : _changeAvatar,
+                    child: SizedBox(
+                      width: 34,
+                      height: 34,
+                      child: _isUploadingAvatar
+                          ? const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              LucideIcons.camera,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(
@@ -265,6 +375,8 @@ class _ProfileHero extends StatelessWidget {
     );
   }
 }
+
+enum _AvatarSource { camera, gallery }
 
 class _ProfileOverview extends StatelessWidget {
   const _ProfileOverview({

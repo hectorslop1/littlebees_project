@@ -131,6 +131,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(isLoading: false);
   }
 
+  Future<void> updateAvatar(String avatarUrl) async {
+    final currentUser = state.user;
+    if (currentUser == null) {
+      throw Exception('Usuario no autenticado');
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final updatedUser = await _repository.updateMyProfile(avatarUrl: avatarUrl);
+      state = AuthState(
+        user: updatedUser,
+        tenant: state.tenant,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'No fue posible actualizar la foto',
+      );
+      rethrow;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }

@@ -154,6 +154,18 @@ export class FilesService implements OnModuleInit {
     return `/files/public/${fileId}?expires=${expiresAt}&signature=${signature}`;
   }
 
+  resolveStoredFileUrl(value?: string | null) {
+    if (!value) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
+      return value;
+    }
+
+    return this.getPublicFileUrl(value);
+  }
+
   async getPublicFile(fileId: string, expires: string, signature: string) {
     const expiresAt = Number(expires);
     if (!Number.isFinite(expiresAt)) {

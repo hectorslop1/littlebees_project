@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +33,24 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   findOne(@Param('id') id: string, @CurrentTenant() tenantId: string) {
     return this.usersService.findById(id, tenantId);
+  }
+
+  @Patch('me')
+  @Roles(
+    UserRole.PARENT,
+    UserRole.TEACHER,
+    UserRole.DIRECTOR,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
+  @ApiOperation({ summary: 'Actualizar mi propio perfil' })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado exitosamente' })
+  updateMe(
+    @CurrentUser('id') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.usersService.update(userId, tenantId, updateUserDto);
   }
 
   @Post()

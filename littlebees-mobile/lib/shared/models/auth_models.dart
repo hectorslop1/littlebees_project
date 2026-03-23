@@ -61,6 +61,27 @@ class UserInfo {
 
   String get fullName => '$firstName $lastName';
 
+  UserInfo copyWith({
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatarUrl,
+    UserRole? role,
+    bool? mfaEnabled,
+  }) {
+    return UserInfo(
+      id: id,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
+      mfaEnabled: mfaEnabled ?? this.mfaEnabled,
+    );
+  }
+
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
       id: json['id'] as String,

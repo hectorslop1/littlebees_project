@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, Shield } from 'lucide-react';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useChangeUserRole } from '@/hooks/use-users';
+import { useUploadFile } from '@/hooks/use-files';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -54,6 +56,9 @@ export default function UsersPage() {
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   const changeRole = useChangeUserRole();
+  const uploadFile = useUploadFile();
+  const createAvatarInputRef = useRef<HTMLInputElement>(null);
+  const editAvatarInputRef = useRef<HTMLInputElement>(null);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -67,6 +72,7 @@ export default function UsersPage() {
     firstName: '',
     lastName: '',
     phone: '',
+    avatarUrl: '',
     role: 'teacher',
   });
 
@@ -75,7 +81,15 @@ export default function UsersPage() {
       await createUser.mutateAsync(formData);
       toast.success('Usuario creado exitosamente');
       setCreateDialogOpen(false);
-      setFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', role: 'teacher' });
+      setFormData({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        avatarUrl: '',
+        role: 'teacher',
+      });
     } catch (error: any) {
       toast.error(error.message || 'Error al crear usuario');
     }
@@ -90,6 +104,7 @@ export default function UsersPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
+          avatarUrl: formData.avatarUrl,
         },
       });
       toast.success('Usuario actualizado exitosamente');
@@ -127,6 +142,7 @@ export default function UsersPage() {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone || '',
+      avatarUrl: user.avatarUrl || '',
       role: user.userTenants[0]?.role || 'teacher',
     });
     setEditDialogOpen(true);
@@ -136,6 +152,16 @@ export default function UsersPage() {
     setSelectedUser(user);
     setFormData({ ...formData, role: user.userTenants[0]?.role || 'teacher' });
     setRoleDialogOpen(true);
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      const uploaded = await uploadFile.mutateAsync<{ id: string }>({ file, purpose: 'avatar' });
+      setFormData((current) => ({ ...current, avatarUrl: uploaded.id }));
+      toast.success('Foto lista para guardarse');
+    } catch (error: any) {
+      toast.error(error.message || 'No fue posible subir la foto');
+    }
   };
 
   return (
@@ -173,7 +199,16 @@ export default function UsersPage() {
               {users?.map((user: any) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {user.firstName} {user.lastName}
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        size="sm"
+                        name={`${user.firstName} ${user.lastName}`}
+                        src={user.avatarUrl || undefined}
+                      />
+                      <span>
+                        {user.firstName} {user.lastName}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phone || '-'}</TableCell>
@@ -241,6 +276,38 @@ export default function UsersPage() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 />
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border p-4">
+              <Avatar
+                size="xl"
+                name={`${formData.firstName} ${formData.lastName}`.trim() || 'Nuevo usuario'}
+                src={formData.avatarUrl || undefined}
+              />
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => createAvatarInputRef.current?.click()}
+                  disabled={uploadFile.isPending}
+                >
+                  {uploadFile.isPending ? 'Subiendo...' : 'Subir foto'}
+                </Button>
+                <input
+                  ref={createAvatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      void handleAvatarUpload(file);
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opcional. Puedes asignar foto desde el alta del usuario.
+                </p>
               </div>
             </div>
             <div className="space-y-2">
@@ -318,6 +385,35 @@ export default function UsersPage() {
                   id="edit-lastName"
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-xl border p-4">
+              <Avatar
+                size="xl"
+                name={`${formData.firstName} ${formData.lastName}`.trim() || 'Usuario'}
+                src={formData.avatarUrl || undefined}
+              />
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => editAvatarInputRef.current?.click()}
+                  disabled={uploadFile.isPending}
+                >
+                  {uploadFile.isPending ? 'Subiendo...' : 'Cambiar foto'}
+                </Button>
+                <input
+                  ref={editAvatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      void handleAvatarUpload(file);
+                    }
+                  }}
                 />
               </div>
             </div>

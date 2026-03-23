@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginRequest, JwtPayload, RefreshTokenRequest, UserRole } from '@kinderspace/shared-types';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +12,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly filesService: FilesService,
   ) {}
 
   async login(dto: LoginRequest) {
@@ -133,7 +135,13 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { ...user, role },
+      user: user
+        ? {
+            ...user,
+            avatarUrl: this.filesService.resolveStoredFileUrl(user.avatarUrl),
+            role,
+          }
+        : null,
       tenant,
     };
   }
@@ -162,11 +170,22 @@ export class AuthService {
       select: { id: true, name: true, slug: true, logoUrl: true },
     });
 
-    const role = user?.userTenants[0]?.role;
-    const { userTenants, ...userData } = user || {};
+    if (!user) {
+      return {
+        user: null,
+        tenant,
+      };
+    }
+
+    const role = user.userTenants[0]?.role;
+    const { userTenants, ...userData } = user;
 
     return {
-      user: { ...userData, role },
+      user: {
+        ...userData,
+        avatarUrl: this.filesService.resolveStoredFileUrl(userData.avatarUrl),
+        role,
+      },
       tenant,
     };
   }

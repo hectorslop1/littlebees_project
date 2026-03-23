@@ -29,6 +29,11 @@ export class CreateUserDto {
   @IsOptional()
   phone?: string;
 
+  @ApiProperty({ example: 'file_abc123', required: false })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
   @ApiProperty({ enum: UserRole, example: 'teacher' })
   @IsEnum(UserRole)
   @IsNotEmpty()
