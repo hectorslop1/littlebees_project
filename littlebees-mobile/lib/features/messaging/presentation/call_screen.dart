@@ -50,6 +50,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
   Duration _duration = Duration.zero;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
+  bool _speakerEnabled = false;
   bool _frontCamera = true;
   bool _isEnding = false;
   bool _offerSent = false;
@@ -76,12 +77,14 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
     _callId = widget.callId;
+    _speakerEnabled = _isVideo;
 
     if (_callId != null) {
       ref.read(activeCallIdProvider.notifier).state = _callId;
     }
 
     await _prepareLocalMedia();
+    await _applyAudioRoute();
     final socket = await SocketClient.connect();
     _registerSocketHandlers(socket);
 
@@ -96,6 +99,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
         _status = _isVideo ? 'Llamando por video...' : 'Llamando...';
       });
     } else {
+      await stopIncomingCallAlert();
       ref.read(incomingCallProvider.notifier).state = null;
       socket.emit('accept_call', {'callId': _callId});
       setState(() {
@@ -123,6 +127,10 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<void> _applyAudioRoute() async {
+    await Helper.setSpeakerphoneOn(_speakerEnabled);
   }
 
   Future<RTCPeerConnection> _ensurePeerConnection() async {
@@ -238,10 +246,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
       socket.emit('webrtc_offer', {
         'callId': _callId,
-        'sdp': {
-          'type': offer.type,
-          'sdp': offer.sdp,
-        },
+        'sdp': {'type': offer.type, 'sdp': offer.sdp},
       });
 
       if (mounted) {
@@ -260,10 +265,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       final sdp = Map<String, dynamic>.from(payload['sdp'] as Map);
       final peerConnection = await _ensurePeerConnection();
       await peerConnection.setRemoteDescription(
-        RTCSessionDescription(
-          sdp['sdp'] as String,
-          sdp['type'] as String,
-        ),
+        RTCSessionDescription(sdp['sdp'] as String, sdp['type'] as String),
       );
 
       final answer = await peerConnection.createAnswer({
@@ -274,10 +276,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
       socket.emit('webrtc_answer', {
         'callId': _callId,
-        'sdp': {
-          'type': answer.type,
-          'sdp': answer.sdp,
-        },
+        'sdp': {'type': answer.type, 'sdp': answer.sdp},
       });
 
       if (mounted) {
@@ -296,10 +295,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       final sdp = Map<String, dynamic>.from(payload['sdp'] as Map);
       final peerConnection = await _ensurePeerConnection();
       await peerConnection.setRemoteDescription(
-        RTCSessionDescription(
-          sdp['sdp'] as String,
-          sdp['type'] as String,
-        ),
+        RTCSessionDescription(sdp['sdp'] as String, sdp['type'] as String),
       );
     };
 
@@ -327,9 +323,9 @@ class _CallScreenState extends ConsumerState<CallScreen> {
       if (payload['callId'] != _callId) return;
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La llamada fue rechazada')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('La llamada fue rechazada')));
       _handleRemoteEnd(popAfterCleanup: true);
     };
 
@@ -403,6 +399,15 @@ class _CallScreenState extends ConsumerState<CallScreen> {
     });
   }
 
+  Future<void> _toggleSpeaker() async {
+    final nextValue = !_speakerEnabled;
+    await Helper.setSpeakerphoneOn(nextValue);
+    if (!mounted) return;
+    setState(() {
+      _speakerEnabled = nextValue;
+    });
+  }
+
   Future<void> _endCall() async {
     if (_isEnding) return;
     _isEnding = true;
@@ -436,6 +441,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
     ref.read(incomingCallProvider.notifier).state = null;
     ref.read(activeCallIdProvider.notifier).state = null;
+    await stopIncomingCallAlert();
+    await Helper.setSpeakerphoneOn(false);
 
     final socket = await SocketClient.getSocket();
     if (_callStartedHandler != null) {
@@ -503,7 +510,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
               child: _isVideo && _remoteStream != null
                   ? RTCVideoView(
                       _remoteRenderer,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      objectFit:
+                          RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     )
                   : _CallBackdrop(
                       participantName: widget.participantName,
@@ -538,9 +546,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _connected
-                        ? _formatDuration(_duration)
-                        : _status,
+                    _connected ? _formatDuration(_duration) : _status,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -598,9 +604,19 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _CallControlButton(
-                        icon: _micEnabled ? LucideIcons.mic : LucideIcons.micOff,
+                        icon: _micEnabled
+                            ? LucideIcons.mic
+                            : LucideIcons.micOff,
                         label: _micEnabled ? 'Microfono' : 'Silenciado',
                         onTap: _toggleMic,
+                      ),
+                      const SizedBox(width: 16),
+                      _CallControlButton(
+                        icon: _speakerEnabled
+                            ? LucideIcons.volume2
+                            : LucideIcons.volume1,
+                        label: _speakerEnabled ? 'Altavoz' : 'Auricular',
+                        onTap: _toggleSpeaker,
                       ),
                       const SizedBox(width: 16),
                       if (_isVideo) ...[
@@ -668,10 +684,7 @@ class _CallBackdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF18212A),
-            Color(0xFF101214),
-          ],
+          colors: [Color(0xFF18212A), Color(0xFF101214)],
         ),
       ),
       child: Center(
@@ -679,7 +692,9 @@ class _CallBackdrop extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             LBAvatar(
-              placeholder: participantName.isNotEmpty ? participantName[0] : 'U',
+              placeholder: participantName.isNotEmpty
+                  ? participantName[0]
+                  : 'U',
               imageUrl: participantAvatarUrl,
               size: LBAvatarSize.large,
             ),

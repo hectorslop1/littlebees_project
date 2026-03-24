@@ -37,15 +37,13 @@ class AuthRepository {
     String? phone,
     String? avatarUrl,
   }) async {
-    await _api.patch<Map<String, dynamic>>(
-      Endpoints.usersMe,
-      data: {
-        'firstName': firstName,
-        'lastName': lastName,
-        'phone': phone,
-        'avatarUrl': avatarUrl,
-      },
-    );
+    final payload = <String, dynamic>{};
+    if (firstName != null) payload['firstName'] = firstName;
+    if (lastName != null) payload['lastName'] = lastName;
+    if (phone != null) payload['phone'] = phone;
+    if (avatarUrl != null) payload['avatarUrl'] = avatarUrl;
+
+    await _api.patch<Map<String, dynamic>>(Endpoints.usersMe, data: payload);
 
     final me = await getMe();
     return me.user;

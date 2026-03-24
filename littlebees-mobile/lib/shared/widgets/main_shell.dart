@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/api/socket_client.dart';
 import '../../design_system/theme/app_colors.dart';
+import '../../design_system/widgets/lb_avatar.dart';
 import '../../core/i18n/app_translations.dart';
 import '../../features/auth/application/auth_provider.dart';
 import '../../features/ai_assistant/presentation/ai_assistant_fab.dart';
@@ -20,84 +22,31 @@ class MainShell extends ConsumerStatefulWidget {
 }
 
 class _MainShellState extends ConsumerState<MainShell> {
-  bool _incomingDialogVisible = false;
-  late final ProviderSubscription<IncomingCallInvitation?> _incomingCallSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _incomingCallSubscription = ref.listenManual<IncomingCallInvitation?>(
-      incomingCallProvider,
-      (previous, next) {
-        if (next == null || _incomingDialogVisible) {
-          return;
-        }
-
-        _incomingDialogVisible = true;
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(
-              next.callType == 'video'
-                  ? 'Videollamada entrante'
-                  : 'Llamada entrante',
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(next.fromName),
-                const SizedBox(height: 8),
-                Text(
-                  next.fromRole ?? 'Contacto',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _incomingDialogVisible = false;
-                  SocketClient.getSocket().then((socket) {
-                    socket.emit('decline_call', {'callId': next.callId});
-                  });
-                  ref.read(incomingCallProvider.notifier).state = null;
-                },
-                child: const Text('Rechazar'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _incomingDialogVisible = false;
-                  ref.read(activeCallIdProvider.notifier).state = next.callId;
-                  context.push(
-                    '/messages/${next.conversationId}/call',
-                    extra: {
-                      'participantName': next.fromName,
-                      'participantAvatarUrl': next.fromAvatarUrl,
-                      'participantRole': next.fromRole,
-                      'callType': next.callType,
-                      'isOutgoing': false,
-                      'callId': next.callId,
-                    },
-                  );
-                },
-                child: const Text('Aceptar'),
-              ),
-            ],
-          ),
-        ).then((_) {
-          _incomingDialogVisible = false;
-        });
-      },
-    );
+  Future<void> _rejectIncomingCall(IncomingCallInvitation call) async {
+    await stopIncomingCallAlert();
+    final socket = await SocketClient.getSocket();
+    socket.emit('decline_call', {'callId': call.callId});
+    ref.read(incomingCallProvider.notifier).state = null;
   }
 
-  @override
-  void dispose() {
-    _incomingCallSubscription.close();
-    super.dispose();
+  Future<void> _acceptIncomingCall(IncomingCallInvitation call) async {
+    await stopIncomingCallAlert();
+    ref.read(incomingCallProvider.notifier).state = null;
+    ref.read(activeCallIdProvider.notifier).state = call.callId;
+
+    if (!mounted) return;
+
+    context.push(
+      '/messages/${call.conversationId}/call',
+      extra: {
+        'participantName': call.fromName,
+        'participantAvatarUrl': call.fromAvatarUrl,
+        'participantRole': call.fromRole,
+        'callType': call.callType,
+        'isOutgoing': false,
+        'callId': call.callId,
+      },
+    );
   }
 
   @override
@@ -107,6 +56,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     final authState = ref.watch(authProvider);
     final userRole = authState.role;
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
+    final incomingCall = ref.watch(incomingCallProvider);
+    final activeCallId = ref.watch(activeCallIdProvider);
     ref.watch(chatRealtimeSyncProvider);
 
     // Obtener items de navegación según el rol
@@ -120,63 +71,82 @@ class _MainShellState extends ConsumerState<MainShell> {
       ...navigationItems.map((item) => item.route),
       '/payments',
     };
-    final showAiFab = aiFabRoutes.contains(location);
+    final showIncomingCallScreen =
+        incomingCall != null && activeCallId != incomingCall.callId;
+    final showAiFab = aiFabRoutes.contains(location) && !showIncomingCallScreen;
 
     return Scaffold(
-      body: widget.child,
-      floatingActionButton: showAiFab ? const AiAssistantFab() : null,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 20,
-              offset: Offset(0, -5),
+      body: Stack(
+        children: [
+          widget.child,
+          if (incomingCall != null && showIncomingCallScreen)
+            Positioned.fill(
+              child: _IncomingCallScreen(
+                call: incomingCall,
+                onAccept: () => _acceptIncomingCall(incomingCall),
+                onReject: () => _rejectIncomingCall(incomingCall),
+              ),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: BottomNavigationBar(
-            currentIndex: currentIndex,
-            onTap: (int idx) => _onItemTapped(idx, context, navigationItems),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: context.isDark
-                ? const Color(0xFF1E1E1E)
-                : AppColors.surface,
-            selectedItemColor: context.isDark
-                ? const Color(0xFFE5C068)
-                : AppColors.primary,
-            unselectedItemColor: context.isDark
-                ? const Color(0xFF808080)
-                : AppColors.textTertiary,
-            selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-            elevation: 0,
-            items: navigationItems.map((item) {
-              final isMessagesItem = item.route == '/messages';
-              return BottomNavigationBarItem(
-                icon: _ShellNavIcon(
-                  icon: item.icon,
-                  badgeCount: isMessagesItem ? unreadMessages : 0,
-                ),
-                activeIcon: _ShellNavIcon(
-                  icon: item.activeIcon,
-                  badgeCount: isMessagesItem ? unreadMessages : 0,
-                  active: true,
-                ),
-                label: tr.tr(item.labelKey),
-              );
-            }).toList(),
-          ),
-        ),
+        ],
       ),
+      floatingActionButton: showAiFab ? const AiAssistantFab() : null,
+      bottomNavigationBar: showIncomingCallScreen
+          ? null
+          : Container(
+              decoration: const BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 20,
+                    offset: Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: BottomNavigationBar(
+                  currentIndex: currentIndex,
+                  onTap: (int idx) =>
+                      _onItemTapped(idx, context, navigationItems),
+                  type: BottomNavigationBarType.fixed,
+                  backgroundColor: context.isDark
+                      ? const Color(0xFF1E1E1E)
+                      : AppColors.surface,
+                  selectedItemColor: context.isDark
+                      ? const Color(0xFFE5C068)
+                      : AppColors.primary,
+                  unselectedItemColor: context.isDark
+                      ? const Color(0xFF808080)
+                      : AppColors.textTertiary,
+                  selectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                  elevation: 0,
+                  items: navigationItems.map((item) {
+                    final isMessagesItem = item.route == '/messages';
+                    return BottomNavigationBarItem(
+                      icon: _ShellNavIcon(
+                        icon: item.icon,
+                        badgeCount: isMessagesItem ? unreadMessages : 0,
+                      ),
+                      activeIcon: _ShellNavIcon(
+                        icon: item.activeIcon,
+                        badgeCount: isMessagesItem ? unreadMessages : 0,
+                        active: true,
+                      ),
+                      label: tr.tr(item.labelKey),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
     );
   }
 
@@ -188,6 +158,151 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (index >= 0 && index < items.length) {
       context.go(items[index].route);
     }
+  }
+}
+
+class _IncomingCallScreen extends StatelessWidget {
+  const _IncomingCallScreen({
+    required this.call,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final IncomingCallInvitation call;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = call.callType == 'video';
+
+    return ColoredBox(
+      color: const Color(0xFF101214),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 28),
+            Text(
+              isVideo ? 'Videollamada entrante' : 'Llamada entrante',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            LBAvatar(
+              placeholder: call.fromName.isNotEmpty ? call.fromName[0] : 'U',
+              imageUrl: call.fromAvatarUrl,
+              size: LBAvatarSize.large,
+            ),
+            const SizedBox(height: 18),
+            Text(
+              call.fromName,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              call.fromRole ?? 'Contacto escolar',
+              style: const TextStyle(
+                color: Colors.white60,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(20),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                isVideo
+                    ? 'Toca para aceptar videollamada'
+                    : 'Toca para aceptar llamada',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 0, 28, 36),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _IncomingCallAction(
+                    icon: LucideIcons.phoneOff,
+                    label: 'Rechazar',
+                    backgroundColor: AppColors.error,
+                    onTap: onReject,
+                  ),
+                  _IncomingCallAction(
+                    icon: isVideo ? LucideIcons.video : LucideIcons.phone,
+                    label: 'Aceptar',
+                    backgroundColor: AppColors.success,
+                    onTap: onAccept,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IncomingCallAction extends StatelessWidget {
+  const _IncomingCallAction({
+    required this.icon,
+    required this.label,
+    required this.backgroundColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: backgroundColor,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onTap,
+            child: SizedBox(
+              width: 84,
+              height: 84,
+              child: Icon(icon, color: Colors.white, size: 30),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
   }
 }
 

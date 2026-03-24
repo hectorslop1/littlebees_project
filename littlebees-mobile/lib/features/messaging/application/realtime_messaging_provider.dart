@@ -61,13 +61,18 @@ class RealtimeMessagingNotifier
     }
   }
 
-  Future<void> sendMessage(String content, {String? attachmentUrl}) async {
+  Future<void> sendMessage(
+    String content, {
+    String? attachmentUrl,
+    String? messageType,
+  }) async {
     try {
       final socket = await SocketClient.getSocket();
       socket.emit('send_message', {
         'conversationId': conversationId,
         'content': content,
         'attachmentUrl': attachmentUrl,
+        'messageType': messageType,
       });
     } catch (error) {
       rethrow;

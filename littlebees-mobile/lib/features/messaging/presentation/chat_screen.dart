@@ -1,26 +1,36 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../../../design_system/widgets/lb_avatar.dart';
-import '../../../design_system/theme/app_colors.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_compress/video_compress.dart';
+import 'package:video_player/video_player.dart';
+
 import '../../../core/i18n/app_translations.dart';
+import '../../../core/services/file_upload_service.dart';
+import '../../../core/services/image_service.dart';
+import '../../../core/utils/resolve_image_url.dart';
+import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/full_screen_image_viewer.dart';
+import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
 import '../application/conversations_provider.dart';
-import '../domain/call_log.dart';
 import '../application/realtime_messaging_provider.dart';
+import '../domain/call_log.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
-  final String conversationId;
-  final String participantName;
-  final String? participantAvatarUrl;
-  final String? participantRole;
-
   const ChatScreen({
     super.key,
     required this.conversationId,
@@ -29,6 +39,11 @@ class ChatScreen extends ConsumerStatefulWidget {
     this.participantRole,
   });
 
+  final String conversationId;
+  final String participantName;
+  final String? participantAvatarUrl;
+  final String? participantRole;
+
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
@@ -36,8 +51,15 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImageService _imageService = ImageService();
+  final FileUploadService _fileUploadService = FileUploadService();
+  final AudioRecorder _audioRecorder = AudioRecorder();
+
   bool _showCallHistory = false;
   bool _isTyping = false;
+  bool _isUploadingAttachment = false;
+  bool _isRecordingVoiceNote = false;
+  String? _voiceRecordingPath;
 
   @override
   void initState() {
@@ -67,17 +89,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _sendMessage() async {
+  Future<void> _sendTextMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
     final content = _controller.text.trim();
     _controller.clear();
     setState(() => _isTyping = false);
 
+    await _sendSocketMessage(content: content);
+  }
+
+  Future<void> _sendSocketMessage({
+    required String content,
+    String? attachmentUrl,
+    String? messageType,
+  }) async {
     try {
       await ref
           .read(realtimeMessagingProvider(widget.conversationId).notifier)
-          .sendMessage(content);
+          .sendMessage(
+            content,
+            attachmentUrl: attachmentUrl,
+            messageType: messageType,
+          );
 
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
@@ -88,15 +122,295 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           );
         }
       });
-    } catch (e) {
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible enviar el mensaje: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openAttachmentSheet() async {
+    final selected = await showModalBottomSheet<_AttachmentOption>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.camera),
+              title: const Text('Tomar foto'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AttachmentOption.camera),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.image),
+              title: const Text('Elegir imagen'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AttachmentOption.gallery),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.video),
+              title: const Text('Grabar video'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AttachmentOption.videoCamera),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.film),
+              title: const Text('Elegir video'),
+              onTap: () => Navigator.of(
+                sheetContext,
+              ).pop(_AttachmentOption.videoGallery),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.file),
+              title: const Text('Enviar archivo'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AttachmentOption.file),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.mic),
+              title: const Text('Grabar nota de voz'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AttachmentOption.audio),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    switch (selected) {
+      case _AttachmentOption.camera:
+        await _sendImageFromCamera();
+        break;
+      case _AttachmentOption.gallery:
+        await _sendImageFromGallery();
+        break;
+      case _AttachmentOption.videoCamera:
+        await _sendVideoFromCamera();
+        break;
+      case _AttachmentOption.videoGallery:
+        await _sendVideoFromGallery();
+        break;
+      case _AttachmentOption.file:
+        await _sendFileAttachment();
+        break;
+      case _AttachmentOption.audio:
+        await _handleVoiceNoteTap();
+        break;
+      case null:
+        break;
+    }
+  }
+
+  Future<void> _sendImageFromCamera() async {
+    final file = await _imageService.capturePhoto();
+    if (file == null) return;
+    await _uploadAndSendAttachment(
+      file: file,
+      messageType: 'image',
+      fallbackContent: 'Imagen',
+    );
+  }
+
+  Future<void> _sendImageFromGallery() async {
+    final file = await _imageService.pickFromGallery();
+    if (file == null) return;
+    await _uploadAndSendAttachment(
+      file: file,
+      messageType: 'image',
+      fallbackContent: 'Imagen',
+    );
+  }
+
+  Future<void> _sendFileAttachment() async {
+    final result = await FilePicker.platform.pickFiles();
+    final path = result?.files.single.path;
+    if (path == null) return;
+
+    await _uploadAndSendAttachment(
+      file: File(path),
+      messageType: 'file',
+      fallbackContent: result?.files.single.name ?? 'Archivo adjunto',
+    );
+  }
+
+  Future<void> _sendVideoFromCamera() async {
+    final file = await _imageService.captureVideo();
+    if (file == null) return;
+    await _compressUploadAndSendVideo(file);
+  }
+
+  Future<void> _sendVideoFromGallery() async {
+    final file = await _imageService.pickVideoFromGallery();
+    if (file == null) return;
+    await _compressUploadAndSendVideo(file);
+  }
+
+  Future<void> _compressUploadAndSendVideo(File originalFile) async {
+    try {
+      setState(() {
+        _isUploadingAttachment = true;
+      });
+
+      final compressedInfo = await VideoCompress.compressVideo(
+        originalFile.path,
+        quality: VideoQuality.MediumQuality,
+        includeAudio: true,
+        deleteOrigin: false,
+      );
+
+      final compressedPath = compressedInfo?.file?.path ?? originalFile.path;
+      final compressedFile = File(compressedPath);
+
+      await _uploadAndSendAttachment(
+        file: compressedFile,
+        messageType: 'video',
+        fallbackContent: 'Video',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible comprimir el video: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      await VideoCompress.cancelCompression();
+      await VideoCompress.deleteAllCache();
       if (mounted) {
+        setState(() {
+          _isUploadingAttachment = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _uploadAndSendAttachment({
+    required File file,
+    required String messageType,
+    required String fallbackContent,
+  }) async {
+    try {
+      setState(() {
+        _isUploadingAttachment = true;
+      });
+
+      final uploaded = await _fileUploadService.uploadFile(
+        file: file,
+        purpose: 'chat_attachment',
+      );
+
+      await _sendSocketMessage(
+        content: uploaded.filename.isNotEmpty
+            ? uploaded.filename
+            : fallbackContent,
+        attachmentUrl: uploaded.fileId,
+        messageType: messageType,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible subir el adjunto: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAttachment = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleVoiceNoteTap() async {
+    if (_isRecordingVoiceNote) {
+      await _finishVoiceRecording(send: true);
+      return;
+    }
+
+    try {
+      if (!await _audioRecorder.hasPermission()) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending message: $e'),
+          const SnackBar(
+            content: Text('Hace falta permiso de micrófono para grabar audio'),
             behavior: SnackBarBehavior.floating,
           ),
         );
+        return;
       }
+
+      final tempDir = await getTemporaryDirectory();
+      final filePath =
+          '${tempDir.path}/voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: filePath,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isRecordingVoiceNote = true;
+        _voiceRecordingPath = filePath;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible iniciar la grabación: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _finishVoiceRecording({required bool send}) async {
+    try {
+      final path = await _audioRecorder.stop();
+      final recordedPath = path ?? _voiceRecordingPath;
+
+      if (mounted) {
+        setState(() {
+          _isRecordingVoiceNote = false;
+          _voiceRecordingPath = null;
+        });
+      }
+
+      if (!send || recordedPath == null) {
+        if (recordedPath != null) {
+          final file = File(recordedPath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        }
+        return;
+      }
+
+      await _uploadAndSendAttachment(
+        file: File(recordedPath),
+        messageType: 'audio',
+        fallbackContent: 'Nota de voz',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible guardar la nota de voz: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -135,9 +449,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final period = dateTime.hour >= 12 ? 'pm' : 'am';
       return '${hour == 0 ? 12 : hour}:${dateTime.minute.toString().padLeft(2, '0')}$period';
     } else if (difference.inDays == 1) {
-      return 'Yesterday';
+      return 'Ayer';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
+      return 'Hace ${difference.inDays} dias';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
@@ -152,6 +466,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scrollController.dispose();
+    unawaited(_audioRecorder.dispose());
     super.dispose();
   }
 
@@ -193,7 +508,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
                 connectionAsync.when(
                   data: (isConnected) => Text(
-                    isConnected ? 'Online' : 'Offline',
+                    isConnected ? 'En linea' : 'Sin conexion',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isConnected
                           ? AppColors.success
@@ -214,7 +529,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
                 icon: const Icon(LucideIcons.phone, size: 22),
                 onPressed: _makeVoiceCall,
-                tooltip: 'Voice call',
+                tooltip: 'Llamar',
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 100.ms)
@@ -222,7 +537,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
                 icon: const Icon(LucideIcons.video, size: 22),
                 onPressed: _makeVideoCall,
-                tooltip: 'Video call',
+                tooltip: 'Videollamada',
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 200.ms)
@@ -249,7 +564,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       color: AppColors.textSecondary,
                     ),
                     const SizedBox(width: 12),
-                    Text(_showCallHistory ? 'Show messages' : 'Call history'),
+                    Text(
+                      _showCallHistory
+                          ? 'Ver mensajes'
+                          : 'Historial de llamadas',
+                    ),
                   ],
                 ),
               ),
@@ -316,73 +635,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child:
-              Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isMe ? AppColors.primary : AppColors.surface,
-                      borderRadius: BorderRadius.circular(16).copyWith(
-                        bottomRight: isMe
-                            ? const Radius.circular(4)
-                            : const Radius.circular(16),
-                        bottomLeft: !isMe
-                            ? const Radius.circular(4)
-                            : const Radius.circular(16),
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0A000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          msg.content,
-                          style: TextStyle(
-                            color: isMe
-                                ? AppColors.textOnPrimary
-                                : AppColors.textPrimary,
-                            fontSize: 15,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatTime(msg.createdAt),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: isMe
-                                    ? AppColors.textOnPrimary.withAlpha(180)
-                                    : AppColors.textTertiary,
-                              ),
-                            ),
-                            if (isMe) ...[
-                              const SizedBox(width: 4),
-                              Icon(
-                                msg.isRead ? Icons.done_all : Icons.done,
-                                size: 14,
-                                color: msg.isRead
-                                    ? AppColors.success.withAlpha(200)
-                                    : AppColors.textOnPrimary.withAlpha(200),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
+              _ChatBubble(
+                    isMe: isMe,
+                    timestamp: _formatTime(msg.createdAt),
+                    isRead: msg.isRead,
+                    child: _buildMessageBody(msg, isMe),
                   )
                   .animate()
                   .fadeIn(duration: 250.ms)
@@ -390,6 +647,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
       },
     );
+  }
+
+  Widget _buildMessageBody(Message msg, bool isMe) {
+    switch (msg.attachmentType) {
+      case 'image':
+        return _ImageAttachmentMessage(
+          imageUrl: msg.attachmentUrl,
+          caption: _normalizeAttachmentCaption(msg.content, 'Imagen'),
+          isMe: isMe,
+        );
+      case 'file':
+        return _FileAttachmentMessage(
+          title:
+              _normalizeAttachmentCaption(msg.content, 'Archivo adjunto') ??
+              'Archivo adjunto',
+          attachmentUrl: msg.attachmentUrl,
+          isMe: isMe,
+        );
+      case 'audio':
+        return _AudioAttachmentMessage(
+          attachmentUrl: msg.attachmentUrl,
+          label:
+              _normalizeAttachmentCaption(msg.content, 'Nota de voz') ??
+              'Nota de voz',
+          isMe: isMe,
+        );
+      case 'video':
+        return _VideoAttachmentMessage(
+          attachmentUrl: msg.attachmentUrl,
+          caption: _normalizeAttachmentCaption(msg.content, 'Video'),
+          isMe: isMe,
+        );
+      default:
+        return Text(
+          msg.content,
+          style: TextStyle(
+            color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+            fontSize: 15,
+            height: 1.4,
+          ),
+        );
+    }
+  }
+
+  String? _normalizeAttachmentCaption(String content, String defaultValue) {
+    if (content.trim().isEmpty) return null;
+    if (content == defaultValue) return null;
+    return content;
   }
 
   Widget _buildCallLogBubble(
@@ -404,73 +709,74 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(14),
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.78,
-            ),
-            decoration: BoxDecoration(
-              color: isMe ? AppColors.primarySurface : AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isMe ? AppColors.primaryLight : AppColors.divider,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: (isVideo ? AppColors.info : AppColors.primary)
-                        .withAlpha(24),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    isVideo ? LucideIcons.video : LucideIcons.phoneCall,
-                    color: isVideo ? AppColors.info : AppColors.primary,
-                    size: 18,
+      child:
+          Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.78,
+                ),
+                decoration: BoxDecoration(
+                  color: isMe ? AppColors.primarySurface : AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isMe ? AppColors.primaryLight : AppColors.divider,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: (isVideo ? AppColors.info : AppColors.primary)
+                            .withAlpha(24),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
+                      child: Icon(
+                        isVideo ? LucideIcons.video : LucideIcons.phoneCall,
+                        color: isVideo ? AppColors.info : AppColors.primary,
+                        size: 18,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _formatTime(message.createdAt),
-                        style: const TextStyle(
-                          color: AppColors.textTertiary,
-                          fontSize: 11,
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _formatTime(message.createdAt),
+                            style: const TextStyle(
+                              color: AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )
-          .animate()
-          .fadeIn(duration: 250.ms)
-          .slideX(begin: isMe ? 0.1 : -0.1, end: 0),
+              )
+              .animate()
+              .fadeIn(duration: 250.ms)
+              .slideX(begin: isMe ? 0.1 : -0.1, end: 0),
     );
   }
 
@@ -518,134 +824,143 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                 )
               : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: callMessages.length,
-            itemBuilder: (context, index) {
-              final message = callMessages[index];
-              final callLog = parseCallLog(message);
-              if (callLog == null || currentUserId == null) {
-                return const SizedBox.shrink();
-              }
+                  padding: const EdgeInsets.all(16),
+                  itemCount: callMessages.length,
+                  itemBuilder: (context, index) {
+                    final message = callMessages[index];
+                    final callLog = parseCallLog(message);
+                    if (callLog == null || currentUserId == null) {
+                      return const SizedBox.shrink();
+                    }
 
-              final isIncoming = callLog.callerId != currentUserId;
-              final wasAnswered = callLog.status == 'completed';
-              final isVideo = callLog.isVideo;
+                    final isIncoming = callLog.callerId != currentUserId;
+                    final wasAnswered = callLog.status == 'completed';
+                    final isVideo = callLog.isVideo;
 
-              return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x08000000),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
+                    return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: wasAnswered
-                                ? AppColors.primarySurface
-                                : AppColors.surfaceVariant,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            isVideo ? LucideIcons.video : LucideIcons.phone,
-                            size: 20,
-                            color: wasAnswered
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    isIncoming
-                                        ? LucideIcons.phoneIncoming
-                                        : LucideIcons.phoneOutgoing,
-                                    size: 14,
-                                    color: wasAnswered
-                                        ? AppColors.success
-                                        : AppColors.error,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isIncoming ? 'Entrante' : 'Saliente',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                  ),
-                                  if (!wasAnswered) ...[
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '(${buildCallSubtitle(callLog)})',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: AppColors.error),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                DateFormat(
-                                  'dd MMM, hh:mm a',
-                                ).format(message.createdAt),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.textSecondary),
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x08000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
-                        ),
-                        if (callLog.durationSeconds > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              formatCallDuration(callLog.durationSeconds),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textSecondary,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: wasAnswered
+                                      ? AppColors.primarySurface
+                                      : AppColors.surfaceVariant,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isVideo
+                                      ? LucideIcons.video
+                                      : LucideIcons.phone,
+                                  size: 20,
+                                  color: wasAnswered
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          isIncoming
+                                              ? LucideIcons.phoneIncoming
+                                              : LucideIcons.phoneOutgoing,
+                                          size: 14,
+                                          color: wasAnswered
+                                              ? AppColors.success
+                                              : AppColors.error,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          isIncoming ? 'Entrante' : 'Saliente',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                        ),
+                                        if (!wasAnswered) ...[
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '(${buildCallSubtitle(callLog)})',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: AppColors.error,
+                                                ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      DateFormat(
+                                        'dd MMM, hh:mm a',
+                                      ).format(message.createdAt),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (callLog.durationSeconds > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
                                   ),
-                            ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    formatCallDuration(callLog.durationSeconds),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 300.ms, delay: (index * 50).ms)
-                  .slideX(begin: -0.1, end: 0);
-            },
-          ),
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: (index * 50).ms)
+                        .slideX(begin: -0.1, end: 0);
+                  },
+                ),
         ),
       ],
     );
   }
 
   Widget _buildInputBar() {
+    final hasText = _controller.text.trim().isNotEmpty;
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -665,47 +980,703 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              LucideIcons.camera,
-              color: AppColors.textSecondary,
+          if (_isRecordingVoiceNote)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.primaryLight),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.mic,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Grabando nota de voz...',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _finishVoiceRecording(send: false),
+                    child: const Text('Cancelar'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: 'Type a message...',
-                hintStyle: const TextStyle(color: AppColors.textTertiary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppColors.surfaceVariant,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+          Row(
+            children: [
+              IconButton(
+                onPressed: _isUploadingAttachment ? null : _openAttachmentSheet,
+                icon: Icon(
+                  LucideIcons.paperclip,
+                  color: _isUploadingAttachment
+                      ? AppColors.textTertiary
+                      : AppColors.textSecondary,
                 ),
               ),
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
-            ),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  enabled: !_isRecordingVoiceNote,
+                  decoration: InputDecoration(
+                    hintText: _isRecordingVoiceNote
+                        ? 'La nota de voz se enviará al detener la grabación'
+                        : 'Escribe un mensaje...',
+                    hintStyle: const TextStyle(color: AppColors.textTertiary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.surfaceVariant,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendTextMessage(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_isUploadingAttachment)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                IconButton(
+                      onPressed: hasText
+                          ? _sendTextMessage
+                          : _handleVoiceNoteTap,
+                      icon: Icon(
+                        hasText
+                            ? LucideIcons.send
+                            : (_isRecordingVoiceNote
+                                  ? LucideIcons.square
+                                  : LucideIcons.mic),
+                        color: _isRecordingVoiceNote
+                            ? AppColors.error
+                            : AppColors.primary,
+                      ),
+                    )
+                    .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                      target: hasText ? 1 : 0,
+                    )
+                    .scale(end: const Offset(1.1, 1.1), duration: 600.ms),
+            ],
           ),
-          IconButton(
-                onPressed: _sendMessage,
-                icon: const Icon(LucideIcons.send, color: AppColors.primary),
-              )
-              .animate(
-                onPlay: (controller) => controller.repeat(reverse: true),
-                target: _controller.text.isNotEmpty ? 1 : 0,
-              )
-              .scale(end: const Offset(1.1, 1.1), duration: 600.ms),
         ],
       ),
     );
   }
+}
+
+enum _AttachmentOption {
+  camera,
+  gallery,
+  videoCamera,
+  videoGallery,
+  file,
+  audio,
+}
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({
+    required this.isMe,
+    required this.timestamp,
+    required this.isRead,
+    required this.child,
+  });
+
+  final bool isMe;
+  final String timestamp;
+  final bool isRead;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.75,
+      ),
+      decoration: BoxDecoration(
+        color: isMe ? AppColors.primary : AppColors.surface,
+        borderRadius: BorderRadius.circular(16).copyWith(
+          bottomRight: isMe
+              ? const Radius.circular(4)
+              : const Radius.circular(16),
+          bottomLeft: !isMe
+              ? const Radius.circular(4)
+              : const Radius.circular(16),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Align(alignment: Alignment.centerLeft, child: child),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                timestamp,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isMe
+                      ? AppColors.textOnPrimary.withAlpha(180)
+                      : AppColors.textTertiary,
+                ),
+              ),
+              if (isMe) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  isRead ? Icons.done_all : Icons.done,
+                  size: 14,
+                  color: isRead
+                      ? AppColors.success.withAlpha(200)
+                      : AppColors.textOnPrimary.withAlpha(200),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImageAttachmentMessage extends StatelessWidget {
+  const _ImageAttachmentMessage({
+    required this.imageUrl,
+    required this.caption,
+    required this.isMe,
+  });
+
+  final String? imageUrl;
+  final String? caption;
+  final bool isMe;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedUrl = resolveImageUrl(imageUrl);
+    if (resolvedUrl == null) {
+      return Text(
+        caption ?? 'Imagen no disponible',
+        style: TextStyle(
+          color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+          fontSize: 15,
+          height: 1.4,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => FullScreenImageViewer(imageUrl: resolvedUrl),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.network(
+              resolvedUrl,
+              width: 220,
+              height: 220,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 220,
+                height: 220,
+                color: Colors.black12,
+                alignment: Alignment.center,
+                child: const Icon(
+                  LucideIcons.imageOff,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (caption != null && caption!.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            caption!,
+            style: TextStyle(
+              color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FileAttachmentMessage extends StatelessWidget {
+  const _FileAttachmentMessage({
+    required this.title,
+    required this.attachmentUrl,
+    required this.isMe,
+  });
+
+  final String title;
+  final String? attachmentUrl;
+  final bool isMe;
+
+  Future<void> _openFile() async {
+    final resolvedUrl = resolveImageUrl(attachmentUrl);
+    if (resolvedUrl == null) return;
+
+    final uri = Uri.tryParse(resolvedUrl);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: attachmentUrl == null ? null : _openFile,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isMe ? Colors.white.withAlpha(18) : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              LucideIcons.fileText,
+              color: isMe ? AppColors.textOnPrimary : AppColors.primary,
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isMe
+                          ? AppColors.textOnPrimary
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    attachmentUrl == null
+                        ? 'Archivo no disponible'
+                        : 'Toca para abrir',
+                    style: TextStyle(
+                      color: isMe
+                          ? AppColors.textOnPrimary.withAlpha(180)
+                          : AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AudioAttachmentMessage extends StatefulWidget {
+  const _AudioAttachmentMessage({
+    required this.attachmentUrl,
+    required this.label,
+    required this.isMe,
+  });
+
+  final String? attachmentUrl;
+  final String label;
+  final bool isMe;
+
+  @override
+  State<_AudioAttachmentMessage> createState() =>
+      _AudioAttachmentMessageState();
+}
+
+class _AudioAttachmentMessageState extends State<_AudioAttachmentMessage> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer.playerStateStream.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state.playing;
+      });
+    });
+    _audioPlayer.durationStream.listen((duration) {
+      if (!mounted || duration == null) return;
+      setState(() {
+        _duration = duration;
+      });
+    });
+    _audioPlayer.positionStream.listen((position) {
+      if (!mounted) return;
+      setState(() {
+        _position = position;
+      });
+    });
+  }
+
+  Future<void> _togglePlayback() async {
+    final resolvedUrl = resolveImageUrl(widget.attachmentUrl);
+    if (resolvedUrl == null) return;
+
+    if (_isPlaying) {
+      await _audioPlayer.pause();
+      return;
+    }
+
+    if (_audioPlayer.audioSource == null) {
+      await _audioPlayer.setUrl(resolvedUrl);
+    }
+    await _audioPlayer.play();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_audioPlayer.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _duration.inMilliseconds == 0
+        ? 0.0
+        : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0, 1);
+    final foreground = widget.isMe
+        ? AppColors.textOnPrimary
+        : AppColors.textPrimary;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: widget.isMe
+            ? Colors.white.withAlpha(18)
+            : AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: _togglePlayback,
+            icon: Icon(
+              _isPlaying ? LucideIcons.pause : LucideIcons.play,
+              color: foreground,
+            ),
+          ),
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 120,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress.toDouble(),
+                    minHeight: 6,
+                    backgroundColor: foreground.withAlpha(50),
+                    valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _formatAudioDuration(
+                    _duration == Duration.zero ? _position : _duration,
+                  ),
+                  style: TextStyle(
+                    color: foreground.withAlpha(180),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoAttachmentMessage extends StatefulWidget {
+  const _VideoAttachmentMessage({
+    required this.attachmentUrl,
+    required this.caption,
+    required this.isMe,
+  });
+
+  final String? attachmentUrl;
+  final String? caption;
+  final bool isMe;
+
+  @override
+  State<_VideoAttachmentMessage> createState() =>
+      _VideoAttachmentMessageState();
+}
+
+class _VideoAttachmentMessageState extends State<_VideoAttachmentMessage> {
+  VideoPlayerController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePreview();
+  }
+
+  Future<void> _initializePreview() async {
+    final resolvedUrl = resolveImageUrl(widget.attachmentUrl);
+    if (resolvedUrl == null) return;
+
+    final controller = VideoPlayerController.networkUrl(Uri.parse(resolvedUrl));
+    try {
+      await controller.initialize();
+      await controller.pause();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+      });
+    } catch (_) {
+      await controller.dispose();
+    }
+  }
+
+  void _openVideoPlayer() {
+    final resolvedUrl = resolveImageUrl(widget.attachmentUrl);
+    if (resolvedUrl == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _VideoPlayerScreen(
+          videoUrl: resolvedUrl,
+          title: widget.caption ?? 'Video',
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    unawaited(_controller?.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    return GestureDetector(
+      onTap: _openVideoPlayer,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (controller != null && controller.value.isInitialized)
+                  SizedBox(
+                    width: 220,
+                    height: 220,
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: controller.value.size.width,
+                        height: controller.value.size.height,
+                        child: VideoPlayer(controller),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: 220,
+                    height: 220,
+                    color: Colors.black12,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      LucideIcons.video,
+                      color: AppColors.textSecondary,
+                      size: 34,
+                    ),
+                  ),
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(140),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.play,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (widget.caption != null && widget.caption!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              widget.caption!,
+              style: TextStyle(
+                color: widget.isMe
+                    ? AppColors.textOnPrimary
+                    : AppColors.textPrimary,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoPlayerScreen extends StatefulWidget {
+  const _VideoPlayerScreen({required this.videoUrl, required this.title});
+
+  final String videoUrl;
+  final String title;
+
+  @override
+  State<_VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<_VideoPlayerScreen> {
+  late final VideoPlayerController _controller;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await _controller.initialize();
+    await _controller.play();
+    if (!mounted) return;
+    setState(() {
+      _initialized = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_controller.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(widget.title),
+      ),
+      body: Center(
+        child: !_initialized
+            ? const CircularProgressIndicator(color: Colors.white)
+            : AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    VideoPlayer(_controller),
+                    GestureDetector(
+                      onTap: () async {
+                        if (_controller.value.isPlaying) {
+                          await _controller.pause();
+                        } else {
+                          await _controller.play();
+                        }
+                        if (!mounted) return;
+                        setState(() {});
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          _controller.value.isPlaying
+                              ? LucideIcons.pause
+                              : LucideIcons.play,
+                          color: Colors.white,
+                          size: 54,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+String _formatAudioDuration(Duration duration) {
+  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
 }

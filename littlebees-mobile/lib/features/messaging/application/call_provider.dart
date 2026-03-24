@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:vibration/vibration.dart';
 
 import '../../../core/api/socket_client.dart';
@@ -27,29 +27,40 @@ class IncomingCallInvitation {
   final String? fromRole;
 }
 
-final incomingCallProvider = StateProvider<IncomingCallInvitation?>((ref) => null);
+final incomingCallProvider = StateProvider<IncomingCallInvitation?>(
+  (ref) => null,
+);
 final activeCallIdProvider = StateProvider<String?>((ref) => null);
+Timer? _incomingCallVibrationTimer;
+final AudioPlayer _incomingCallAudioPlayer = AudioPlayer();
+bool _incomingCallAudioPrepared = false;
 
-Future<void> _startIncomingCallAlert() async {
-  FlutterRingtonePlayer().play(
-    android: AndroidSounds.ringtone,
-    ios: const IosSound(1003),
-    looping: true,
-    volume: 0.8,
-    asAlarm: false,
-  );
+Future<void> startIncomingCallAlert() async {
+  await stopIncomingCallAlert();
+
+  if (!_incomingCallAudioPrepared) {
+    await _incomingCallAudioPlayer.setAsset('assets/audio/LittleBees.mp3');
+    await _incomingCallAudioPlayer.setLoopMode(LoopMode.one);
+    _incomingCallAudioPrepared = true;
+  }
+
+  await _incomingCallAudioPlayer.setVolume(1);
+  await _incomingCallAudioPlayer.seek(Duration.zero);
+  await _incomingCallAudioPlayer.play();
 
   if (await Vibration.hasVibrator()) {
-    Vibration.vibrate(
-      pattern: [0, 700, 500, 700],
-      repeat: 0,
-      intensities: [180, 255],
+    await Vibration.vibrate(duration: 650);
+    _incomingCallVibrationTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => Vibration.vibrate(duration: 650),
     );
   }
 }
 
-Future<void> _stopIncomingCallAlert() async {
-  FlutterRingtonePlayer().stop();
+Future<void> stopIncomingCallAlert() async {
+  _incomingCallVibrationTimer?.cancel();
+  _incomingCallVibrationTimer = null;
+  await _incomingCallAudioPlayer.stop();
   await Vibration.cancel();
 }
 
@@ -81,7 +92,7 @@ final callSyncProvider = Provider<void>((ref) {
       fromAvatarUrl: from['avatarUrl'] as String?,
       fromRole: from['role'] as String?,
     );
-    unawaited(_startIncomingCallAlert());
+    unawaited(startIncomingCallAlert());
   }
 
   void handleCallCompleted(dynamic data) {
@@ -98,7 +109,7 @@ final callSyncProvider = Provider<void>((ref) {
       ref.read(activeCallIdProvider.notifier).state = null;
     }
 
-    unawaited(_stopIncomingCallAlert());
+    unawaited(stopIncomingCallAlert());
   }
 
   Future<void>.microtask(() async {
@@ -116,7 +127,7 @@ final callSyncProvider = Provider<void>((ref) {
 
   ref.onDispose(() {
     disposed = true;
-    unawaited(_stopIncomingCallAlert());
+    unawaited(stopIncomingCallAlert());
     SocketClient.getSocket().then((socket) {
       socket.off('incoming_call', handleIncomingCall);
       socket.off('call_declined', handleCallCompleted);

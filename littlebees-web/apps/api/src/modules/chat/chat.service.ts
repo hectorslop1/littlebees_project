@@ -579,6 +579,7 @@ export class ChatService {
 
     return {
       ...message,
+      attachmentUrl: this.filesService.resolveStoredFileUrl(message.attachmentUrl),
       senderName: senderName || 'Usuario',
       senderAvatarUrl: sender?.avatarUrl ?? null,
     };

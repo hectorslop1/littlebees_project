@@ -43,6 +43,44 @@ class ImageService {
     }
   }
 
+  /// Grabar video con la cámara
+  Future<File?> captureVideo({
+    Duration maxDuration = const Duration(seconds: 60),
+  }) async {
+    try {
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.camera,
+        maxDuration: maxDuration,
+      );
+
+      if (video == null) return null;
+
+      return File(video.path);
+    } catch (e) {
+      debugPrint('Error capturing video: $e');
+      rethrow;
+    }
+  }
+
+  /// Seleccionar video desde la galería
+  Future<File?> pickVideoFromGallery({
+    Duration maxDuration = const Duration(seconds: 60),
+  }) async {
+    try {
+      final XFile? video = await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: maxDuration,
+      );
+
+      if (video == null) return null;
+
+      return File(video.path);
+    } catch (e) {
+      debugPrint('Error picking video: $e');
+      rethrow;
+    }
+  }
+
   /// Mostrar opciones de cámara o galería
   Future<File?> pickImage({bool allowGallery = true}) async {
     // Por defecto, usar cámara directamente

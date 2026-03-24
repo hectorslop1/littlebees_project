@@ -107,13 +107,15 @@ export class UsersService {
       }
     }
 
-    const updateData: any = {
-      email: updateUserDto.email,
-      firstName: updateUserDto.firstName,
-      lastName: updateUserDto.lastName,
-      phone: updateUserDto.phone,
-      avatarUrl: updateUserDto.avatarUrl,
-    };
+    const updateData = Object.fromEntries(
+      Object.entries({
+        email: updateUserDto.email,
+        firstName: updateUserDto.firstName,
+        lastName: updateUserDto.lastName,
+        phone: updateUserDto.phone,
+        avatarUrl: updateUserDto.avatarUrl,
+      }).filter(([, value]) => value !== undefined && value !== null),
+    ) as Record<string, unknown>;
 
     if (updateUserDto.password) {
       updateData.passwordHash = await bcrypt.hash(updateUserDto.password, 10);
