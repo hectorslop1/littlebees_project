@@ -183,15 +183,23 @@ class RemoteHomeRepository {
   }
 
   TimelineEvent _parseTimelineEvent(Map<String, dynamic> json) {
-    String? caregiverName;
+    final metadata = json['metadata'] as Map<String, dynamic>?;
+    final rawPhotoUrls = metadata?['photoUrls'] as List?;
+    final photoUrls = rawPhotoUrls
+        ?.map((url) => url?.toString())
+        .whereType<String>()
+        .where((url) => url.isNotEmpty)
+        .toList();
+    final caregiverName = json['recordedByName'] as String?;
 
     MealDetails? mealDetails;
-    final metadata = json['metadata'] as Map<String, dynamic>?;
     if (json['type'] == 'meal' && metadata != null) {
       mealDetails = MealDetails(
-        mealType: _parseMealType(metadata['food'] ?? ''),
+        mealType: _parseMealType(
+          metadata['foodEaten'] ?? metadata['food'] ?? '',
+        ),
         amount: MealConsumption.some,
-        notes: metadata['notes'],
+        notes: metadata['notes'] ?? json['description'],
       );
     }
 
@@ -213,7 +221,7 @@ class RemoteHomeRepository {
       description: json['description'],
       caregiverName: caregiverName,
       caregiverAvatarUrl: null,
-      photoUrls: null,
+      photoUrls: photoUrls == null || photoUrls.isEmpty ? null : photoUrls,
       mealDetails: mealDetails,
       napDetails: napDetails,
     );
@@ -221,6 +229,10 @@ class RemoteHomeRepository {
 
   TimelineEventType _parseEventType(String type) {
     switch (type) {
+      case 'check_in':
+        return TimelineEventType.checkIn;
+      case 'check_out':
+        return TimelineEventType.checkOut;
       case 'meal':
         return TimelineEventType.meal;
       case 'nap':

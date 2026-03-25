@@ -53,7 +53,7 @@ class TimelineItem extends StatelessWidget {
   Widget _buildEventContent(BuildContext context) {
     bool hasContent =
         event.description != null ||
-        (event.type == TimelineEventType.photo && event.photoUrls != null) ||
+        event.photoUrls != null ||
         event.napDetails != null ||
         event.mealDetails != null;
 
@@ -89,14 +89,13 @@ class TimelineItem extends StatelessWidget {
                     event.description!,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  if (event.type == TimelineEventType.photo ||
+                  if (event.photoUrls != null ||
                       event.napDetails != null ||
                       event.mealDetails != null)
                     const SizedBox(height: AppSpacing.sm),
                 ],
 
-                if (event.type == TimelineEventType.photo &&
-                    event.photoUrls != null)
+                if (event.photoUrls != null)
                   SizedBox(
                     height: 120,
                     child: ListView.separated(

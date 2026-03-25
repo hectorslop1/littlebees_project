@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/endpoints.dart';
 import '../../../core/storage/secure_token_storage.dart';
@@ -54,20 +56,41 @@ class AuthRepository {
   }
 
   Future<bool> hasValidSession() async {
-    final token = await SecureTokenStorage.getAccessToken();
-    if (token == null || token.isEmpty) return false;
+    final accessToken = await SecureTokenStorage.getAccessToken();
+    final accessPayload = accessToken != null ? _parseJwt(accessToken) : null;
 
-    final payload = _parseJwt(token);
-    if (payload == null) return false;
+    if (accessPayload != null && !accessPayload.isExpired) {
+      return true;
+    }
 
-    return !payload.isExpired;
+    final refreshToken = await SecureTokenStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return false;
+    }
+
+    final refreshPayload = _parseJwt(refreshToken);
+    if (refreshPayload == null || refreshPayload.isExpired) {
+      await SecureTokenStorage.clearTokens();
+      return false;
+    }
+
+    return refreshSession();
   }
 
   Future<UserInfo?> getUserFromToken() async {
-    final token = await SecureTokenStorage.getAccessToken();
-    if (token == null || token.isEmpty) return null;
+    var token = await SecureTokenStorage.getAccessToken();
+    var payload = token != null ? _parseJwt(token) : null;
 
-    final payload = _parseJwt(token);
+    if (payload == null || payload.isExpired) {
+      final refreshed = await refreshSession();
+      if (!refreshed) {
+        return null;
+      }
+      token = await SecureTokenStorage.getAccessToken();
+      payload = token != null ? _parseJwt(token) : null;
+    }
+
+    if (token == null || token.isEmpty) return null;
     if (payload == null || payload.isExpired) return null;
 
     return UserInfo(
@@ -78,6 +101,41 @@ class AuthRepository {
       role: payload.role,
       mfaEnabled: false,
     );
+  }
+
+  Future<bool> refreshSession() async {
+    try {
+      final refreshToken = await SecureTokenStorage.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        return false;
+      }
+
+      final response =
+          await Dio(
+            BaseOptions(
+              baseUrl: AppConfig.apiBaseUrl,
+              connectTimeout: AppConfig.connectTimeout,
+              receiveTimeout: AppConfig.receiveTimeout,
+            ),
+          ).post<Map<String, dynamic>>(
+            Endpoints.refresh,
+            data: {'refreshToken': refreshToken},
+          );
+
+      final data = response.data;
+      if (data == null) {
+        return false;
+      }
+
+      await SecureTokenStorage.storeTokens(
+        accessToken: data['accessToken'] as String,
+        refreshToken: data['refreshToken'] as String,
+      );
+      return true;
+    } catch (_) {
+      await SecureTokenStorage.clearTokens();
+      return false;
+    }
   }
 
   JwtPayload? _parseJwt(String token) {

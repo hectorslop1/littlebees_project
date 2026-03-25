@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_button.dart';
 import '../../../design_system/widgets/lb_input.dart';
@@ -39,273 +40,267 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(authProvider.notifier)
           .login(_emailController.text.trim(), _passwordController.text);
 
-      if (mounted) {
-        setState(() => _isLoading = false);
-        // Explicitly navigate to home after successful login
-        context.go('/home');
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      context.go('/home');
     } catch (e) {
-      print('LOGIN ERROR: $e'); // Debug logging
-      if (mounted) {
-        setState(() => _isLoading = false);
-        final errorMessage = e.toString().replaceAll('Exception: ', '');
-        print('SHOWING SNACKBAR: $errorMessage'); // Debug logging
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF5F6F8),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 60),
-
-                _buildLogo(),
-
-                const SizedBox(height: 48),
-
-                _buildHeader(context),
-
-                const SizedBox(height: 48),
-
-                _buildEmailField(),
-
-                const SizedBox(height: 20),
-
-                _buildPasswordField(),
-
-                const SizedBox(height: 12),
-
-                _buildForgotPassword(context),
-
-                const SizedBox(height: 32),
-
-                _buildLoginButton(),
-
-                const SizedBox(height: 24),
-
-                _buildDivider(),
-
-                const SizedBox(height: 24),
-
-                _buildSignUpPrompt(context),
-
-                const SizedBox(height: 32),
-              ],
+        child: Stack(
+          children: [
+            Positioned(
+              top: -40,
+              right: -10,
+              child: _GlowBubble(
+                size: 180,
+                colors: const [Color(0x33D4A853), Color(0x11D4A853)],
+              ),
             ),
-          ),
+            Positioned(
+              top: 100,
+              left: -30,
+              child: _GlowBubble(
+                size: 140,
+                colors: const [Color(0x228FAE8B), Color(0x1190CAF9)],
+              ),
+            ),
+            Positioned(
+              bottom: 180,
+              right: -50,
+              child: _GlowBubble(
+                size: 200,
+                colors: const [Color(0x22F0DFA8), Color(0x11E7F0FB)],
+              ),
+            ),
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHero(),
+                    const SizedBox(height: 24),
+                    _buildLoginCard(context),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildLogo() {
-    return Center(
-          child: Image.asset(
-            'assets/images/Logo.png',
-            width: 220,
-            fit: BoxFit.contain,
+  Widget _buildHero() {
+    return Container(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF8EBC8), Color(0xFFE8F0FB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(10),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Image.asset(
+                  'assets/images/Logo.png',
+                  width: 210,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tu escuela, en tiempo real',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 26,
+                  height: 1.05,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Accede con tu cuenta para entrar a LittleBees.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         )
         .animate()
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1.0, 1.0),
-          duration: 600.ms,
-          curve: Curves.easeOutBack,
-        )
-        .fadeIn(duration: 500.ms);
+        .fadeIn(duration: 450.ms)
+        .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic);
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-              'Welcome back',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.5,
+  Widget _buildLoginCard(BuildContext context) {
+    return Container(
+          padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(8),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
-            )
-            .animate()
-            .fadeIn(duration: 500.ms)
-            .slideX(begin: -0.2, end: 0, curve: Curves.easeOut),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Inicia sesión',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Usa tus credenciales institucionales para entrar.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 24),
+              LBInput(
+                controller: _emailController,
+                label: 'Correo electrónico',
+                hintText: 'tu.correo@institucion.com',
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: LucideIcons.mail,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ingresa tu correo';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Ingresa un correo válido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 18),
+              LBInput(
+                controller: _passwordController,
+                label: 'Contraseña',
+                hintText: '••••••••',
+                obscureText: !_isPasswordVisible,
+                prefixIcon: LucideIcons.lock,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
+                    size: 20,
+                    color: AppColors.textSecondary,
+                  ),
+                  onPressed: () {
+                    setState(() => _isPasswordVisible = !_isPasswordVisible);
+                  },
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ingresa tu contraseña';
+                  }
+                  if (value.length < 6) {
+                    return 'La contraseña debe tener al menos 6 caracteres';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'La recuperación de contraseña estará disponible próximamente.',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              LBButton(
+                text: _isLoading ? 'Entrando...' : 'Entrar a LittleBees',
+                onPressed: _isLoading ? null : _handleLogin,
+                icon: _isLoading
+                    ? null
+                    : const Icon(
+                        LucideIcons.logIn,
+                        size: 20,
+                        color: AppColors.textOnPrimary,
+                      ),
+              ),
+            ],
+          ),
+        )
+        .animate()
+        .fadeIn(duration: 500.ms, delay: 100.ms)
+        .slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic);
+  }
+}
 
-        const SizedBox(height: 8),
+class _GlowBubble extends StatelessWidget {
+  const _GlowBubble({required this.size, required this.colors});
 
-        Text(
-              'Sign in to continue',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
-            )
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 100.ms)
-            .slideX(begin: -0.2, end: 0, curve: Curves.easeOut),
-      ],
+  final double size;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: colors),
+        ),
+      ),
     );
-  }
-
-  Widget _buildEmailField() {
-    return LBInput(
-          controller: _emailController,
-          label: 'Email',
-          hintText: 'your.email@example.com',
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: LucideIcons.mail,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your email';
-            }
-            if (!value.contains('@')) {
-              return 'Please enter a valid email';
-            }
-            return null;
-          },
-        )
-        .animate()
-        .fadeIn(duration: 500.ms, delay: 200.ms)
-        .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
-  }
-
-  Widget _buildPasswordField() {
-    return LBInput(
-          controller: _passwordController,
-          label: 'Password',
-          hintText: '••••••••',
-          obscureText: !_isPasswordVisible,
-          prefixIcon: LucideIcons.lock,
-          suffixIcon: IconButton(
-            icon: Icon(
-              _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
-              size: 20,
-              color: AppColors.textSecondary,
-            ),
-            onPressed: () {
-              setState(() => _isPasswordVisible = !_isPasswordVisible);
-            },
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your password';
-            }
-            if (value.length < 6) {
-              return 'Password must be at least 6 characters';
-            }
-            return null;
-          },
-        )
-        .animate()
-        .fadeIn(duration: 500.ms, delay: 300.ms)
-        .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
-  }
-
-  Widget _buildForgotPassword(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: TextButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password reset coming soon'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-        child: Text(
-          'Forgot password?',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 400.ms);
-  }
-
-  Widget _buildLoginButton() {
-    return LBButton(
-          text: _isLoading ? 'Signing in...' : 'Sign In',
-          onPressed: _isLoading ? null : _handleLogin,
-          icon: _isLoading
-              ? null
-              : const Icon(
-                  LucideIcons.logIn,
-                  size: 20,
-                  color: AppColors.textOnPrimary,
-                ),
-        )
-        .animate()
-        .fadeIn(duration: 500.ms, delay: 500.ms)
-        .slideY(begin: 0.2, end: 0, curve: Curves.easeOut);
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider(color: AppColors.border)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'or',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textTertiary),
-          ),
-        ),
-        const Expanded(child: Divider(color: AppColors.border)),
-      ],
-    ).animate().fadeIn(duration: 500.ms, delay: 600.ms);
-  }
-
-  Widget _buildSignUpPrompt(BuildContext context) {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Don\'t have an account? ',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-          ),
-          TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sign up coming soon'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: Text(
-              'Sign up',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 700.ms);
   }
 }

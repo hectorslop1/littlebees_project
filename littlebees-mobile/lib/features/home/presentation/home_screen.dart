@@ -109,25 +109,15 @@ class _ParentHomeContent extends ConsumerWidget {
                               .fadeIn(delay: 40.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           const SizedBox(height: 18),
-                          _QuickActionsStrip(
-                            onChildrenTap: () =>
-                                context.pushNamed(RouteNames.children),
-                            onPaymentsTap: () =>
-                                context.pushNamed(RouteNames.payments),
-                            onMessagesTap: () =>
-                                context.pushNamed(RouteNames.messages),
-                            unreadMessages: unreadMessages,
-                          ).animate().fadeIn(delay: 80.ms, duration: 320.ms),
-                          const SizedBox(height: 18),
                           StatusCard(status: dailyStory.status)
                               .animate()
                               .fadeIn(delay: 120.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           if (dailyStory.aiSummary != null) ...[
                             const SizedBox(height: 18),
-                            AiSummaryCard(summary: dailyStory.aiSummary!)
-                                .animate()
-                                .fadeIn(delay: 160.ms, duration: 320.ms),
+                            AiSummaryCard(
+                              summary: dailyStory.aiSummary!,
+                            ).animate().fadeIn(delay: 160.ms, duration: 320.ms),
                           ],
                           const SizedBox(height: 26),
                           _TodaySectionHeader(
@@ -216,10 +206,7 @@ class _HomeTopBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        _RoundActionButton(
-          icon: LucideIcons.bell,
-          onTap: onNotificationsTap,
-        ),
+        _RoundActionButton(icon: LucideIcons.bell, onTap: onNotificationsTap),
         const SizedBox(width: 10),
         _RoundActionButton(
           icon: LucideIcons.messageCircle,
@@ -284,144 +271,6 @@ class _RoundActionButton extends StatelessWidget {
   }
 }
 
-class _QuickActionsStrip extends StatelessWidget {
-  const _QuickActionsStrip({
-    required this.onChildrenTap,
-    required this.onPaymentsTap,
-    required this.onMessagesTap,
-    required this.unreadMessages,
-  });
-
-  final VoidCallback onChildrenTap;
-  final VoidCallback onPaymentsTap;
-  final VoidCallback onMessagesTap;
-  final int unreadMessages;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _QuickActionCard(
-            icon: LucideIcons.baby,
-            title: 'Mis hijos',
-            subtitle: 'Perfiles y grupos',
-            accent: AppColors.secondary,
-            onTap: onChildrenTap,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _QuickActionCard(
-            icon: LucideIcons.creditCard,
-            title: 'Pagos',
-            subtitle: 'Estado de cuenta',
-            accent: AppColors.primary,
-            onTap: onPaymentsTap,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _QuickActionCard(
-            icon: LucideIcons.messageCircle,
-            title: 'Chat',
-            subtitle: 'Mensajes activos',
-            accent: AppColors.info,
-            onTap: onMessagesTap,
-            badgeCount: unreadMessages,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.onTap,
-    this.badgeCount = 0,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color accent;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x10000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: accent.withAlpha(30),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(icon, size: 18, color: accent),
-                  ),
-                  if (badgeCount > 0)
-                    Positioned(
-                      right: -8,
-                      top: -8,
-                      child: _UnreadBadge(count: badgeCount),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  height: 1.35,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _UnreadBadge extends StatelessWidget {
   const _UnreadBadge({required this.count});
 
@@ -453,10 +302,7 @@ class _UnreadBadge extends StatelessWidget {
 }
 
 class _TodaySectionHeader extends StatelessWidget {
-  const _TodaySectionHeader({
-    required this.title,
-    required this.eventsCount,
-  });
+  const _TodaySectionHeader({required this.title, required this.eventsCount});
 
   final String title;
   final int eventsCount;
@@ -517,11 +363,7 @@ class _EmptyTimelineState extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(
-            LucideIcons.clock3,
-            size: 36,
-            color: AppColors.textTertiary,
-          ),
+          Icon(LucideIcons.clock3, size: 36, color: AppColors.textTertiary),
           SizedBox(height: 14),
           Text(
             'Aun no hay registros del dia',
@@ -535,10 +377,7 @@ class _EmptyTimelineState extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             'Cuando la escuela registre actividades, alimentos o siestas apareceran aqui.',
-            style: TextStyle(
-              height: 1.5,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(height: 1.5, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -630,10 +469,7 @@ class _ParentHomeEmptyState extends StatelessWidget {
 }
 
 class _ParentHomeErrorState extends StatelessWidget {
-  const _ParentHomeErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ParentHomeErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

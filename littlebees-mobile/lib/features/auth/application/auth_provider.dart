@@ -74,18 +74,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<LoginResponse> login(String email, String password) async {
-    print('🔐 AUTH: Starting login for $email');
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      print('🔐 AUTH: Calling repository login...');
       final response = await _repository.login(
         email: email,
         password: password,
-      );
-
-      print(
-        '🔐 AUTH: Login successful! User: ${response.user.email}, Role: ${response.user.role}',
       );
 
       state = AuthState(
@@ -94,18 +88,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
 
-      print(
-        '🔐 AUTH: State updated. isAuthenticated: ${state.isAuthenticated}',
-      );
-
       return response;
     } catch (e) {
-      print('❌ AUTH ERROR: $e');
       String errorMessage = 'Error al iniciar sesión';
 
-      // Parse DioException for better error messages
       final errorStr = e.toString().toLowerCase();
-      print('❌ AUTH ERROR STRING: $errorStr');
 
       if (errorStr.contains('401') || errorStr.contains('unauthorized')) {
         errorMessage = 'Credenciales incorrectas';
@@ -119,9 +106,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         errorMessage = 'Tiempo de espera agotado. Intenta de nuevo.';
       }
 
-      print('❌ AUTH: Setting error message: $errorMessage');
       state = state.copyWith(isLoading: false, error: errorMessage);
-      print('❌ AUTH: Throwing exception...');
       throw Exception(errorMessage);
     }
   }
@@ -140,7 +125,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final updatedUser = await _repository.updateMyProfile(avatarUrl: avatarUrl);
+      final updatedUser = await _repository.updateMyProfile(
+        avatarUrl: avatarUrl,
+      );
       state = AuthState(
         user: updatedUser,
         tenant: state.tenant,

@@ -7,6 +7,7 @@ import 'widgets/photo_grid.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../../design_system/widgets/lb_empty_state.dart';
 import '../../../../design_system/widgets/lb_error_state.dart';
+import '../../../../design_system/widgets/lb_avatar.dart';
 import '../../auth/application/auth_provider.dart';
 import 'create_activity_screen.dart';
 
@@ -23,6 +24,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final photosAsync = ref.watch(photosProvider);
+    final activityFeedAsync = ref.watch(activityFeedProvider);
     final tr = ref.watch(translationsProvider);
     final authState = ref.watch(authProvider);
     final isTeacher =
@@ -43,12 +45,17 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const CreateActivityScreen(),
                     ),
-                  );
+                  ).then((saved) {
+                    if (saved == true) {
+                      ref.invalidate(photosProvider);
+                      ref.invalidate(activityFeedProvider);
+                    }
+                  });
                 },
               ),
             ),
@@ -178,39 +185,184 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onRetry: () => ref.refresh(photosProvider),
                       ),
                     )
-                  : Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              LucideIcons.clipboard,
-                              size: 64,
-                              color: AppColors.textTertiary,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              tr.tr('activityLogTitle'),
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              isTeacher
-                                  ? '${tr.tr('activityLogMsg')}\n\nPresiona "Nueva" para crear una actividad.'
-                                  : tr.tr('activityLogMsg'),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                  : activityFeedAsync.when(
+                      data: (items) {
+                        if (items.isEmpty) {
+                          return LBEmptyState(
+                            icon: LucideIcons.clipboardList,
+                            title: 'Aún no hay actividad registrada',
+                            message: isTeacher
+                                ? 'Cuando registres actividades del aula, aparecerán aquí y también podrán reflejarse en la experiencia del padre.'
+                                : tr.tr('activityLogMsg'),
+                          );
+                        }
+
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            ref.invalidate(activityFeedProvider);
+                          },
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                            itemCount: items.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final item = items[index];
+                              final log = item.log;
+                              final metadata = log.metadata ?? const {};
+                              final activityType =
+                                  metadata['activityType'] as String?;
+
+                              return Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha(8),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        LBAvatar(
+                                          imageUrl: item.childPhotoUrl,
+                                          placeholder: item.childName.isNotEmpty
+                                              ? item.childName
+                                                    .trim()
+                                                    .split(' ')
+                                                    .first[0]
+                                              : '?',
+                                          size: LBAvatarSize.large,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.childName,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                log.time ?? '',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withAlpha(
+                                              24,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            _activityBadgeLabel(
+                                              activityType ?? log.type.value,
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Text(
+                                      log.title,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    if ((log.description ?? '')
+                                        .trim()
+                                        .isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          log.description!,
+                                          style: TextStyle(
+                                            height: 1.45,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    if ((metadata['photoUrls'] as List?)
+                                            ?.isNotEmpty ==
+                                        true)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 12),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primarySurface,
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                LucideIcons.image,
+                                                size: 16,
+                                                color: AppColors.primary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  '${(metadata['photoUrls'] as List).length} foto(s) adjuntas',
+                                                  style: const TextStyle(
+                                                    color: AppColors.primary,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, _) => LBErrorState(
+                        title: 'No fue posible cargar la bitácora',
+                        message:
+                            'Intenta actualizar. Si el problema sigue, revisamos el contrato del backend.',
+                        onRetry: () => ref.invalidate(activityFeedProvider),
                       ),
                     ),
             ),
@@ -218,5 +370,26 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         ),
       ),
     );
+  }
+
+  String _activityBadgeLabel(String rawType) {
+    switch (rawType) {
+      case 'meal':
+        return 'Comida';
+      case 'nap':
+        return 'Siesta';
+      case 'bathroom':
+        return 'Baño';
+      case 'play':
+        return 'Juego';
+      case 'learning':
+        return 'Aprendizaje';
+      case 'outdoor':
+        return 'Exterior';
+      case 'art':
+        return 'Arte';
+      default:
+        return 'Actividad';
+    }
   }
 }

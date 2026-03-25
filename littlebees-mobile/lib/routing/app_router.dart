@@ -37,37 +37,23 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
-      // Read auth state DIRECTLY at redirect time (not captured)
       final authState = ref.read(authProvider);
       final isLoading = authState.isLoading;
       final isLoggedIn = authState.isAuthenticated;
       final isOnAuthPage = state.matchedLocation.startsWith('/auth');
       final isOnSplash = state.matchedLocation == '/';
 
-      print(
-        '🔄 ROUTER REDIRECT: isLoading=$isLoading, isLoggedIn=$isLoggedIn, location=${state.matchedLocation}',
-      );
+      if (isLoading) return null;
 
-      // While auth is loading, stay on splash
-      if (isLoading) {
-        return isOnSplash ? null : '/';
-      }
-
-      // Allow splash screen briefly
       if (isOnSplash) {
         return isLoggedIn ? '/home' : '/auth/login';
       }
 
-      // If not logged in and not on auth page, redirect to login
       if (!isLoggedIn && !isOnAuthPage) {
         return '/auth/login';
       }
 
-      // If logged in and on auth page, redirect to home
       if (isLoggedIn && isOnAuthPage) {
-        print(
-          '🔄 ROUTER: Redirecting authenticated user from auth page to /home',
-        );
         return '/home';
       }
 
@@ -140,8 +126,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                       final extra = state.extra as Map<String, dynamic>? ?? {};
                       return CallScreen(
                         conversationId: state.pathParameters['conversationId']!,
-                        participantName: extra['participantName'] as String? ?? 'Usuario',
-                        participantAvatarUrl: extra['participantAvatarUrl'] as String?,
+                        participantName:
+                            extra['participantName'] as String? ?? 'Usuario',
+                        participantAvatarUrl:
+                            extra['participantAvatarUrl'] as String?,
                         participantRole: extra['participantRole'] as String?,
                         callType: extra['callType'] as String? ?? 'voice',
                         isOutgoing: extra['isOutgoing'] as bool? ?? true,
@@ -246,9 +234,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 class _AuthChangeNotifier extends ChangeNotifier {
   _AuthChangeNotifier(this._ref) {
     _subscription = _ref.listen(authProvider, (previous, next) {
-      print(
-        '🔄 AUTH NOTIFIER: isAuthenticated changed to ${next.isAuthenticated}',
-      );
       notifyListeners();
     });
   }

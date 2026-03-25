@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:vibration/vibration.dart';
 
 import '../../../core/api/socket_client.dart';
@@ -37,6 +39,7 @@ bool _incomingCallAudioPrepared = false;
 
 Future<void> startIncomingCallAlert() async {
   await stopIncomingCallAlert();
+  await Helper.setSpeakerphoneOn(true);
 
   if (!_incomingCallAudioPrepared) {
     await _incomingCallAudioPlayer.setAsset('assets/audio/LittleBees.mp3');
@@ -49,10 +52,20 @@ Future<void> startIncomingCallAlert() async {
   await _incomingCallAudioPlayer.play();
 
   if (await Vibration.hasVibrator()) {
-    await Vibration.vibrate(duration: 650);
+    await Vibration.vibrate(duration: 320);
     _incomingCallVibrationTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => Vibration.vibrate(duration: 650),
+      const Duration(milliseconds: 1600),
+      (_) async {
+        await HapticFeedback.mediumImpact();
+        if (await Vibration.hasVibrator()) {
+          await Vibration.vibrate(duration: 320);
+        }
+      },
+    );
+  } else {
+    _incomingCallVibrationTimer = Timer.periodic(
+      const Duration(milliseconds: 1600),
+      (_) => HapticFeedback.mediumImpact(),
     );
   }
 }
@@ -62,6 +75,7 @@ Future<void> stopIncomingCallAlert() async {
   _incomingCallVibrationTimer = null;
   await _incomingCallAudioPlayer.stop();
   await Vibration.cancel();
+  await Helper.setSpeakerphoneOn(false);
 }
 
 final callSyncProvider = Provider<void>((ref) {

@@ -12,6 +12,8 @@ import '../../features/messaging/application/call_provider.dart';
 import '../../features/messaging/application/conversations_provider.dart';
 import '../../routing/role_navigation.dart';
 
+final aiFabEnabledProvider = StateProvider<bool>((ref) => true);
+
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
 
@@ -58,6 +60,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
     final incomingCall = ref.watch(incomingCallProvider);
     final activeCallId = ref.watch(activeCallIdProvider);
+    final aiFabEnabled = ref.watch(aiFabEnabledProvider);
     ref.watch(chatRealtimeSyncProvider);
 
     // Obtener items de navegación según el rol
@@ -73,7 +76,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     };
     final showIncomingCallScreen =
         incomingCall != null && activeCallId != incomingCall.callId;
-    final showAiFab = aiFabRoutes.contains(location) && !showIncomingCallScreen;
+    final isSecondaryChatScreen = location.startsWith('/messages/');
+    final showAiFab =
+        aiFabRoutes.contains(location) &&
+        !showIncomingCallScreen &&
+        !isSecondaryChatScreen &&
+        aiFabEnabled;
 
     return Scaffold(
       body: Stack(

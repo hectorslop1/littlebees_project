@@ -26,6 +26,19 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Little Bees necesita usar la camara para realizar videollamadas con la escuela.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Little Bees necesita usar el microfono para llamadas y videollamadas con la escuela.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Little Bees necesita acceso a la galería para poder enviar imágenes o videos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -70,16 +83,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Little Bees necesita usar la camara para realizar videollamadas con la escuela.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Little Bees necesita usar el microfono para llamadas y videollamadas con la escuela.</string>
 </dict>
 </plist>

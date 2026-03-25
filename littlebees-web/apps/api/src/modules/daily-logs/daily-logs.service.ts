@@ -3,10 +3,14 @@ import { Prisma, AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { QuickRegisterDto, QuickRegisterType } from './dto/quick-register.dto';
 import { DayScheduleResponseDto } from './dto/day-schedule.dto';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class DailyLogsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
   async findByChildAndDate(
     tenantId: string,
@@ -18,7 +22,7 @@ export class DailyLogsService {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    return this.prisma.dailyLogEntry.findMany({
+    const entries = await this.prisma.dailyLogEntry.findMany({
       where: {
         tenantId,
         childId,
@@ -37,6 +41,8 @@ export class DailyLogsService {
       },
       orderBy: { time: 'asc' },
     });
+
+    return this.enrichEntries(entries);
   }
 
   async findByDate(
@@ -52,7 +58,7 @@ export class DailyLogsService {
       return [];
     }
 
-    return this.prisma.dailyLogEntry.findMany({
+    const entries = await this.prisma.dailyLogEntry.findMany({
       where: { 
         tenantId, 
         date: targetDate,
@@ -70,6 +76,8 @@ export class DailyLogsService {
       },
       orderBy: { time: 'asc' },
     });
+
+    return this.enrichEntries(entries);
   }
 
   private buildRoleFilter(userId: string, userRole: string) {
@@ -181,6 +189,7 @@ export class DailyLogsService {
       throw new NotFoundException('Niño no encontrado');
     }
 
+    const metadata = (dto.metadata ?? {}) as Record<string, any>;
     let attendanceRecord = null;
     let dailyLogEntry = null;
 
@@ -190,8 +199,9 @@ export class DailyLogsService {
 
     switch (dto.type) {
       case QuickRegisterType.CHECK_IN:
-        title = 'Entrada';
-        description = dto.metadata?.notes || 'Registro de entrada';
+        title = metadata['title'] || 'Entrada';
+        description =
+          metadata['description'] || metadata['notes'] || 'Registro de entrada';
         
         // Crear o actualizar registro de asistencia
         attendanceRecord = await this.prisma.attendanceRecord.upsert({
@@ -220,27 +230,33 @@ export class DailyLogsService {
         break;
 
       case QuickRegisterType.MEAL:
-        title = 'Comida';
-        description = dto.metadata?.foodEaten 
-          ? `Comió: ${dto.metadata.foodEaten}` 
-          : 'Registro de comida';
+        title = metadata['title'] || 'Comida';
+        description =
+          metadata['description'] ||
+          (metadata['foodEaten'] ? `Comió: ${metadata['foodEaten']}` : 'Registro de comida');
         break;
 
       case QuickRegisterType.NAP:
-        title = 'Siesta';
-        description = dto.metadata?.napDuration 
-          ? `Duración: ${dto.metadata.napDuration} minutos` 
-          : 'Registro de siesta';
+        title = metadata['title'] || 'Siesta';
+        description =
+          metadata['description'] ||
+          (metadata['napDuration']
+            ? `Duración: ${metadata['napDuration']} minutos`
+            : metadata['notes'] || 'Registro de siesta');
         break;
 
       case QuickRegisterType.ACTIVITY:
-        title = 'Actividad';
-        description = dto.metadata?.activityDescription || 'Registro de actividad';
+        title = metadata['activityTitle'] || metadata['title'] || 'Actividad';
+        description =
+          metadata['activityDescription'] ||
+          metadata['description'] ||
+          'Registro de actividad';
         break;
 
       case QuickRegisterType.CHECK_OUT:
-        title = 'Salida';
-        description = dto.metadata?.notes || 'Registro de salida';
+        title = metadata['title'] || 'Salida';
+        description =
+          metadata['description'] || metadata['notes'] || 'Registro de salida';
         
         // Actualizar registro de asistencia
         const existingAttendance = await this.prisma.attendanceRecord.findUnique({
@@ -298,11 +314,65 @@ export class DailyLogsService {
       },
     });
 
+    const [enrichedDailyLogEntry] = await this.enrichEntries([dailyLogEntry]);
+
     return {
-      dailyLogEntry,
+      dailyLogEntry: enrichedDailyLogEntry,
       attendanceRecord,
       message: `${title} registrado exitosamente`,
     };
+  }
+
+  private async enrichEntries<T extends { recordedBy: string; metadata: any }>(
+    entries: T[],
+  ) {
+    if (!entries.length) {
+      return entries;
+    }
+
+    const userIds = Array.from(new Set(entries.map((entry) => entry.recordedBy)));
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    const userNames = new Map(
+      users.map((user) => [
+        user.id,
+        `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+      ]),
+    );
+
+    return entries.map((entry) => ({
+      ...entry,
+      recordedByName: userNames.get(entry.recordedBy) || null,
+      metadata: this.resolveEntryMetadata(entry.metadata),
+    }));
+  }
+
+  private resolveEntryMetadata(metadata: unknown) {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+      return metadata;
+    }
+
+    const resolved = { ...(metadata as Record<string, unknown>) };
+
+    if (typeof resolved['photoUrl'] === 'string') {
+      resolved['photoUrl'] = this.filesService.resolveStoredFileUrl(
+        resolved['photoUrl'],
+      );
+    }
+
+    if (Array.isArray(resolved['photoUrls'])) {
+      resolved['photoUrls'] = resolved['photoUrls']
+        .map((value) =>
+          typeof value === 'string'
+            ? this.filesService.resolveStoredFileUrl(value)
+            : null,
+        )
+        .filter(Boolean);
+    }
+
+    return resolved;
   }
 
   // Get day schedule for a group

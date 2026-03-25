@@ -15,24 +15,24 @@ class RegisterActivityRepository {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      final now = DateTime.now();
-      final timeStr =
-          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
       final response = await _api.post<Map<String, dynamic>>(
         Endpoints.dailyLogsQuickRegister,
         data: {
           'childId': childId,
           'type': type,
-          'title': title,
-          'description': description,
-          'time': timeStr,
-          'date': now.toIso8601String().split('T')[0],
-          'metadata': metadata ?? {},
+          'metadata': {
+            'title': title,
+            'description': description,
+            ...?metadata,
+          },
         },
       );
 
-      return _parseDailyLog(response);
+      return _parseDailyLog(
+        Map<String, dynamic>.from(
+          response['dailyLogEntry'] as Map<String, dynamic>? ?? response,
+        ),
+      );
     } catch (e) {
       throw Exception('Error al registrar actividad: $e');
     }
@@ -58,20 +58,7 @@ class RegisterActivityRepository {
         description: notes,
         metadata: metadata,
       );
-
-      // También actualizar registro de asistencia
-      final attendanceResponse = await _api.post<Map<String, dynamic>>(
-        Endpoints.attendance,
-        data: {
-          'childId': childId,
-          'date': DateTime.now().toIso8601String().split('T')[0],
-          'checkInAt': DateTime.now().toIso8601String(),
-          'checkInPhotoUrl': photoUrl,
-          'status': 'present',
-        },
-      );
-
-      return {'logEntry': logEntry, 'attendance': attendanceResponse};
+      return {'logEntry': logEntry};
     } catch (e) {
       throw Exception('Error al registrar entrada: $e');
     }
@@ -95,18 +82,7 @@ class RegisterActivityRepository {
         description: notes,
         metadata: metadata,
       );
-
-      // Actualizar registro de asistencia con hora de salida
-      final dateStr = DateTime.now().toIso8601String().split('T')[0];
-      final attendanceResponse = await _api.patch<Map<String, dynamic>>(
-        '${Endpoints.attendance}/$childId/$dateStr',
-        data: {
-          'checkOutAt': DateTime.now().toIso8601String(),
-          'checkOutPhotoUrl': photoUrl,
-        },
-      );
-
-      return {'logEntry': logEntry, 'attendance': attendanceResponse};
+      return {'logEntry': logEntry};
     } catch (e) {
       throw Exception('Error al registrar salida: $e');
     }

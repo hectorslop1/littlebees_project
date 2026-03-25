@@ -42,6 +42,25 @@ class DailyLogsRepository {
     }
   }
 
+  Future<List<DailyLogEntry>> getDailyLogsByDate({
+    required DateTime date,
+  }) async {
+    try {
+      final dateStr = date.toIso8601String().split('T')[0];
+      final response = await _api.get<Map<String, dynamic>>(
+        Endpoints.dailyLogs,
+        queryParameters: {'date': dateStr},
+      );
+
+      final items = (response['data'] as List? ?? []);
+      return items
+          .map((json) => _parseDailyLog(Map<String, dynamic>.from(json as Map)))
+          .toList();
+    } catch (e) {
+      throw Exception('Error loading daily logs by date: $e');
+    }
+  }
+
   Future<DailyLogEntry> createDailyLog({
     required String childId,
     required LogType type,

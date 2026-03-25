@@ -24,6 +24,7 @@ import '../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
+import '../../../shared/widgets/main_shell.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
 import '../application/conversations_provider.dart';
@@ -50,22 +51,28 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImageService _imageService = ImageService();
   final FileUploadService _fileUploadService = FileUploadService();
   final AudioRecorder _audioRecorder = AudioRecorder();
 
   bool _showCallHistory = false;
+  bool _isSearchMode = false;
   bool _isTyping = false;
   bool _isUploadingAttachment = false;
   bool _isRecordingVoiceNote = false;
   String? _voiceRecordingPath;
+  String _searchQuery = '';
+  String? _lastRenderedMessageId;
+  bool _hasInitialScroll = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
     Future.microtask(() {
+      ref.read(aiFabEnabledProvider.notifier).state = false;
       ref.read(activeConversationIdProvider.notifier).state =
           widget.conversationId;
       ref
@@ -235,6 +242,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       file: File(path),
       messageType: 'file',
       fallbackContent: result?.files.single.name ?? 'Archivo adjunto',
+      preferFilename: true,
     );
   }
 
@@ -294,6 +302,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     required File file,
     required String messageType,
     required String fallbackContent,
+    bool preferFilename = false,
   }) async {
     try {
       setState(() {
@@ -306,7 +315,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
 
       await _sendSocketMessage(
-        content: uploaded.filename.isNotEmpty
+        content: preferFilename && uploaded.filename.isNotEmpty
             ? uploaded.filename
             : fallbackContent,
         attachmentUrl: uploaded.fileId,
@@ -457,14 +466,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  void _syncScrollToLatest(List<Message> messages) {
+    if (messages.isEmpty) return;
+    final lastMessageId = messages.last.id;
+    final isFirstScroll = !_hasInitialScroll;
+    if (!isFirstScroll && _lastRenderedMessageId == lastMessageId) return;
+    _lastRenderedMessageId = lastMessageId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (isFirstScroll) {
+        _hasInitialScroll = true;
+        _scrollController.jumpTo(target);
+        return;
+      }
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  List<Message> _filterMessages(List<Message> messages) {
+    if (_searchQuery.trim().isEmpty) {
+      return messages;
+    }
+
+    final query = _searchQuery.trim().toLowerCase();
+    return messages.where((message) {
+      final searchable = [
+        message.content,
+        message.senderName,
+        message.attachmentType ?? '',
+      ].join(' ').toLowerCase();
+      return searchable.contains(query);
+    }).toList();
+  }
+
   @override
   void dispose() {
+    ref.read(aiFabEnabledProvider.notifier).state = true;
     final activeConversationId = ref.read(activeConversationIdProvider);
     if (activeConversationId == widget.conversationId) {
       ref.read(activeConversationIdProvider.notifier).state = null;
     }
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
+    _searchController.dispose();
     _scrollController.dispose();
     unawaited(_audioRecorder.dispose());
     super.dispose();
@@ -483,49 +533,90 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft, size: 28),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (_isSearchMode) {
+              setState(() {
+                _isSearchMode = false;
+                _searchQuery = '';
+                _searchController.clear();
+              });
+              return;
+            }
+            context.pop();
+          },
         ),
-        title: Row(
-          children: [
-            LBAvatar(
-              placeholder: widget.participantName.isNotEmpty
-                  ? widget.participantName.substring(0, 1)
-                  : 'U',
-              imageUrl: widget.participantAvatarUrl,
-              size: LBAvatarSize.small,
-              showStatusDot: true,
-              statusColor: AppColors.success,
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.participantName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+        title: _isSearchMode
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  hintText: 'Buscar mensajes...',
+                  border: InputBorder.none,
                 ),
-                connectionAsync.when(
-                  data: (isConnected) => Text(
-                    isConnected ? 'En linea' : 'Sin conexion',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isConnected
-                          ? AppColors.success
-                          : AppColors.textTertiary,
-                    ),
+              )
+            : Row(
+                children: [
+                  LBAvatar(
+                    placeholder: widget.participantName.isNotEmpty
+                        ? widget.participantName.substring(0, 1)
+                        : 'U',
+                    imageUrl: widget.participantAvatarUrl,
+                    size: LBAvatarSize.small,
+                    showStatusDot: true,
+                    statusColor: AppColors.success,
                   ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ],
-        ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.participantName,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      connectionAsync.when(
+                        data: (isConnected) => Text(
+                          isConnected ? 'En linea' : 'Sin conexion',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: isConnected
+                                    ? AppColors.success
+                                    : AppColors.textTertiary,
+                              ),
+                        ),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
         titleSpacing: 0,
         elevation: 0,
         backgroundColor: AppColors.surface,
         actions: [
+          if (!_showCallHistory)
+            IconButton(
+              icon: Icon(
+                _isSearchMode ? LucideIcons.x : LucideIcons.search,
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isSearchMode = !_isSearchMode;
+                  if (!_isSearchMode) {
+                    _searchQuery = '';
+                    _searchController.clear();
+                  }
+                });
+              },
+              tooltip: 'Buscar',
+            ),
           IconButton(
                 icon: const Icon(LucideIcons.phone, size: 22),
                 onPressed: _makeVoiceCall,
@@ -594,13 +685,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   )
                 : messagesAsync.when(
-                    data: (messages) => messages.isEmpty
-                        ? LBEmptyState(
-                            icon: LucideIcons.messageSquare,
-                            title: tr.tr('noMessages'),
-                            message: tr.tr('noMessagesMsg'),
-                          )
-                        : _buildMessagesList(messages, currentUser?.id),
+                    data: (messages) {
+                      final visibleMessages = _filterMessages(messages);
+                      _syncScrollToLatest(visibleMessages);
+                      return visibleMessages.isEmpty
+                          ? LBEmptyState(
+                              icon: LucideIcons.messageSquare,
+                              title: _searchQuery.isEmpty
+                                  ? tr.tr('noMessages')
+                                  : 'Sin resultados',
+                              message: _searchQuery.isEmpty
+                                  ? tr.tr('noMessagesMsg')
+                                  : 'No encontramos mensajes con ese texto.',
+                            )
+                          : _buildMessagesList(
+                              visibleMessages,
+                              currentUser?.id,
+                            );
+                    },
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => LBErrorState(
@@ -694,7 +796,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _normalizeAttachmentCaption(String content, String defaultValue) {
     if (content.trim().isEmpty) return null;
     if (content == defaultValue) return null;
+    if (_looksLikeGeneratedAttachmentName(content)) return null;
     return content;
+  }
+
+  bool _looksLikeGeneratedAttachmentName(String value) {
+    final normalized = value.trim().toLowerCase();
+    return normalized.startsWith('image_picker_') ||
+        normalized.startsWith('voice_note_') ||
+        normalized.endsWith('.jpg') ||
+        normalized.endsWith('.jpeg') ||
+        normalized.endsWith('.png') ||
+        normalized.endsWith('.heic') ||
+        normalized.endsWith('.m4a') ||
+        normalized.endsWith('.mp4') ||
+        normalized.endsWith('.mov');
   }
 
   Widget _buildCallLogBubble(
@@ -1014,6 +1130,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onPressed: () => _finishVoiceRecording(send: false),
                     child: const Text('Cancelar'),
                   ),
+                  const SizedBox(width: 4),
+                  FilledButton(
+                    onPressed: () => _finishVoiceRecording(send: true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.textOnPrimary,
+                    ),
+                    child: const Text('Enviar'),
+                  ),
                 ],
               ),
             ),
@@ -1061,9 +1186,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 )
               else
                 IconButton(
-                      onPressed: hasText
-                          ? _sendTextMessage
-                          : _handleVoiceNoteTap,
+                      onPressed: _isRecordingVoiceNote
+                          ? null
+                          : (hasText ? _sendTextMessage : _handleVoiceNoteTap),
                       icon: Icon(
                         hasText
                             ? LucideIcons.send
