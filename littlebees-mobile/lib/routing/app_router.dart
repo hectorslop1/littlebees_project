@@ -22,6 +22,8 @@ import '../features/groups/presentation/groups_screen.dart';
 import '../features/children/presentation/children_list_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/excuses/presentation/excuses_list_screen.dart';
+import '../features/excuses/presentation/create_excuse_screen.dart';
+import '../features/excuses/presentation/excuse_detail_screen.dart';
 import '../features/child_profile/presentation/child_profile_screen.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/groups/presentation/group_detail_screen.dart';
@@ -208,6 +210,20 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/excuses',
             name: RouteNames.excuses,
             builder: (context, state) => const ExcusesListScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: RouteNames.excuseCreate,
+                builder: (context, state) => const CreateExcuseScreen(),
+              ),
+              GoRoute(
+                path: ':excuseId',
+                name: RouteNames.excuseDetail,
+                builder: (context, state) => ExcuseDetailScreen(
+                  excuseId: state.pathParameters['excuseId']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/notifications',

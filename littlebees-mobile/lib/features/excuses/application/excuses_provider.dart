@@ -120,4 +120,17 @@ class ExcusesFilters {
     this.startDate,
     this.endDate,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExcusesFilters &&
+          runtimeType == other.runtimeType &&
+          childId == other.childId &&
+          status == other.status &&
+          startDate == other.startDate &&
+          endDate == other.endDate;
+
+  @override
+  int get hashCode => Object.hash(childId, status, startDate, endDate);
 }

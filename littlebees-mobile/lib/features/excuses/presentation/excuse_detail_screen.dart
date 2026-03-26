@@ -20,7 +20,7 @@ class ExcuseDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final isTeacher = authState.isTeacher || authState.isDirector || authState.isAdmin;
+    final canReview = authState.isDirector || authState.isAdmin;
     final excuseAsync = ref.watch(excuseDetailProvider(excuseId));
 
     return Scaffold(
@@ -65,7 +65,7 @@ class ExcuseDetailScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: statusColor, width: 2),
                     ),
@@ -252,8 +252,8 @@ class ExcuseDetailScreen extends ConsumerWidget {
                     ),
                   ],
 
-                  // Botones de acción (solo para maestras y si está pendiente)
-                  if (isTeacher && excuse.isPending) ...[
+                  // Botones de acción (dirección/administración y si está pendiente)
+                  if (canReview && excuse.isPending) ...[
                     const SizedBox(height: 32),
                     Row(
                       children: [
@@ -431,6 +431,7 @@ class ExcuseDetailScreen extends ConsumerWidget {
                   
                   // Refresh the detail
                   ref.invalidate(excuseDetailProvider(excuseId));
+                  ref.invalidate(excusesListProvider(ExcusesFilters()));
                   
                   // Go back after a short delay
                   Future.delayed(const Duration(seconds: 1), () {

@@ -36,14 +36,20 @@ export class AttendanceController {
   }
 
   @Post('check-in')
-  @Roles('teacher', 'director', 'admin', 'super_admin')
+  @Roles('teacher', 'director', 'admin', 'super_admin', 'parent')
   @ApiOperation({ summary: 'Registrar entrada' })
   checkIn(
     @CurrentTenant() tenantId: string,
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: { id: string; role: string },
     @Body() dto: { childId: string; method: string },
   ) {
-    return this.attendanceService.checkIn(tenantId, dto.childId, userId, dto.method);
+    return this.attendanceService.checkIn(
+      tenantId,
+      dto.childId,
+      user.id,
+      dto.method,
+      user.role,
+    );
   }
 
   @Post('check-out')

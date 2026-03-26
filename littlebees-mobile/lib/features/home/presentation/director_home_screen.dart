@@ -7,6 +7,7 @@ import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../groups/application/groups_provider.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../notifications/application/notifications_provider.dart';
 import '../application/home_providers.dart';
 
 class DirectorHomeScreen extends ConsumerWidget {
@@ -17,7 +18,8 @@ class DirectorHomeScreen extends ConsumerWidget {
     final tr = ref.watch(translationsProvider);
     final authState = ref.watch(authProvider);
     final groupsAsync = ref.watch(groupsProvider);
-    final childrenAsync = ref.watch(myChildrenProvider);
+    final dashboardAsync = ref.watch(directorDashboardProvider);
+    final notificationsUnreadAsync = ref.watch(notificationUnreadCountProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -78,7 +80,12 @@ class DirectorHomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Panel de dirección',
+                        dashboardAsync.maybeWhen(
+                          data: (dashboard) => dashboard.pendingExcusesCount > 0
+                              ? '${dashboard.pendingExcusesCount} justificantes pendientes'
+                              : 'Panel de dirección',
+                          orElse: () => 'Panel de dirección',
+                        ),
                         style: TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,
@@ -113,8 +120,8 @@ class DirectorHomeScreen extends ConsumerWidget {
                       child: _DashboardStatCard(
                         icon: LucideIcons.users,
                         label: 'Alumnos',
-                        value: childrenAsync.when(
-                          data: (children) => '${children.length}',
+                        value: dashboardAsync.when(
+                          data: (dashboard) => '${dashboard.studentsCount}',
                           loading: () => '...',
                           error: (_, _) => '-',
                         ),
@@ -126,8 +133,8 @@ class DirectorHomeScreen extends ConsumerWidget {
                       child: _DashboardStatCard(
                         icon: LucideIcons.layoutGrid,
                         label: 'Grupos',
-                        value: groupsAsync.when(
-                          data: (groups) => '${groups.length}',
+                        value: dashboardAsync.when(
+                          data: (dashboard) => '${dashboard.groupsCount}',
                           loading: () => '...',
                           error: (_, _) => '-',
                         ),
@@ -150,8 +157,12 @@ class DirectorHomeScreen extends ConsumerWidget {
                       child: _DashboardStatCard(
                         icon: LucideIcons.clipboardCheck,
                         label: 'Asistencia',
-                        value: '--',
-                        subtitle: 'Sin datos aún',
+                        value: dashboardAsync.when(
+                          data: (dashboard) => '${dashboard.presentCount}',
+                          loading: () => '...',
+                          error: (_, _) => '-',
+                        ),
+                        subtitle: 'Presentes hoy',
                         color: AppColors.info,
                       ),
                     ),
@@ -160,12 +171,67 @@ class DirectorHomeScreen extends ConsumerWidget {
                       child: _DashboardStatCard(
                         icon: LucideIcons.fileText,
                         label: 'Justificantes',
-                        value: '--',
+                        value: dashboardAsync.when(
+                          data: (dashboard) =>
+                              '${dashboard.pendingExcusesCount}',
+                          loading: () => '...',
+                          error: (_, _) => '-',
+                        ),
                         subtitle: 'Pendientes',
                         color: AppColors.warning,
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                child: notificationsUnreadAsync.when(
+                  data: (count) => count > 0
+                      ? Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.18),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primarySurface,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  LucideIcons.bellRing,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  'Tienes $count notificaciones sin leer entre mensajes, avisos y revisiones pendientes.',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, stackTrace) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -287,7 +353,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -415,7 +481,7 @@ class _DashboardStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -427,7 +493,7 @@ class _DashboardStatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, size: 20, color: color),
@@ -484,7 +550,7 @@ class _QuickActionTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -495,7 +561,7 @@ class _QuickActionTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, size: 22, color: color),

@@ -7,9 +7,16 @@ import '../../../../design_system/theme/app_colors.dart';
 import '../../domain/child_status.dart';
 
 class StatusCard extends ConsumerWidget {
-  const StatusCard({super.key, required this.status});
+  const StatusCard({
+    super.key,
+    required this.status,
+    this.onConfirmAttendance,
+    this.isConfirmingAttendance = false,
+  });
 
   final ChildStatus status;
+  final Future<void> Function()? onConfirmAttendance;
+  final bool isConfirmingAttendance;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -120,6 +127,43 @@ class StatusCard extends ConsumerWidget {
               ),
             ],
           ),
+          if (onConfirmAttendance != null &&
+              (status.status == ChildPresenceStatus.expected ||
+                  status.status == ChildPresenceStatus.absent)) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isConfirmingAttendance
+                    ? null
+                    : () => onConfirmAttendance!.call(),
+                icon: isConfirmingAttendance
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(LucideIcons.badgeCheck),
+                label: Text(
+                  isConfirmingAttendance
+                      ? 'Confirmando asistencia...'
+                      : 'Confirmar asistencia de hoy',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.color,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

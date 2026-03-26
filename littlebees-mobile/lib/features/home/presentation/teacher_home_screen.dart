@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../auth/application/auth_provider.dart';
+import '../application/home_providers.dart';
 import '../../groups/application/groups_provider.dart';
 import '../../messaging/application/conversations_provider.dart';
 
@@ -18,20 +19,25 @@ class TeacherHomeScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final groupsAsync = ref.watch(groupsProvider);
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
+    final dashboardAsync = ref.watch(teacherDashboardProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
       body: SafeArea(
         child: groupsAsync.when(
           data: (groups) {
-            final totalStudents = groups.fold<int>(
-              0,
-              (sum, group) => sum + group.currentCapacity,
-            );
+            final dashboard = dashboardAsync.valueOrNull;
+            final totalStudents =
+                dashboard?.studentsCount ??
+                groups.fold<int>(0, (sum, group) => sum + group.currentCapacity);
+            final presentCount = dashboard?.presentCount ?? 0;
+            final pendingExcuses = dashboard?.pendingExcusesCount ?? 0;
+            final todayActivities = dashboard?.todayActivitiesCount ?? 0;
 
             return RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(groupsProvider);
+                ref.invalidate(teacherDashboardProvider);
               },
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
@@ -137,6 +143,30 @@ class TeacherHomeScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _MetricCard(
+                                icon: LucideIcons.userCheck,
+                                value: '$presentCount',
+                                label: 'Presentes',
+                                tint: AppColors.success.withValues(alpha: 0.15),
+                                iconColor: AppColors.success,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _MetricCard(
+                                icon: LucideIcons.fileCheck2,
+                                value: '$pendingExcuses',
+                                label: 'Justificantes',
+                                tint: AppColors.warning.withValues(alpha: 0.18),
+                                iconColor: AppColors.warning,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -155,12 +185,41 @@ class TeacherHomeScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _TeacherActionCard(
+                          icon: LucideIcons.sparkles,
+                          title: 'Jornada',
+                          subtitle: todayActivities > 0
+                              ? '$todayActivities registros hoy'
+                              : 'Empieza a registrar el día',
+                          accent: AppColors.info,
+                          onTap: () => context.push('/activity'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _TeacherActionCard(
+                          icon: LucideIcons.fileCheck2,
+                          title: 'Justificantes',
+                          subtitle: pendingExcuses > 0
+                              ? '$pendingExcuses pendientes'
+                              : 'Sin pendientes por ahora',
+                          accent: AppColors.warning,
+                          onTap: () => context.push('/excuses'),
+                          badgeCount: pendingExcuses,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _TeacherActionCard(
                           icon: LucideIcons.messageCircle,
                           title: 'Mensajes',
                           subtitle: unreadMessages > 0
                               ? '$unreadMessages pendientes'
                               : 'Comunicación activa',
-                          accent: AppColors.info,
+                          accent: AppColors.secondary,
                           onTap: () => context.push('/messages'),
                           badgeCount: unreadMessages,
                         ),

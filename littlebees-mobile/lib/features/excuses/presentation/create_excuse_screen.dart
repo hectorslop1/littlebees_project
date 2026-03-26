@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../routing/route_names.dart';
 import '../application/excuses_provider.dart';
 import '../../../shared/enums/enums.dart';
 import '../../home/application/home_providers.dart';
@@ -59,13 +60,14 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
       );
 
       if (mounted) {
+        ref.invalidate(excusesListProvider(ExcusesFilters()));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Justificante creado exitosamente'),
             backgroundColor: Colors.green,
           ),
         );
-        context.pop();
+        context.goNamed(RouteNames.excuses);
       }
     } catch (e) {
       if (mounted) {
@@ -160,7 +162,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
 
                     // Tipo de justificante
                     Text(
-                      'Tipo de justificante',
+                      'Motivo',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -178,7 +180,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                           onSelected: (selected) {
                             setState(() => _selectedType = type);
                           },
-                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          selectedColor: AppColors.primary.withValues(alpha: 0.2),
                           checkmarkColor: AppColors.primary,
                         );
                       }).toList(),
@@ -305,7 +307,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                                 ),
                               )
                             : const Text(
-                                'Enviar Justificante',
+                              'Enviar Justificante',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

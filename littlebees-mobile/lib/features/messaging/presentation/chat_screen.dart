@@ -64,8 +64,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isRecordingVoiceNote = false;
   String? _voiceRecordingPath;
   String _searchQuery = '';
-  String? _lastRenderedMessageId;
-  bool _hasInitialScroll = false;
 
   @override
   void initState() {
@@ -123,7 +121,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+            _scrollController.position.minScrollExtent,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
           );
@@ -466,29 +464,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _syncScrollToLatest(List<Message> messages) {
-    if (messages.isEmpty) return;
-    final lastMessageId = messages.last.id;
-    final isFirstScroll = !_hasInitialScroll;
-    if (!isFirstScroll && _lastRenderedMessageId == lastMessageId) return;
-    _lastRenderedMessageId = lastMessageId;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      final target = _scrollController.position.maxScrollExtent;
-      if (isFirstScroll) {
-        _hasInitialScroll = true;
-        _scrollController.jumpTo(target);
-        return;
-      }
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
   List<Message> _filterMessages(List<Message> messages) {
     if (_searchQuery.trim().isEmpty) {
       return messages;
@@ -687,7 +662,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 : messagesAsync.when(
                     data: (messages) {
                       final visibleMessages = _filterMessages(messages);
-                      _syncScrollToLatest(visibleMessages);
                       return visibleMessages.isEmpty
                           ? LBEmptyState(
                               icon: LucideIcons.messageSquare,
@@ -723,10 +697,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildMessagesList(List<Message> messages, String? currentUserId) {
     return ListView.builder(
       controller: _scrollController,
+      reverse: true,
       padding: const EdgeInsets.all(24),
       itemCount: messages.length,
       itemBuilder: (context, index) {
-        final msg = messages[index];
+        final msg = messages[messages.length - 1 - index];
         final isMe = msg.senderId == currentUserId;
         final callLog = parseCallLog(msg);
 
@@ -802,8 +777,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   bool _looksLikeGeneratedAttachmentName(String value) {
     final normalized = value.trim().toLowerCase();
-    return normalized.startsWith('image_picker_') ||
-        normalized.startsWith('voice_note_') ||
+    return normalized.contains('image_picker_') ||
+        normalized.contains('voice_note_') ||
+        normalized.contains('ph_asset_') ||
         normalized.endsWith('.jpg') ||
         normalized.endsWith('.jpeg') ||
         normalized.endsWith('.png') ||
@@ -1464,6 +1440,7 @@ class _AudioAttachmentMessageState extends State<_AudioAttachmentMessage> {
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  String? _loadedUrl;
 
   @override
   void initState() {
@@ -1490,17 +1467,41 @@ class _AudioAttachmentMessageState extends State<_AudioAttachmentMessage> {
 
   Future<void> _togglePlayback() async {
     final resolvedUrl = resolveImageUrl(widget.attachmentUrl);
-    if (resolvedUrl == null) return;
-
-    if (_isPlaying) {
-      await _audioPlayer.pause();
+    if (resolvedUrl == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La nota de voz todavía no está disponible'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
-    if (_audioPlayer.audioSource == null) {
-      await _audioPlayer.setUrl(resolvedUrl);
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+        return;
+      }
+
+      if (_loadedUrl != resolvedUrl) {
+        await _audioPlayer.setUrl(resolvedUrl);
+        _loadedUrl = resolvedUrl;
+      }
+
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _audioPlayer.seek(Duration.zero);
+      }
+      await _audioPlayer.play();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No fue posible reproducir la nota de voz'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-    await _audioPlayer.play();
   }
 
   @override

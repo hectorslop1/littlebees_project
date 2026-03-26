@@ -21,6 +21,22 @@ export class QuickRegisterDto {
   @IsEnum(QuickRegisterType)
   type: QuickRegisterType;
 
+  @ApiProperty({
+    description: 'Fecha local del registro en formato YYYY-MM-DD',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  date?: string;
+
+  @ApiProperty({
+    description: 'Hora local del registro en formato HH:mm',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  time?: string;
+
   @ApiProperty({ 
     description: 'Metadatos adicionales (incluye photoUrl para check_in/check_out)',
     required: false,

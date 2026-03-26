@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BulkCheckInDto, BulkCheckInResponseDto } from './dto/bulk-check-in.dto';
@@ -60,9 +60,35 @@ export class AttendanceService {
     });
   }
 
-  async checkIn(tenantId: string, childId: string, userId: string, method: string) {
+  async checkIn(
+    tenantId: string,
+    childId: string,
+    userId: string,
+    method: string,
+    userRole: string,
+  ) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const child = await this.prisma.child.findFirst({
+      where: { id: childId, tenantId },
+      include: {
+        parents: {
+          where: { userId },
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!child) {
+      throw new NotFoundException('Niño no encontrado');
+    }
+
+    if (userRole === 'parent' && child.parents.length == 0) {
+      throw new ForbiddenException(
+        'No puedes confirmar asistencia para este niño',
+      );
+    }
 
     return this.prisma.attendanceRecord.upsert({
       where: { childId_date: { childId, date: today } },

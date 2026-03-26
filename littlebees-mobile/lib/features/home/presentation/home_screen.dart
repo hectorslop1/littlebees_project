@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../routing/route_names.dart';
+import '../../../shared/providers/repository_providers.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../messaging/application/conversations_provider.dart';
 import '../application/home_providers.dart';
@@ -14,9 +15,9 @@ import 'director_home_screen.dart';
 import 'teacher_home_screen.dart';
 import 'widgets/ai_summary_card.dart';
 import 'widgets/child_header.dart';
+import 'widgets/daily_activity_stack.dart';
 import 'widgets/home_shimmer.dart';
 import 'widgets/status_card.dart';
-import 'widgets/timeline_feed.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -60,17 +61,94 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _ParentHomeContent extends ConsumerWidget {
+class _ParentHomeContent extends ConsumerStatefulWidget {
   const _ParentHomeContent({required this.currentChildId});
 
   final String currentChildId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ParentHomeContent> createState() => _ParentHomeContentState();
+}
+
+class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
+    with WidgetsBindingObserver {
+  bool _isConfirmingAttendance = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    Future.microtask(_refreshStory);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ParentHomeContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentChildId != widget.currentChildId) {
+      Future.microtask(_refreshStory);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshStory();
+    }
+  }
+
+  void _refreshStory() {
+    ref.invalidate(dailyStoryProvider(widget.currentChildId));
+  }
+
+  Future<void> _confirmAttendance() async {
+    if (_isConfirmingAttendance) return;
+
+    setState(() {
+      _isConfirmingAttendance = true;
+    });
+
+    try {
+      final repository = ref.read(attendanceRepositoryProvider);
+      await repository.checkIn(childId: widget.currentChildId);
+      _refreshStory();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Asistencia confirmada correctamente'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No fue posible confirmar asistencia: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConfirmingAttendance = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tr = ref.watch(translationsProvider);
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
-    final dailyStoryAsync = ref.watch(dailyStoryProvider(currentChildId));
+    final dailyStoryAsync = ref.watch(
+      dailyStoryProvider(widget.currentChildId),
+    );
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
 
     return Scaffold(
@@ -81,12 +159,14 @@ class _ParentHomeContent extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(myChildrenProvider);
-                ref.invalidate(dailyStoryProvider(currentChildId));
-                await ref.read(dailyStoryProvider(currentChildId).future);
+                ref.invalidate(dailyStoryProvider(widget.currentChildId));
+                await ref.read(
+                  dailyStoryProvider(widget.currentChildId).future,
+                );
               },
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                key: ValueKey(currentChildId),
+                key: ValueKey(widget.currentChildId),
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
@@ -109,7 +189,11 @@ class _ParentHomeContent extends ConsumerWidget {
                               .fadeIn(delay: 40.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           const SizedBox(height: 18),
-                          StatusCard(status: dailyStory.status)
+                          StatusCard(
+                            status: dailyStory.status,
+                            isConfirmingAttendance: _isConfirmingAttendance,
+                            onConfirmAttendance: _confirmAttendance,
+                          )
                               .animate()
                               .fadeIn(delay: 120.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
@@ -132,9 +216,11 @@ class _ParentHomeContent extends ConsumerWidget {
                     ),
                   ),
                   if (dailyStory.events.isNotEmpty)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                      sliver: TimelineFeed(events: dailyStory.events),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+                        child: DailyActivityStack(events: dailyStory.events),
+                      ),
                     ),
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
                 ],
@@ -144,7 +230,8 @@ class _ParentHomeContent extends ConsumerWidget {
           loading: () => const HomeShimmer(),
           error: (error, _) => _ParentHomeErrorState(
             message: '$error',
-            onRetry: () => ref.refresh(dailyStoryProvider(currentChildId)),
+            onRetry: () =>
+                ref.refresh(dailyStoryProvider(widget.currentChildId)),
           ),
         ),
       ),

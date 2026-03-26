@@ -99,8 +99,8 @@ class DailyLogsRepository {
       metadata: json['metadata'] as Map<String, dynamic>?,
       recordedBy: json['recordedBy'] as String?,
       recordedByName: json['recordedByName'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String).toLocal(),
+      updatedAt: DateTime.parse(json['updatedAt'] as String).toLocal(),
     );
   }
 }

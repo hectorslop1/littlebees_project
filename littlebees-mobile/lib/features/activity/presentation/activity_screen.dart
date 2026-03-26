@@ -52,6 +52,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ),
                   ).then((saved) {
                     if (saved == true) {
+                      if (mounted) {
+                        setState(() {
+                          _isPhotosTab = false;
+                        });
+                      }
                       ref.invalidate(photosProvider);
                       ref.invalidate(activityFeedProvider);
                     }

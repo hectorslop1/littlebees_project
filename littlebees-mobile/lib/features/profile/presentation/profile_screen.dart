@@ -65,6 +65,22 @@ class ProfileScreen extends ConsumerWidget {
               LBCard(
                 child: Column(
                   children: [
+                    if (user != null &&
+                        (user.role == UserRole.parent ||
+                            user.role == UserRole.teacher ||
+                            user.role == UserRole.director ||
+                            user.role == UserRole.admin ||
+                            user.role == UserRole.superAdmin)) ...[
+                      _ActionRow(
+                        icon: LucideIcons.fileCheck2,
+                        title: 'Justificantes',
+                        subtitle: user.role == UserRole.parent
+                            ? 'Crea y consulta justificantes de tus hijos'
+                            : 'Revisa avisos y justificantes vinculados a tus alumnos',
+                        onTap: () => context.pushNamed(RouteNames.excuses),
+                      ),
+                      const Divider(height: 24),
+                    ],
                     _ActionRow(
                       icon: LucideIcons.creditCard,
                       title: tr.tr('billing'),

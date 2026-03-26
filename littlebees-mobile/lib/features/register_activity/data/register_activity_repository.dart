@@ -12,6 +12,8 @@ class RegisterActivityRepository {
     required String type,
     required String title,
     String? description,
+    String? date,
+    String? time,
     Map<String, dynamic>? metadata,
   }) async {
     try {
@@ -20,6 +22,8 @@ class RegisterActivityRepository {
         data: {
           'childId': childId,
           'type': type,
+          ...?date != null ? {'date': date} : null,
+          ...?time != null ? {'time': time} : null,
           'metadata': {
             'title': title,
             'description': description,
@@ -56,6 +60,8 @@ class RegisterActivityRepository {
         type: 'check_in',
         title: 'Entrada registrada',
         description: notes,
+        date: _todayIso(),
+        time: _currentTime(),
         metadata: metadata,
       );
       return {'logEntry': logEntry};
@@ -80,6 +86,8 @@ class RegisterActivityRepository {
         type: 'check_out',
         title: 'Salida registrada',
         description: notes,
+        date: _todayIso(),
+        time: _currentTime(),
         metadata: metadata,
       );
       return {'logEntry': logEntry};
@@ -99,6 +107,8 @@ class RegisterActivityRepository {
       type: 'meal',
       title: 'Comida registrada',
       description: notes,
+      date: _todayIso(),
+      time: _currentTime(),
       metadata: {'foodEaten': foodEaten},
     );
   }
@@ -114,6 +124,8 @@ class RegisterActivityRepository {
       type: 'nap',
       title: 'Siesta registrada',
       description: notes,
+      date: _todayIso(),
+      time: _currentTime(),
       metadata: {'napDuration': durationMinutes},
     );
   }
@@ -129,8 +141,20 @@ class RegisterActivityRepository {
       type: 'activity',
       title: activityDescription,
       description: notes,
+      date: _todayIso(),
+      time: _currentTime(),
       metadata: {'activityDescription': activityDescription},
     );
+  }
+
+  String _todayIso() {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  String _currentTime() {
+    final now = DateTime.now();
+    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
   }
 
   DailyLogEntry _parseDailyLog(Map<String, dynamic> json) {

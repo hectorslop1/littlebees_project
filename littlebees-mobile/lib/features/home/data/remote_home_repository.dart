@@ -56,10 +56,10 @@ class RemoteHomeRepository {
           bloodType: json['bloodType'],
           authorizedPickups: null,
           createdAt: json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'])
+              ? DateTime.parse(json['createdAt']).toLocal()
               : DateTime.now(),
           updatedAt: json['updatedAt'] != null
-              ? DateTime.parse(json['updatedAt'])
+              ? DateTime.parse(json['updatedAt']).toLocal()
               : DateTime.now(),
         );
       }).toList();
@@ -109,10 +109,10 @@ class RemoteHomeRepository {
         bloodType: childJson['bloodType'],
         authorizedPickups: null,
         createdAt: childJson['createdAt'] != null
-            ? DateTime.parse(childJson['createdAt'])
+            ? DateTime.parse(childJson['createdAt']).toLocal()
             : DateTime.now(),
         updatedAt: childJson['updatedAt'] != null
-            ? DateTime.parse(childJson['updatedAt'])
+            ? DateTime.parse(childJson['updatedAt']).toLocal()
             : DateTime.now(),
       );
 
@@ -129,7 +129,7 @@ class RemoteHomeRepository {
         status = ChildStatus(
           status: _parsePresenceStatus(record['status']),
           lastStatusChange: record['checkInAt'] != null
-              ? DateTime.parse(record['checkInAt'])
+              ? DateTime.parse(record['checkInAt']).toLocal()
               : null,
           checkedInBy: record['checkInBy'],
           checkedOutBy: record['checkOutBy'],
@@ -148,9 +148,13 @@ class RemoteHomeRepository {
       );
 
       final logEntries = (logsResponse['data'] as List? ?? []);
-      final events = logEntries.map((json) {
-        return _parseTimelineEvent(json);
-      }).toList();
+      final events =
+          logEntries
+              .map(
+                (json) => _parseTimelineEvent(Map<String, dynamic>.from(json)),
+              )
+              .toList()
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       // AI summary is not yet implemented in the API
       AiSummary? aiSummary;
@@ -216,7 +220,9 @@ class RemoteHomeRepository {
     return TimelineEvent(
       id: json['id'],
       type: _parseEventType(json['type']),
-      timestamp: DateTime.parse(json['createdAt'] ?? json['date']),
+      timestamp: DateTime.parse(
+        (json['createdAt'] ?? json['date']) as String,
+      ).toLocal(),
       title: json['title'],
       description: json['description'],
       caregiverName: caregiverName,

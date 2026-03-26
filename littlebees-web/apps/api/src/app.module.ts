@@ -23,7 +23,7 @@ import { GroupsModule } from './modules/groups/groups.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ExercisesModule } from './modules/exercises/exercises.module';
 import { MenuModule } from './modules/menu/menu.module';
-// import { ExcusesModule } from './modules/excuses/excuses.module'; // DISABLED: Model doesn't exist in Prisma
+import { ExcusesModule } from './modules/excuses/excuses.module';
 import { AiModule } from './modules/ai/ai.module';
 import { CustomizationModule } from './modules/customization/customization.module';
 // import { DayScheduleModule } from './modules/day-schedule/day-schedule.module';
@@ -78,7 +78,7 @@ import { CustomizationModule } from './modules/customization/customization.modul
     AnnouncementsModule,
     ExercisesModule,
     MenuModule,
-    // ExcusesModule, // DISABLED: Model doesn't exist in Prisma
+    ExcusesModule,
     AiModule,
     CustomizationModule,
     // DayScheduleModule, // DISABLED: Model doesn't exist in Prisma

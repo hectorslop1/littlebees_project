@@ -6,6 +6,23 @@ import '../enums/enums.dart';
 class AttendanceRepository {
   final ApiClient _api = ApiClient.instance;
 
+  Future<void> checkIn({
+    required String childId,
+    String method = 'parent_app',
+  }) async {
+    try {
+      await _api.post<Map<String, dynamic>>(
+        Endpoints.checkIn,
+        data: {
+          'childId': childId,
+          'method': method,
+        },
+      );
+    } catch (e) {
+      throw Exception('Error confirming attendance: $e');
+    }
+  }
+
   Future<List<AttendanceRecord>> getAttendance({
     required String childId,
     required DateTime date,
@@ -49,18 +66,18 @@ class AttendanceRepository {
       childId: json['childId'] as String,
       date: DateTime.parse(json['date'] as String),
       checkInAt: json['checkInAt'] != null
-          ? DateTime.parse(json['checkInAt'] as String)
+          ? DateTime.parse(json['checkInAt'] as String).toLocal()
           : null,
       checkOutAt: json['checkOutAt'] != null
-          ? DateTime.parse(json['checkOutAt'] as String)
+          ? DateTime.parse(json['checkOutAt'] as String).toLocal()
           : null,
       checkInBy: json['checkInBy'] as String?,
       checkOutBy: json['checkOutBy'] as String?,
       checkInMethod: json['checkInMethod'] as String?,
       status: AttendanceStatus.fromString(json['status'] as String),
       observations: json['observations'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String).toLocal(),
+      updatedAt: DateTime.parse(json['updatedAt'] as String).toLocal(),
     );
   }
 }

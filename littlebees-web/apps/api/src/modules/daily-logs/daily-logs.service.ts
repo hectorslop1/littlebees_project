@@ -175,10 +175,14 @@ export class DailyLogsService {
     userId: string,
     dto: QuickRegisterDto,
   ) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = this.parseLogicalDate(dto.date);
     const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const timeStr =
+      dto.time?.trim() ||
+      `${now.getHours().toString().padStart(2, '0')}:${now
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
 
     // Verificar que el niño existe
     const child = await this.prisma.child.findFirst({
@@ -201,7 +205,9 @@ export class DailyLogsService {
       case QuickRegisterType.CHECK_IN:
         title = metadata['title'] || 'Entrada';
         description =
-          metadata['description'] || metadata['notes'] || 'Registro de entrada';
+          metadata['notes'] ||
+          metadata['description'] ||
+          'Registro de entrada';
         
         // Crear o actualizar registro de asistencia
         attendanceRecord = await this.prisma.attendanceRecord.upsert({
@@ -232,6 +238,7 @@ export class DailyLogsService {
       case QuickRegisterType.MEAL:
         title = metadata['title'] || 'Comida';
         description =
+          metadata['notes'] ||
           metadata['description'] ||
           (metadata['foodEaten'] ? `Comió: ${metadata['foodEaten']}` : 'Registro de comida');
         break;
@@ -239,6 +246,7 @@ export class DailyLogsService {
       case QuickRegisterType.NAP:
         title = metadata['title'] || 'Siesta';
         description =
+          metadata['notes'] ||
           metadata['description'] ||
           (metadata['napDuration']
             ? `Duración: ${metadata['napDuration']} minutos`
@@ -248,6 +256,7 @@ export class DailyLogsService {
       case QuickRegisterType.ACTIVITY:
         title = metadata['activityTitle'] || metadata['title'] || 'Actividad';
         description =
+          metadata['notes'] ||
           metadata['activityDescription'] ||
           metadata['description'] ||
           'Registro de actividad';
@@ -476,5 +485,18 @@ export class DailyLogsService {
       presentChildren,
       absentChildren: group.children.length - presentChildren,
     };
+  }
+
+  private parseLogicalDate(rawDate?: string) {
+    const source = rawDate?.trim();
+    if (source) {
+      const [year, month, day] = source.split('-').map((value) => Number(value));
+      if ([year, month, day].every((value) => Number.isFinite(value))) {
+        return new Date(Date.UTC(year, month - 1, day));
+      }
+    }
+
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   }
 }

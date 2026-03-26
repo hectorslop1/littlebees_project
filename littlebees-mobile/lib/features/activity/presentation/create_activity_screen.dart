@@ -212,6 +212,11 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
 
       final notes = _notesController.text.trim();
       final label = _selectedActivityLabel;
+      final now = DateTime.now();
+      final localDate =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final localTime =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       await ref
           .read(registerActivityProvider.notifier)
@@ -220,6 +225,8 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
             type: _backendActivityType,
             title: label,
             description: notes.isEmpty ? label : notes,
+            date: localDate,
+            time: localTime,
             metadata: {
               'activityType': _selectedActivityType,
               'activityTitle': label,
@@ -617,7 +624,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                 crossAxisCount: 2,
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
-                                childAspectRatio: 1.28,
+                                childAspectRatio: 1.55,
                               ),
                           itemBuilder: (context, index) {
                             final type = _activityTypes[index];
@@ -648,7 +655,6 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
                                       width: 38,
@@ -667,7 +673,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                             : accent,
                                       ),
                                     ),
-                                    const SizedBox(height: 10),
+                                    const Spacer(),
                                     Text(
                                       type['label'] as String,
                                       style: TextStyle(

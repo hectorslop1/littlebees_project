@@ -608,6 +608,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             ? LucideIcons.mic
                             : LucideIcons.micOff,
                         label: _micEnabled ? 'Microfono' : 'Silenciado',
+                        active: _micEnabled,
                         onTap: _toggleMic,
                       ),
                       const SizedBox(width: 16),
@@ -616,6 +617,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                             ? LucideIcons.volume2
                             : LucideIcons.volume1,
                         label: _speakerEnabled ? 'Altavoz' : 'Auricular',
+                        active: _speakerEnabled,
                         onTap: _toggleSpeaker,
                       ),
                       const SizedBox(width: 16),
@@ -625,6 +627,7 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                               ? LucideIcons.video
                               : LucideIcons.videoOff,
                           label: _cameraEnabled ? 'Camara' : 'Camara off',
+                          active: _cameraEnabled,
                           onTap: _toggleCamera,
                         ),
                         const SizedBox(width: 16),
@@ -738,6 +741,7 @@ class _CallControlButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.active = false,
     this.backgroundColor = const Color(0x1FFFFFFF),
     this.iconColor = Colors.white,
   });
@@ -745,6 +749,7 @@ class _CallControlButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool active;
   final Color backgroundColor;
   final Color iconColor;
 
@@ -754,7 +759,7 @@ class _CallControlButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Material(
-          color: backgroundColor,
+          color: active ? AppColors.primary : backgroundColor,
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
@@ -762,7 +767,11 @@ class _CallControlButton extends StatelessWidget {
             child: SizedBox(
               width: 64,
               height: 64,
-              child: Icon(icon, color: iconColor, size: 24),
+              child: Icon(
+                icon,
+                color: active ? Colors.white : iconColor,
+                size: 24,
+              ),
             ),
           ),
         ),

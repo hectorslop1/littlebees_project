@@ -76,11 +76,11 @@ class _MainShellState extends ConsumerState<MainShell> {
     };
     final showIncomingCallScreen =
         incomingCall != null && activeCallId != incomingCall.callId;
-    final isSecondaryChatScreen = location.startsWith('/messages/');
+    final isMessagesRoute = location.startsWith('/messages');
     final showAiFab =
         aiFabRoutes.contains(location) &&
         !showIncomingCallScreen &&
-        !isSecondaryChatScreen &&
+        !isMessagesRoute &&
         aiFabEnabled;
 
     return Scaffold(

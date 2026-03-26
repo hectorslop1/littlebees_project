@@ -16,6 +16,8 @@ class RegisterActivityNotifier extends StateNotifier<AsyncValue<DailyLogEntry?>>
     required String type,
     required String title,
     String? description,
+    String? date,
+    String? time,
     Map<String, dynamic>? metadata,
   }) async {
     state = const AsyncValue.loading();
@@ -26,6 +28,8 @@ class RegisterActivityNotifier extends StateNotifier<AsyncValue<DailyLogEntry?>>
         type: type,
         title: title,
         description: description,
+        date: date,
+        time: time,
         metadata: metadata,
       );
       

@@ -71,9 +71,7 @@ class ExcusesRepository {
           .map((json) => Excuse.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      // If endpoint doesn't exist or any error, return empty list
-      // The excuses endpoint may not be implemented in the backend yet
-      return [];
+      throw Exception('Error al obtener justificantes: $e');
     }
   }
 
