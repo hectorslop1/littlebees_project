@@ -19,4 +19,6 @@ class RouteNames {
   static const String childProfile = 'childProfile';
   static const String notifications = 'notifications';
   static const String groupDetail = 'groupDetail';
+  static const String families = 'families';
+  static const String aiAssistant = 'aiAssistant';
 }

@@ -2,6 +2,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/endpoints.dart';
 import '../../../shared/models/daily_log_model.dart';
 import '../../../shared/enums/enums.dart';
+import 'package:dio/dio.dart';
 
 class RegisterActivityRepository {
   final ApiClient _api = ApiClient.instance;
@@ -16,20 +17,22 @@ class RegisterActivityRepository {
     String? time,
     Map<String, dynamic>? metadata,
   }) async {
+    final payload = {
+      'childId': childId,
+      'type': type,
+      ...?date != null ? {'date': date} : null,
+      ...?time != null ? {'time': time} : null,
+      'metadata': {
+        'title': title,
+        'description': description,
+        ...?metadata,
+      },
+    };
+
     try {
       final response = await _api.post<Map<String, dynamic>>(
         Endpoints.dailyLogsQuickRegister,
-        data: {
-          'childId': childId,
-          'type': type,
-          ...?date != null ? {'date': date} : null,
-          ...?time != null ? {'time': time} : null,
-          'metadata': {
-            'title': title,
-            'description': description,
-            ...?metadata,
-          },
-        },
+        data: payload,
       );
 
       return _parseDailyLog(
@@ -37,9 +40,51 @@ class RegisterActivityRepository {
           response['dailyLogEntry'] as Map<String, dynamic>? ?? response,
         ),
       );
+    } on DioException catch (error) {
+      if (_shouldRetryWithoutDateTime(error, payload)) {
+        final fallbackPayload = Map<String, dynamic>.from(payload)
+          ..remove('date')
+          ..remove('time');
+
+        final response = await _api.post<Map<String, dynamic>>(
+          Endpoints.dailyLogsQuickRegister,
+          data: fallbackPayload,
+        );
+
+        return _parseDailyLog(
+          Map<String, dynamic>.from(
+            response['dailyLogEntry'] as Map<String, dynamic>? ?? response,
+          ),
+        );
+      }
+
+      throw Exception('Error al registrar actividad: $error');
     } catch (e) {
       throw Exception('Error al registrar actividad: $e');
     }
+  }
+
+  bool _shouldRetryWithoutDateTime(
+    DioException error,
+    Map<String, dynamic> payload,
+  ) {
+    if (!payload.containsKey('date') && !payload.containsKey('time')) {
+      return false;
+    }
+
+    final data = error.response?.data;
+    if (data is! Map<String, dynamic>) {
+      return false;
+    }
+
+    final message = data['message'];
+    if (message is! List) {
+      return false;
+    }
+
+    final issues = message.map((item) => item.toString()).toList();
+    return issues.contains('property date should not exist') ||
+        issues.contains('property time should not exist');
   }
 
   /// Registrar entrada con foto

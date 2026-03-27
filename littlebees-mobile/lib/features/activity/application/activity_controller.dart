@@ -19,75 +19,81 @@ class ActivityFeedItem {
 }
 
 final photosProvider = FutureProvider<List<Photo>>((ref) async {
-  final user = ref.watch(currentUserProvider);
-  final children = await ref.watch(myChildrenProvider.future);
+  final authState = ref.watch(authProvider);
   final repository = ref.watch(dailyLogsRepositoryProvider);
+  final childrenRepository = ref.watch(childrenRepositoryProvider);
 
-  if (user == null || children.isEmpty) {
+  if (!authState.isAuthenticated) {
     return [];
   }
 
-  // Get daily logs with photos for all children
-  final childIds = children.map((c) => c.id).toList();
-  final date = DateTime.now();
+  final logs = authState.isParent
+      ? await (() async {
+          final children = await ref.watch(myChildrenProvider.future);
+          if (children.isEmpty) {
+            return <DailyLogEntry>[];
+          }
 
-  final logs = await repository.getDailyLogsForChildren(
-    childIds: childIds,
-    date: date,
-  );
+          return repository.getDailyLogsForChildren(
+            childIds: children.map((c) => c.id).toList(),
+            date: DateTime.now(),
+          );
+        })()
+      : await repository.getDailyLogsByDate(date: DateTime.now());
 
-  // Filter logs that have photo metadata and convert to Photo objects
-  final photos = <Photo>[];
-  for (final log in logs) {
-    if (log.metadata != null && log.metadata!['photoUrls'] != null) {
-      final photoUrls = log.metadata!['photoUrls'] as List;
-      for (final url in photoUrls) {
-        photos.add(
-          Photo(
-            id: '${log.id}_${photos.length}',
-            url: url as String,
-            timestamp: log.createdAt,
-            caption: log.description ?? log.title,
-            caregiverName: log.recordedByName ?? 'Teacher',
-          ),
-        );
-      }
+  for (final childId in logs.map((log) => log.childId).toSet()) {
+    try {
+      await childrenRepository.getChildById(childId);
+    } catch (_) {
+      // Ignore inaccessible child details; photos still render from log metadata.
     }
   }
 
-  return photos;
+  final photos = <Photo>[];
+  for (final log in logs) {
+    for (final url in _extractPhotoUrls(log.metadata)) {
+      photos.add(
+        Photo(
+          id: '${log.id}_${photos.length}',
+          url: url,
+          timestamp: log.createdAt,
+          caption: log.description ?? log.title,
+          caregiverName: log.recordedByName ?? 'Teacher',
+        ),
+      );
+    }
+  }
+
+  return photos..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 });
 
 final activityFeedProvider = FutureProvider<List<ActivityFeedItem>>((
   ref,
 ) async {
-  final user = ref.watch(currentUserProvider);
-  final children = await ref.watch(myChildrenProvider.future);
+  final authState = ref.watch(authProvider);
   final repository = ref.watch(dailyLogsRepositoryProvider);
   final childrenRepository = ref.watch(childrenRepositoryProvider);
 
-  if (user == null || children.isEmpty) {
+  if (!authState.isAuthenticated) {
     return [];
   }
 
-  final logs = await repository.getDailyLogsByDate(date: DateTime.now());
-  final childIndex = {
-    for (final child in children)
-      child.id: (
-        name: '${child.firstName} ${child.lastName}'.trim(),
-        photoUrl: child.photoUrl,
-      ),
-  };
+  final logs = authState.isParent
+      ? await (() async {
+          final children = await ref.watch(myChildrenProvider.future);
+          if (children.isEmpty) {
+            return <DailyLogEntry>[];
+          }
 
-  final missingPhotoIds = childIndex.entries
-      .where(
-        (entry) =>
-            entry.value.photoUrl == null || entry.value.photoUrl!.isEmpty,
-      )
-      .map((entry) => entry.key)
-      .toSet();
+          return repository.getDailyLogsForChildren(
+            childIds: children.map((c) => c.id).toList(),
+            date: DateTime.now(),
+          );
+        })()
+      : await repository.getDailyLogsByDate(date: DateTime.now());
 
-  for (final childId in missingPhotoIds) {
+  final childIndex = <String, ({String name, String? photoUrl})>{};
+  for (final childId in logs.map((log) => log.childId).toSet()) {
     try {
       final child = await childrenRepository.getChildById(childId);
       childIndex[childId] = (
@@ -95,7 +101,7 @@ final activityFeedProvider = FutureProvider<List<ActivityFeedItem>>((
         photoUrl: child.photoUrl,
       );
     } catch (_) {
-      // Keep the existing lightweight record if detailed lookup fails.
+      childIndex[childId] = (name: 'Alumno', photoUrl: null);
     }
   }
 
@@ -108,3 +114,27 @@ final activityFeedProvider = FutureProvider<List<ActivityFeedItem>>((
     );
   }).toList()..sort((a, b) => b.log.createdAt.compareTo(a.log.createdAt));
 });
+
+List<String> _extractPhotoUrls(Map<String, dynamic>? metadata) {
+  if (metadata == null) {
+    return const [];
+  }
+
+  final urls = <String>[];
+  final rawPhotoUrls = metadata['photoUrls'];
+  if (rawPhotoUrls is List) {
+    urls.addAll(
+      rawPhotoUrls
+          .map((value) => value?.toString())
+          .whereType<String>()
+          .where((value) => value.isNotEmpty),
+    );
+  }
+
+  final singlePhotoUrl = metadata['photoUrl']?.toString();
+  if (singlePhotoUrl != null && singlePhotoUrl.isNotEmpty) {
+    urls.add(singlePhotoUrl);
+  }
+
+  return urls;
+}

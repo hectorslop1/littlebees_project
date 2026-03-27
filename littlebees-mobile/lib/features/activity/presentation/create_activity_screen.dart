@@ -8,9 +8,10 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/services/file_upload_service.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
-import '../../../shared/widgets/main_shell.dart';
+import '../../child_profile/application/child_profile_provider.dart';
 import '../../groups/application/groups_provider.dart';
 import '../../groups/domain/group_model.dart';
+import '../../home/application/home_providers.dart';
 import '../../register_activity/application/register_activity_provider.dart';
 import '../application/activity_controller.dart';
 
@@ -44,18 +45,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(aiFabEnabledProvider.notifier).state = false;
-      }
-    });
-  }
-
-  @override
   void dispose() {
-    ref.read(aiFabEnabledProvider.notifier).state = true;
     _notesController.dispose();
     super.dispose();
   }
@@ -449,6 +439,15 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                   final groupDetailAsync = ref.watch(
                                     groupByIdProvider(_selectedGroupId!),
                                   );
+                                  final knownChildren =
+                                      ref
+                                          .watch(myChildrenProvider)
+                                          .valueOrNull ??
+                                      const [];
+                                  final childPhotoIndex = {
+                                    for (final child in knownChildren)
+                                      child.id: child.photoUrl,
+                                  };
 
                                   return groupDetailAsync.when(
                                     data: (groupDetail) {
@@ -494,8 +493,14 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                           ? 'Selecciona un niño'
                                           : '${selectedChild['firstName'] ?? ''} ${selectedChild['lastName'] ?? ''}'
                                                 .trim();
+                                      final selectedChildId =
+                                          selectedChild?['id'] as String?;
                                       final selectedChildPhotoUrl =
-                                          selectedChild?['photoUrl'] as String?;
+                                          (selectedChild?['photoUrl']
+                                                  as String?) ??
+                                          (selectedChildId != null
+                                              ? childPhotoIndex[selectedChildId]
+                                              : null);
 
                                       return Column(
                                         children: [
@@ -546,12 +551,29 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                             ),
                                             child: Row(
                                               children: [
-                                                LBAvatar(
-                                                  imageUrl:
-                                                      selectedChildPhotoUrl,
-                                                  placeholder:
-                                                      selectedChildName,
-                                                  size: LBAvatarSize.large,
+                                                Consumer(
+                                                  builder: (context, ref, _) {
+                                                    final profilePhotoUrl =
+                                                        selectedChildId == null
+                                                        ? null
+                                                        : ref
+                                                              .watch(
+                                                                childProfileProvider(
+                                                                  selectedChildId,
+                                                                ),
+                                                              )
+                                                              .valueOrNull
+                                                              ?.photoUrl;
+
+                                                    return LBAvatar(
+                                                      imageUrl:
+                                                          profilePhotoUrl ??
+                                                          selectedChildPhotoUrl,
+                                                      placeholder:
+                                                          selectedChildName,
+                                                      size: LBAvatarSize.large,
+                                                    );
+                                                  },
                                                 ),
                                                 const SizedBox(width: 14),
                                                 Expanded(

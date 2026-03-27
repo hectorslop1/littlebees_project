@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@kinderspace/shared-types';
 import { GroupsService } from './groups.service';
 import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
@@ -26,15 +27,24 @@ export class GroupsController {
 
   @Get()
   @ApiOperation({ summary: 'Listar grupos del tenant' })
-  async findAll(@CurrentTenant() tenantId: string) {
-    const groups = await this.groupsService.findAll(tenantId);
+  async findAll(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    const groups = await this.groupsService.findAll(tenantId, userId, userRole);
     return createPaginatedResponse(groups);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener detalle de grupo' })
-  findById(@Param('id') id: string, @CurrentTenant() tenantId: string) {
-    return this.groupsService.findById(id, tenantId);
+  findById(
+    @Param('id') id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.groupsService.findById(id, tenantId, userId, userRole);
   }
 
   @Post()

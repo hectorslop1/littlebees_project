@@ -9,6 +9,7 @@ import '../../../../design_system/widgets/lb_card.dart';
 import '../../../../shared/enums/enums.dart';
 import '../../../../shared/models/payment_model.dart';
 import '../../../../shared/providers/repository_providers.dart';
+import '../../auth/application/auth_provider.dart';
 import '../application/payments_providers.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
@@ -25,6 +26,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentsAsync = ref.watch(paymentsProvider);
+    final authState = ref.watch(authProvider);
+    final canPayFromThisRole = authState.isParent;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -41,7 +44,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(paymentsProvider.future),
           child: paymentsAsync.when(
-            data: (payments) => _buildContent(context, payments),
+            data: (payments) =>
+                _buildContent(context, payments, canPayFromThisRole),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _buildErrorState(context, ref, error),
           ),
@@ -50,7 +54,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, List<Payment> payments) {
+  Widget _buildContent(
+    BuildContext context,
+    List<Payment> payments,
+    bool canPayFromThisRole,
+  ) {
     final summary = _PaymentsSummary.fromPayments(payments);
     final filteredPayments = _applyFilter(payments);
 
@@ -67,7 +75,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             .fadeIn(delay: 80.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
         const SizedBox(height: 20),
-        _buildNoticeCard()
+        _buildNoticeCard(canPayFromThisRole)
             .animate()
             .fadeIn(delay: 140.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
@@ -88,7 +96,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           ...filteredPayments.asMap().entries.map(
             (entry) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildPaymentCard(context, entry.value)
+              child: _buildPaymentCard(context, entry.value, canPayFromThisRole)
                   .animate()
                   .fadeIn(delay: (260 + (entry.key * 40)).ms, duration: 260.ms)
                   .slideY(begin: 0.05, duration: 260.ms),
@@ -124,7 +132,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withAlpha(40),
                   borderRadius: BorderRadius.circular(999),
@@ -202,10 +213,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   'Cargos pendientes',
                   '${summary.pendingCount}',
                 ),
-                _buildSummaryRow(
-                  'Pagos registrados',
-                  '${summary.paidCount}',
-                ),
+                _buildSummaryRow('Pagos registrados', '${summary.paidCount}'),
                 if (summary.overdueCount > 0)
                   _buildSummaryRow(
                     'Pendientes vencidos',
@@ -326,7 +334,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               Container(
                 height: 10,
                 width: 10,
-                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                ),
               ),
             ],
           ),
@@ -361,7 +372,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     );
   }
 
-  Widget _buildNoticeCard() {
+  Widget _buildNoticeCard(bool canPayFromThisRole) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -369,16 +380,21 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.divider),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(LucideIcons.shieldCheck, color: AppColors.secondary, size: 20),
-          SizedBox(width: 12),
+          const Icon(
+            LucideIcons.shieldCheck,
+            color: AppColors.secondary,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Los cargos y pagos mostrados aquí provienen del backend real. '
-              'El registro del pago se realiza desde administración y se refleja automáticamente en tu estado de cuenta.',
-              style: TextStyle(
+              canPayFromThisRole
+                  ? 'Los cargos y pagos mostrados aquí provienen del backend real. Puedes liquidar tus cargos pendientes y revisar el historial de tus hijos.'
+                  : 'Los cargos y pagos mostrados aquí provienen del backend real. Desde este rol solo puedes consultar el estado financiero; el pago corresponde a las familias.',
+              style: const TextStyle(
                 height: 1.5,
                 fontSize: 13,
                 color: AppColors.textSecondary,
@@ -407,7 +423,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 });
               },
               labelStyle: TextStyle(
-                color: selected ? AppColors.textOnPrimary : AppColors.textPrimary,
+                color: selected
+                    ? AppColors.textOnPrimary
+                    : AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
               backgroundColor: AppColors.surface,
@@ -423,7 +441,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     );
   }
 
-  Widget _buildPaymentCard(BuildContext context, Payment payment) {
+  Widget _buildPaymentCard(
+    BuildContext context,
+    Payment payment,
+    bool canPayFromThisRole,
+  ) {
     final visualStatus = _visualStatus(payment);
     final dueDateLabel = _dateFormat.format(payment.dueDate.toLocal());
     final paidDateLabel = payment.paidAt == null
@@ -505,14 +527,17 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   icon: LucideIcons.badgeCheck,
                   label: 'Pagado $paidDateLabel',
                 ),
-              if (payment.paymentMethod != null && payment.paymentMethod!.isNotEmpty)
+              if (payment.paymentMethod != null &&
+                  payment.paymentMethod!.isNotEmpty)
                 _buildMetaPill(
                   icon: LucideIcons.landmark,
                   label: _paymentMethodLabel(payment.paymentMethod!),
                 ),
             ],
           ),
-          if (payment.status == PaymentStatus.pending || _isOverdue(payment)) ...[
+          if (canPayFromThisRole &&
+              (payment.status == PaymentStatus.pending ||
+                  _isOverdue(payment))) ...[
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
@@ -551,10 +576,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     );
   }
 
-  Widget _buildMetaPill({
-    required IconData icon,
-    required String label,
-  }) {
+  Widget _buildMetaPill({required IconData icon, required String label}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -598,7 +620,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   }
 
   Widget _buildEmptyState() {
-        return LBCard(
+    return LBCard(
       child: Column(
         children: const [
           Icon(LucideIcons.receipt, size: 36, color: AppColors.textTertiary),
@@ -626,11 +648,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         LBCard(
           child: Column(
             children: [
-              const Icon(
-                LucideIcons.receipt,
-                size: 44,
-                color: AppColors.error,
-              ),
+              const Icon(LucideIcons.receipt, size: 44, color: AppColors.error),
               const SizedBox(height: 16),
               const Text(
                 'No fue posible cargar los pagos',
@@ -659,17 +677,22 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   }
 
   List<Payment> _applyFilter(List<Payment> payments) {
-    final sorted = [...payments]..sort((a, b) => b.dueDate.compareTo(a.dueDate));
+    final sorted = [...payments]
+      ..sort((a, b) => b.dueDate.compareTo(a.dueDate));
 
     switch (_selectedFilter) {
       case PaymentFilter.all:
         return sorted;
       case PaymentFilter.pending:
-        return sorted.where((payment) => payment.status == PaymentStatus.pending).toList();
+        return sorted
+            .where((payment) => payment.status == PaymentStatus.pending)
+            .toList();
       case PaymentFilter.overdue:
         return sorted.where((payment) => _isOverdue(payment)).toList();
       case PaymentFilter.paid:
-        return sorted.where((payment) => payment.status == PaymentStatus.paid).toList();
+        return sorted
+            .where((payment) => payment.status == PaymentStatus.paid)
+            .toList();
       case PaymentFilter.cancelled:
         return sorted
             .where((payment) => payment.status == PaymentStatus.cancelled)
@@ -681,7 +704,13 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     return payment.status == PaymentStatus.overdue ||
         (payment.status == PaymentStatus.pending &&
             payment.dueDate.isBefore(
-              DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0),
+              DateTime.now().copyWith(
+                hour: 0,
+                minute: 0,
+                second: 0,
+                millisecond: 0,
+                microsecond: 0,
+              ),
             ));
   }
 
@@ -784,14 +813,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 setModalState(() {});
 
                 try {
-                  await ref.read(paymentsRepositoryProvider).simulatePayment(
-                    paymentId: payment.id,
-                    cardholderName: cardholderController.text.trim(),
-                    cardNumber: cardNumberController.text.trim(),
-                    expiryMonth: expiryMonthController.text.trim(),
-                    expiryYear: expiryYearController.text.trim(),
-                    cvv: cvvController.text.trim(),
-                  );
+                  await ref
+                      .read(paymentsRepositoryProvider)
+                      .simulatePayment(
+                        paymentId: payment.id,
+                        cardholderName: cardholderController.text.trim(),
+                        cardNumber: cardNumberController.text.trim(),
+                        expiryMonth: expiryMonthController.text.trim(),
+                        expiryYear: expiryYearController.text.trim(),
+                        cvv: cvvController.text.trim(),
+                      );
 
                   if (mounted) {
                     navigator.pop();
@@ -808,7 +839,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   if (mounted) {
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('No fue posible procesar el pago: $error'),
+                        content: Text(
+                          'No fue posible procesar el pago: $error',
+                        ),
                       ),
                     );
                   }
@@ -877,7 +910,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           controller: cardholderController,
                           label: 'Titular',
                           hint: 'Carlos Ramirez',
-                          validator: (value) => (value == null || value.trim().length < 3)
+                          validator: (value) =>
+                              (value == null || value.trim().length < 3)
                               ? 'Ingresa el nombre del titular'
                               : null,
                         ),
@@ -888,7 +922,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           hint: '4242 4242 4242 4242',
                           keyboardType: TextInputType.number,
                           validator: (value) {
-                            final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+                            final digits = (value ?? '').replaceAll(
+                              RegExp(r'\D'),
+                              '',
+                            );
                             if (digits.length < 12) {
                               return 'Ingresa una tarjeta dummy valida';
                             }
@@ -906,7 +943,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
                                   final month = int.tryParse(value ?? '');
-                                  if (month == null || month < 1 || month > 12) {
+                                  if (month == null ||
+                                      month < 1 ||
+                                      month > 12) {
                                     return 'Mes invalido';
                                   }
                                   return null;
@@ -937,7 +976,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                 hint: '123',
                                 keyboardType: TextInputType.number,
                                 validator: (value) {
-                                  final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+                                  final digits = (value ?? '').replaceAll(
+                                    RegExp(r'\D'),
+                                    '',
+                                  );
                                   if (digits.length < 3) {
                                     return 'CVV invalido';
                                   }
@@ -1119,31 +1161,51 @@ class _PaymentsSummary {
   }
 
   factory _PaymentsSummary.fromPayments(List<Payment> payments) {
-    final pendingPayments = payments.where((payment) => payment.status == PaymentStatus.pending);
-    final paidPayments = payments.where((payment) => payment.status == PaymentStatus.paid);
+    final pendingPayments = payments.where(
+      (payment) => payment.status == PaymentStatus.pending,
+    );
+    final paidPayments = payments.where(
+      (payment) => payment.status == PaymentStatus.paid,
+    );
     final overduePayments = payments.where((payment) {
       return payment.status == PaymentStatus.overdue ||
           (payment.status == PaymentStatus.pending &&
               payment.dueDate.isBefore(
-                DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0),
+                DateTime.now().copyWith(
+                  hour: 0,
+                  minute: 0,
+                  second: 0,
+                  millisecond: 0,
+                  microsecond: 0,
+                ),
               ));
     });
 
     DateTime? nextPendingDueDate;
     for (final payment in pendingPayments) {
-      if (nextPendingDueDate == null || payment.dueDate.isBefore(nextPendingDueDate)) {
+      if (nextPendingDueDate == null ||
+          payment.dueDate.isBefore(nextPendingDueDate)) {
         nextPendingDueDate = payment.dueDate;
       }
     }
 
     return _PaymentsSummary(
-      pendingBalance: pendingPayments.fold(0.0, (sum, payment) => sum + payment.amount),
+      pendingBalance: pendingPayments.fold(
+        0.0,
+        (sum, payment) => sum + payment.amount,
+      ),
       pendingCount: pendingPayments.length,
       overdueCount: overduePayments.length,
-      overdueAmount: overduePayments.fold(0.0, (sum, payment) => sum + payment.amount),
+      overdueAmount: overduePayments.fold(
+        0.0,
+        (sum, payment) => sum + payment.amount,
+      ),
       paidCount: paidPayments.length,
       paidTotal: paidPayments.fold(0.0, (sum, payment) => sum + payment.amount),
-      childrenWithPayments: payments.map((payment) => payment.childId).toSet().length,
+      childrenWithPayments: payments
+          .map((payment) => payment.childId)
+          .toSet()
+          .length,
       nextPendingDueDate: nextPendingDueDate,
     );
   }

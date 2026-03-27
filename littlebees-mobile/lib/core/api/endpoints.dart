@@ -19,6 +19,9 @@ class Endpoints {
   static String childContacts(String id) => '/children/$id/emergency-contacts';
   static String childContact(String childId, String contactId) =>
       '/children/$childId/emergency-contacts/$contactId';
+  static String childParents(String id) => '/children/$id/parents';
+  static String childParent(String childId, String userId) =>
+      '/children/$childId/parents/$userId';
 
   // Attendance
   static const String attendance = '/attendance';
@@ -61,7 +64,13 @@ class Endpoints {
   // Reports
   static const String reports = '/reports';
 
+  // AI Assistant
+  static const String aiSessions = '/ai/sessions';
+  static String aiSession(String id) => '/ai/sessions/$id';
+  static String aiChat(String id) => '/ai/sessions/$id/chat';
+
   // Users
+  static const String users = '/users';
   static const String usersMe = '/users/me';
 
   // Excuses/Justificantes

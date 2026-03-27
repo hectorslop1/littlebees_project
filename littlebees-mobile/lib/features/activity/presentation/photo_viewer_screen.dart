@@ -3,6 +3,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/utils/resolve_image_url.dart';
 import '../domain/photo_model.dart';
 import '../../../../design_system/theme/app_colors.dart';
 
@@ -18,6 +19,16 @@ class PhotoViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = resolveImageUrl(photo.url);
+    if (resolvedUrl == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Icon(LucideIcons.imageOff, color: Colors.white70, size: 40),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
@@ -26,7 +37,7 @@ class PhotoViewerScreen extends StatelessWidget {
         children: [
           // Background immersive image
           PhotoView(
-            imageProvider: NetworkImage(photo.url),
+            imageProvider: NetworkImage(resolvedUrl),
             heroAttributes: PhotoViewHeroAttributes(tag: heroTag),
             minScale: PhotoViewComputedScale.contained,
             maxScale: PhotoViewComputedScale.covered * 2,

@@ -148,11 +148,17 @@ class RemoteHomeRepository {
       );
 
       final logEntries = (logsResponse['data'] as List? ?? []);
+      final requestedLocalDay = DateTime(date.year, date.month, date.day);
       final events =
           logEntries
               .map(
                 (json) => _parseTimelineEvent(Map<String, dynamic>.from(json)),
               )
+              .where((event) {
+                final local = event.timestamp.toLocal();
+                final eventDay = DateTime(local.year, local.month, local.day);
+                return eventDay == requestedLocalDay;
+              })
               .toList()
             ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
@@ -194,6 +200,11 @@ class RemoteHomeRepository {
         .whereType<String>()
         .where((url) => url.isNotEmpty)
         .toList();
+    final singlePhotoUrl = metadata?['photoUrl']?.toString();
+    final resolvedPhotoUrls = [
+      ...?photoUrls,
+      if (singlePhotoUrl != null && singlePhotoUrl.isNotEmpty) singlePhotoUrl,
+    ];
     final caregiverName = json['recordedByName'] as String?;
 
     MealDetails? mealDetails;
@@ -227,7 +238,7 @@ class RemoteHomeRepository {
       description: json['description'],
       caregiverName: caregiverName,
       caregiverAvatarUrl: null,
-      photoUrls: photoUrls == null || photoUrls.isEmpty ? null : photoUrls,
+      photoUrls: resolvedPhotoUrls.isEmpty ? null : resolvedPhotoUrls,
       mealDetails: mealDetails,
       napDetails: napDetails,
     );

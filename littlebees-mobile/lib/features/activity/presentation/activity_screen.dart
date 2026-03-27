@@ -8,6 +8,8 @@ import '../../../../core/i18n/app_translations.dart';
 import '../../../../design_system/widgets/lb_empty_state.dart';
 import '../../../../design_system/widgets/lb_error_state.dart';
 import '../../../../design_system/widgets/lb_avatar.dart';
+import '../../../../core/utils/resolve_image_url.dart';
+import '../../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../auth/application/auth_provider.dart';
 import 'create_activity_screen.dart';
 
@@ -19,7 +21,7 @@ class ActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
-  bool _isPhotosTab = true;
+  bool _showGallery = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +31,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final authState = ref.watch(authProvider);
     final isTeacher =
         authState.isTeacher || authState.isDirector || authState.isAdmin;
+    final photosCount = photosAsync.valueOrNull?.length ?? 0;
+    final logsCount = activityFeedAsync.valueOrNull?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(tr.tr('activity')),
+        title: Text(isTeacher ? 'Actividad del día' : tr.tr('activity')),
         actions: [
           if (isTeacher)
             Padding(
@@ -54,7 +58,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     if (saved == true) {
                       if (mounted) {
                         setState(() {
-                          _isPhotosTab = false;
+                          _showGallery = false;
                         });
                       }
                       ref.invalidate(photosProvider);
@@ -69,32 +73,118 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Custom Tab Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: context.isDark
+                        ? const [Color(0xFF1E1A11), Color(0xFF1C1F24)]
+                        : const [Color(0xFFF8EBC8), Color(0xFFE8F0FB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(
+                          context.isDark ? 25 : 180,
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isTeacher ? 'Jornada del aula' : 'Actividad compartida',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: context.appColor(AppColors.primary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      isTeacher
+                          ? 'Todo lo que registras hoy, en un solo lugar'
+                          : 'Momentos y registros del día',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        height: 1.05,
+                        color: context.appColor(AppColors.textPrimary),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isTeacher
+                          ? 'Usa Jornada para revisar registros y Galería para compartir evidencia visual con las familias.'
+                          : 'Consulta primero los registros más recientes y después las fotos del día.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.45,
+                        color: context.appColor(AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActivityStatPill(
+                            icon: LucideIcons.clipboardList,
+                            label: 'Registros',
+                            value: '$logsCount',
+                            accent: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActivityStatPill(
+                            icon: LucideIcons.image,
+                            label: 'Fotos',
+                            value: '$photosCount',
+                            accent: AppColors.info,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24.0,
-                vertical: 8.0,
+                vertical: 2.0,
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
+                  color: context.appColor(AppColors.surfaceVariant),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.all(4),
                 child: Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _isPhotosTab = true),
+                        onTap: () => setState(() => _showGallery = false),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: _isPhotosTab
-                                ? AppColors.surface
+                            color: !_showGallery
+                                ? context.appColor(AppColors.surface)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: _isPhotosTab
+                            boxShadow: !_showGallery
                                 ? [
                                     BoxShadow(
                                       color: Colors.black.withAlpha(10),
@@ -106,14 +196,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              '📸 ${tr.tr('photos')}',
+                              'Jornada',
                               style: TextStyle(
-                                fontWeight: _isPhotosTab
+                                fontWeight: !_showGallery
                                     ? FontWeight.w600
                                     : FontWeight.w500,
-                                color: _isPhotosTab
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
+                                color: !_showGallery
+                                    ? context.appColor(AppColors.textPrimary)
+                                    : context.appColor(AppColors.textSecondary),
                               ),
                             ),
                           ),
@@ -122,16 +212,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _isPhotosTab = false),
+                        onTap: () => setState(() => _showGallery = true),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: !_isPhotosTab
-                                ? AppColors.surface
+                            color: _showGallery
+                                ? context.appColor(AppColors.surface)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
-                            boxShadow: !_isPhotosTab
+                            boxShadow: _showGallery
                                 ? [
                                     BoxShadow(
                                       color: Colors.black.withAlpha(10),
@@ -143,14 +233,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              '📋 ${tr.tr('activityLog')}',
+                              'Galería',
                               style: TextStyle(
-                                fontWeight: !_isPhotosTab
+                                fontWeight: _showGallery
                                     ? FontWeight.w600
                                     : FontWeight.w500,
-                                color: !_isPhotosTab
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
+                                color: _showGallery
+                                    ? context.appColor(AppColors.textPrimary)
+                                    : context.appColor(AppColors.textSecondary),
                               ),
                             ),
                           ),
@@ -162,7 +252,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               ),
             ),
             Expanded(
-              child: _isPhotosTab
+              child: _showGallery
                   ? photosAsync.when(
                       data: (photos) {
                         final bool isTeacherRole = isTeacher;
@@ -195,9 +285,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         if (items.isEmpty) {
                           return LBEmptyState(
                             icon: LucideIcons.clipboardList,
-                            title: 'Aún no hay actividad registrada',
+                            title: 'Aún no hay registros en la jornada',
                             message: isTeacher
-                                ? 'Cuando registres actividades del aula, aparecerán aquí y también podrán reflejarse en la experiencia del padre.'
+                                ? 'Cuando registres actividades del aula, aquí verás la jornada ordenada por hora y por alumno.'
                                 : tr.tr('activityLogMsg'),
                           );
                         }
@@ -217,6 +307,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                               final metadata = log.metadata ?? const {};
                               final activityType =
                                   metadata['activityType'] as String?;
+                              final photoUrls = _extractPhotoUrls(metadata);
 
                               return Container(
                                 padding: const EdgeInsets.all(18),
@@ -320,38 +411,112 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                           ),
                                         ),
                                       ),
-                                    if ((metadata['photoUrls'] as List?)
-                                            ?.isNotEmpty ==
-                                        true)
+                                    if (photoUrls.isNotEmpty)
                                       Padding(
                                         padding: const EdgeInsets.only(top: 12),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primarySurface,
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                LucideIcons.image,
-                                                size: 16,
-                                                color: AppColors.primary,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.primarySurface,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
                                               ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  '${(metadata['photoUrls'] as List).length} foto(s) adjuntas',
-                                                  style: const TextStyle(
+                                              child: Row(
+                                                children: [
+                                                  const Icon(
+                                                    LucideIcons.image,
+                                                    size: 16,
                                                     color: AppColors.primary,
-                                                    fontWeight: FontWeight.w600,
                                                   ),
-                                                ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      '${photoUrls.length} foto(s) adjuntas',
+                                                      style: const TextStyle(
+                                                        color:
+                                                            AppColors.primary,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            SizedBox(
+                                              height: 88,
+                                              child: ListView.separated(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                itemCount: photoUrls.length,
+                                                separatorBuilder:
+                                                    (context, index) =>
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                itemBuilder: (context, index) {
+                                                  final resolvedUrl =
+                                                      resolveImageUrl(
+                                                        photoUrls[index],
+                                                      );
+                                                  if (resolvedUrl == null) {
+                                                    return const SizedBox();
+                                                  }
+
+                                                  return GestureDetector(
+                                                    onTap: () {
+                                                      Navigator.of(
+                                                        context,
+                                                      ).push(
+                                                        MaterialPageRoute<void>(
+                                                          builder: (_) =>
+                                                              FullScreenImageViewer(
+                                                                imageUrl:
+                                                                    resolvedUrl,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            14,
+                                                          ),
+                                                      child: Image.network(
+                                                        resolvedUrl,
+                                                        width: 104,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (
+                                                              context,
+                                                              error,
+                                                              stackTrace,
+                                                            ) => Container(
+                                                              width: 104,
+                                                              color: AppColors
+                                                                  .primarySurface,
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              child: const Icon(
+                                                                LucideIcons
+                                                                    .imageOff,
+                                                                color: AppColors
+                                                                    .textSecondary,
+                                                              ),
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                   ],
@@ -396,5 +561,84 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       default:
         return 'Actividad';
     }
+  }
+}
+
+List<String> _extractPhotoUrls(Map<String, dynamic> metadata) {
+  final urls = <String>[];
+  final rawPhotoUrls = metadata['photoUrls'];
+  if (rawPhotoUrls is List) {
+    urls.addAll(
+      rawPhotoUrls
+          .map((value) => value?.toString())
+          .whereType<String>()
+          .where((value) => value.isNotEmpty),
+    );
+  }
+
+  final singlePhotoUrl = metadata['photoUrl']?.toString();
+  if (singlePhotoUrl != null && singlePhotoUrl.isNotEmpty) {
+    urls.add(singlePhotoUrl);
+  }
+
+  return urls;
+}
+
+class _ActivityStatPill extends StatelessWidget {
+  const _ActivityStatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(context.isDark ? 18 : 185),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: accent.withAlpha(24),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: accent, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: context.appColor(AppColors.textPrimary),
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: context.appColor(AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

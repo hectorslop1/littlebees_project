@@ -58,23 +58,31 @@ final dailyStoryProvider = FutureProvider.family<DailyStory, String>((
 final todayRoleAttendanceProvider = FutureProvider<List<AttendanceRecord>>((
   ref,
 ) async {
-  final children = await ref.watch(myChildrenProvider.future);
-  if (children.isEmpty) {
+  try {
+    final children = await ref.watch(myChildrenProvider.future);
+    if (children.isEmpty) {
+      return [];
+    }
+
+    final repository = ref.watch(attendanceRepositoryProvider);
+    return repository.getAttendanceForChildren(
+      childIds: children.map((child) => child.id).toList(),
+      date: DateTime.now(),
+    );
+  } catch (_) {
     return [];
   }
-
-  final repository = ref.watch(attendanceRepositoryProvider);
-  return repository.getAttendanceForChildren(
-    childIds: children.map((child) => child.id).toList(),
-    date: DateTime.now(),
-  );
 });
 
 final todayRoleDailyLogsProvider = FutureProvider<List<DailyLogEntry>>((
   ref,
 ) async {
-  final repository = ref.watch(dailyLogsRepositoryProvider);
-  return repository.getDailyLogsByDate(date: DateTime.now());
+  try {
+    final repository = ref.watch(dailyLogsRepositoryProvider);
+    return repository.getDailyLogsByDate(date: DateTime.now());
+  } catch (_) {
+    return [];
+  }
 });
 
 class TeacherDashboardSnapshot {
@@ -96,13 +104,23 @@ class TeacherDashboardSnapshot {
 final teacherDashboardProvider = FutureProvider<TeacherDashboardSnapshot>((
   ref,
 ) async {
-  final groups = await ref.watch(groupsProvider.future);
-  final children = await ref.watch(myChildrenProvider.future);
-  final attendance = await ref.watch(todayRoleAttendanceProvider.future);
-  final logs = await ref.watch(todayRoleDailyLogsProvider.future);
-  final excuses = await ref.watch(
-    excusesListProvider(ExcusesFilters(status: ExcuseStatus.pending)).future,
-  );
+  final groups = await AsyncValue.guard(
+    () => ref.watch(groupsProvider.future),
+  ).then((value) => value.value ?? const []);
+  final children = await AsyncValue.guard(
+    () => ref.watch(myChildrenProvider.future),
+  ).then((value) => value.value ?? const <Child>[]);
+  final attendance = await AsyncValue.guard(
+    () => ref.watch(todayRoleAttendanceProvider.future),
+  ).then((value) => value.value ?? const <AttendanceRecord>[]);
+  final logs = await AsyncValue.guard(
+    () => ref.watch(todayRoleDailyLogsProvider.future),
+  ).then((value) => value.value ?? const <DailyLogEntry>[]);
+  final excuses = await AsyncValue.guard(
+    () => ref.watch(
+      excusesListProvider(ExcusesFilters(status: ExcuseStatus.pending)).future,
+    ),
+  ).then((value) => value.value ?? const []);
 
   final presentIds = attendance
       .where(
@@ -142,13 +160,23 @@ class DirectorDashboardSnapshot {
 final directorDashboardProvider = FutureProvider<DirectorDashboardSnapshot>((
   ref,
 ) async {
-  final groups = await ref.watch(groupsProvider.future);
-  final children = await ref.watch(myChildrenProvider.future);
-  final attendance = await ref.watch(todayRoleAttendanceProvider.future);
-  final logs = await ref.watch(todayRoleDailyLogsProvider.future);
-  final excuses = await ref.watch(
-    excusesListProvider(ExcusesFilters(status: ExcuseStatus.pending)).future,
-  );
+  final groups = await AsyncValue.guard(
+    () => ref.watch(groupsProvider.future),
+  ).then((value) => value.value ?? const []);
+  final children = await AsyncValue.guard(
+    () => ref.watch(myChildrenProvider.future),
+  ).then((value) => value.value ?? const <Child>[]);
+  final attendance = await AsyncValue.guard(
+    () => ref.watch(todayRoleAttendanceProvider.future),
+  ).then((value) => value.value ?? const <AttendanceRecord>[]);
+  final logs = await AsyncValue.guard(
+    () => ref.watch(todayRoleDailyLogsProvider.future),
+  ).then((value) => value.value ?? const <DailyLogEntry>[]);
+  final excuses = await AsyncValue.guard(
+    () => ref.watch(
+      excusesListProvider(ExcusesFilters(status: ExcuseStatus.pending)).future,
+    ),
+  ).then((value) => value.value ?? const []);
 
   final presentIds = attendance
       .where(

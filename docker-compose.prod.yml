@@ -81,6 +81,8 @@ services:
       MINIO_SECRET_KEY: kinderspace123
       MINIO_BUCKET: kinderspace-files
       MINIO_USE_SSL: "false"
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
       CORS_ORIGINS: http://216.250.125.239:3000

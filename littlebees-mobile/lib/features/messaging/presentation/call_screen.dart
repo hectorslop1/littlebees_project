@@ -543,6 +543,8 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                       fontWeight: FontWeight.w800,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -600,8 +602,12 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         ),
                       ),
                     ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 14,
+                    runSpacing: 16,
                     children: [
                       _CallControlButton(
                         icon: _micEnabled
@@ -611,7 +617,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         active: _micEnabled,
                         onTap: _toggleMic,
                       ),
-                      const SizedBox(width: 16),
                       _CallControlButton(
                         icon: _speakerEnabled
                             ? LucideIcons.volume2
@@ -620,7 +625,6 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                         active: _speakerEnabled,
                         onTap: _toggleSpeaker,
                       ),
-                      const SizedBox(width: 16),
                       if (_isVideo) ...[
                         _CallControlButton(
                           icon: _cameraEnabled
@@ -630,13 +634,11 @@ class _CallScreenState extends ConsumerState<CallScreen> {
                           active: _cameraEnabled,
                           onTap: _toggleCamera,
                         ),
-                        const SizedBox(width: 16),
                         _CallControlButton(
                           icon: LucideIcons.refreshCcw,
                           label: 'Cambiar',
                           onTap: _switchCamera,
                         ),
-                        const SizedBox(width: 16),
                       ],
                       _CallControlButton(
                         icon: LucideIcons.phoneOff,
@@ -765,12 +767,12 @@ class _CallControlButton extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: SizedBox(
-              width: 64,
-              height: 64,
+              width: 58,
+              height: 58,
               child: Icon(
                 icon,
                 color: active ? Colors.white : iconColor,
-                size: 24,
+                size: 22,
               ),
             ),
           ),
@@ -780,7 +782,7 @@ class _CallControlButton extends StatelessWidget {
           label,
           style: const TextStyle(
             color: Colors.white70,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),

@@ -30,6 +30,8 @@ import '../features/groups/presentation/group_detail_screen.dart';
 import '../features/profile/presentation/notification_settings_screen.dart';
 import '../features/profile/presentation/my_children_screen.dart';
 import '../features/messaging/presentation/new_conversation_screen.dart';
+import '../features/families/presentation/families_screen.dart';
+import '../features/ai_assistant/presentation/ai_assistant_fab.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthChangeNotifier(ref);
@@ -73,7 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       ShellRoute(
-        builder: (context, state, child) => MainShell(child: child),
+        builder: (context, state, child) => MainShell(
+          currentLocation: state.matchedLocation,
+          child: child,
+        ),
         routes: [
           GoRoute(
             path: '/home',
@@ -229,6 +234,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/notifications',
             name: RouteNames.notifications,
             builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/assistant',
+            name: RouteNames.aiAssistant,
+            builder: (context, state) => const AiAssistantScreen(),
+          ),
+          GoRoute(
+            path: '/families',
+            name: RouteNames.families,
+            builder: (context, state) => const FamiliesScreen(),
           ),
           GoRoute(
             path: '/notification-settings',

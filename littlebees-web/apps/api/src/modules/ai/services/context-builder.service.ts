@@ -9,6 +9,9 @@ interface UserContext {
   children?: any[];
   groups?: any[];
   recentActivities?: any[];
+  recentAttendance?: any[];
+  recentExcuses?: any[];
+  financialSummary?: any;
   stats?: any;
   dataAccessed: string[];
 }
@@ -65,6 +68,11 @@ export class ContextBuilderService {
         dateOfBirth: true,
         gender: true,
         status: true,
+        group: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -96,6 +104,40 @@ export class ContextBuilderService {
 
       context.dataAccessed.push('activities');
 
+      context.recentAttendance = await this.prisma.attendanceRecord.findMany({
+        where: {
+          childId: { in: childIds },
+        },
+        include: {
+          child: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+        take: 10,
+      });
+
+      context.recentExcuses = await this.prisma.excuse.findMany({
+        where: {
+          childId: { in: childIds },
+        },
+        include: {
+          child: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+      });
+
+      context.dataAccessed.push('attendance', 'excuses');
+
       // Estadísticas básicas
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -110,6 +152,7 @@ export class ContextBuilderService {
       context.stats = {
         totalChildren: context.children.length,
         todayActivities,
+        recentExcuses: context.recentExcuses.length,
       };
     }
   }
@@ -170,6 +213,23 @@ export class ContextBuilderService {
 
       context.dataAccessed.push('activities');
 
+      context.recentExcuses = await this.prisma.excuse.findMany({
+        where: {
+          childId: { in: childIds },
+          status: 'pending',
+        },
+        include: {
+          child: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      });
+
       // Estadísticas del grupo
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -186,7 +246,10 @@ export class ContextBuilderService {
         totalGroups: context.groups.length,
         totalChildren: childIds.length,
         todayAttendance: attendance,
+        pendingExcuses: context.recentExcuses.length,
       };
+
+      context.dataAccessed.push('excuses');
     }
   }
 
@@ -247,12 +310,51 @@ export class ContextBuilderService {
       },
     });
 
+    const [pendingPayments, overduePayments, paidThisMonth, pendingExcuses] =
+      await Promise.all([
+        this.prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: {
+            tenantId: context.tenantId,
+            status: 'pending',
+          },
+        }),
+        this.prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: {
+            tenantId: context.tenantId,
+            status: 'overdue',
+          },
+        }),
+        this.prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: {
+            tenantId: context.tenantId,
+            status: 'paid',
+            paidAt: { gte: startOfMonth },
+          },
+        }),
+        this.prisma.excuse.count({
+          where: {
+            tenantId: context.tenantId,
+            status: 'pending',
+          },
+        }),
+      ]);
+
     context.stats = {
       ...context.stats,
       monthlyActivities,
+      pendingExcuses,
     };
 
-    context.dataAccessed.push('financial_stats');
+    context.financialSummary = {
+      pendingAmount: Number(pendingPayments._sum.amount || 0),
+      overdueAmount: Number(overduePayments._sum.amount || 0),
+      paidThisMonth: Number(paidThisMonth._sum.amount || 0),
+    };
+
+    context.dataAccessed.push('financial_stats', 'excuses');
   }
 
   private getPermissions(role: string): string[] {
@@ -299,7 +401,7 @@ export class ContextBuilderService {
       formatted += `Hijos del usuario:\n`;
       context.children.forEach((child) => {
         const age = this.calculateAge(child.dateOfBirth);
-        formatted += `- ${child.firstName} ${child.lastName} (${age} años)\n`;
+        formatted += `- ${child.firstName} ${child.lastName} (${age} años, grupo ${child.group?.name ?? 'sin grupo'})\n`;
       });
       formatted += `\n`;
     }
@@ -327,7 +429,28 @@ export class ContextBuilderService {
     if (context.recentActivities && context.recentActivities.length > 0) {
       formatted += `Actividades recientes:\n`;
       context.recentActivities.slice(0, 5).forEach((activity) => {
-        formatted += `- ${activity.type} - ${activity.child.firstName} ${activity.child.lastName} (${this.formatDate(activity.date)})\n`;
+        formatted += `- ${activity.title} / ${activity.type} - ${activity.child.firstName} ${activity.child.lastName} (${this.formatDate(activity.date)})`;
+        if (activity.description) {
+          formatted += `: ${activity.description}\n`;
+        } else {
+          formatted += `\n`;
+        }
+      });
+      formatted += `\n`;
+    }
+
+    if (context.recentAttendance && context.recentAttendance.length > 0) {
+      formatted += `Asistencia reciente:\n`;
+      context.recentAttendance.slice(0, 5).forEach((entry) => {
+        formatted += `- ${entry.child.firstName} ${entry.child.lastName}: ${entry.status} (${this.formatDate(entry.date)})\n`;
+      });
+      formatted += `\n`;
+    }
+
+    if (context.recentExcuses && context.recentExcuses.length > 0) {
+      formatted += `Justificantes recientes:\n`;
+      context.recentExcuses.slice(0, 5).forEach((excuse) => {
+        formatted += `- ${excuse.child.firstName} ${excuse.child.lastName}: ${excuse.title} [${excuse.status}] (${this.formatDate(excuse.date)})\n`;
       });
       formatted += `\n`;
     }
@@ -337,6 +460,13 @@ export class ContextBuilderService {
       Object.entries(context.stats).forEach(([key, value]) => {
         formatted += `- ${this.formatStatKey(key)}: ${value}\n`;
       });
+    }
+
+    if (context.financialSummary) {
+      formatted += `\nResumen financiero:\n`;
+      formatted += `- Pendiente por cobrar: MXN ${context.financialSummary.pendingAmount}\n`;
+      formatted += `- Vencido: MXN ${context.financialSummary.overdueAmount}\n`;
+      formatted += `- Cobrado este mes: MXN ${context.financialSummary.paidThisMonth}\n`;
     }
 
     return formatted;
@@ -381,6 +511,8 @@ export class ContextBuilderService {
       todayAttendance: 'Asistencia hoy',
       monthlyActivities: 'Actividades del mes',
       activeTeachers: 'Maestras activas',
+      recentExcuses: 'Justificantes recientes',
+      pendingExcuses: 'Justificantes pendientes',
     };
     return labels[key] || key;
   }

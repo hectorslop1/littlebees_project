@@ -29,7 +29,10 @@ class TeacherHomeScreen extends ConsumerWidget {
             final dashboard = dashboardAsync.valueOrNull;
             final totalStudents =
                 dashboard?.studentsCount ??
-                groups.fold<int>(0, (sum, group) => sum + group.currentCapacity);
+                groups.fold<int>(
+                  0,
+                  (sum, group) => sum + group.currentCapacity,
+                );
             final presentCount = dashboard?.presentCount ?? 0;
             final pendingExcuses = dashboard?.pendingExcusesCount ?? 0;
             final todayActivities = dashboard?.todayActivitiesCount ?? 0;
@@ -129,6 +132,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                                 label: 'Grupos',
                                 tint: AppColors.primarySurface,
                                 iconColor: AppColors.primary,
+                                onTap: () => context.push('/groups'),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -139,6 +143,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                                 label: tr.tr('students'),
                                 tint: AppColors.secondarySurface,
                                 iconColor: AppColors.secondary,
+                                onTap: () => context.push('/groups'),
                               ),
                             ),
                           ],
@@ -153,6 +158,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                                 label: 'Presentes',
                                 tint: AppColors.success.withValues(alpha: 0.15),
                                 iconColor: AppColors.success,
+                                onTap: () => context.push('/activity'),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -163,6 +169,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                                 label: 'Justificantes',
                                 tint: AppColors.warning.withValues(alpha: 0.18),
                                 iconColor: AppColors.warning,
+                                onTap: () => context.push('/excuses'),
                               ),
                             ),
                           ],
@@ -175,9 +182,11 @@ class TeacherHomeScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _TeacherActionCard(
-                          icon: LucideIcons.camera,
-                          title: 'Actividad',
-                          subtitle: 'Registra momentos del aula',
+                          icon: LucideIcons.plusSquare,
+                          title: 'Registrar',
+                          subtitle: todayActivities > 0
+                              ? '$todayActivities registros hoy'
+                              : 'Crea la primera actividad del día',
                           accent: AppColors.primary,
                           onTap: () => context.push('/activity'),
                         ),
@@ -185,43 +194,13 @@ class TeacherHomeScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _TeacherActionCard(
-                          icon: LucideIcons.sparkles,
-                          title: 'Jornada',
-                          subtitle: todayActivities > 0
-                              ? '$todayActivities registros hoy'
-                              : 'Empieza a registrar el día',
-                          accent: AppColors.info,
-                          onTap: () => context.push('/activity'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _TeacherActionCard(
-                          icon: LucideIcons.fileCheck2,
-                          title: 'Justificantes',
-                          subtitle: pendingExcuses > 0
-                              ? '$pendingExcuses pendientes'
-                              : 'Sin pendientes por ahora',
-                          accent: AppColors.warning,
-                          onTap: () => context.push('/excuses'),
-                          badgeCount: pendingExcuses,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _TeacherActionCard(
-                          icon: LucideIcons.messageCircle,
-                          title: 'Mensajes',
-                          subtitle: unreadMessages > 0
-                              ? '$unreadMessages pendientes'
-                              : 'Comunicación activa',
+                          icon: LucideIcons.users,
+                          title: 'Mis grupos',
+                          subtitle: groups.isEmpty
+                              ? 'Revisa tus salones asignados'
+                              : 'Abre listas, alumnos y detalles',
                           accent: AppColors.secondary,
-                          onTap: () => context.push('/messages'),
-                          badgeCount: unreadMessages,
+                          onTap: () => context.push('/groups'),
                         ),
                       ),
                     ],
@@ -454,6 +433,7 @@ class _MetricCard extends StatelessWidget {
     required this.label,
     required this.tint,
     required this.iconColor,
+    this.onTap,
   });
 
   final IconData icon;
@@ -461,48 +441,53 @@ class _MetricCard extends StatelessWidget {
   final String label;
   final Color tint;
   final Color iconColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(190),
+    return Material(
+      color: Colors.white.withAlpha(190),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: tint,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: tint,
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(icon, size: 18, color: iconColor),
               ),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -515,7 +500,6 @@ class _TeacherActionCard extends StatelessWidget {
     required this.subtitle,
     required this.accent,
     required this.onTap,
-    this.badgeCount = 0,
   });
 
   final IconData icon;
@@ -523,7 +507,6 @@ class _TeacherActionCard extends StatelessWidget {
   final String subtitle;
   final Color accent;
   final VoidCallback onTap;
-  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -580,29 +563,6 @@ class _TeacherActionCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (badgeCount > 0)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

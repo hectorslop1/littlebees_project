@@ -1,13 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { FilesService } from '../files/files.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class GroupsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly filesService: FilesService,
+  ) {}
 
-  async findAll(tenantId: string) {
+  async findAll(tenantId: string, userId?: string, userRole?: string) {
+    const where: any = { tenantId };
+
+    if (userRole === 'teacher') {
+      where.teacherId = userId;
+    }
+
     return this.prisma.group.findMany({
-      where: { tenantId },
+      where,
       include: {
         _count: {
           select: { children: true },
@@ -17,9 +27,15 @@ export class GroupsService {
     });
   }
 
-  async findById(id: string, tenantId: string) {
+  async findById(id: string, tenantId: string, userId?: string, userRole?: string) {
+    const where: any = { id, tenantId };
+
+    if (userRole === 'teacher') {
+      where.teacherId = userId;
+    }
+
     const group = await this.prisma.group.findFirst({
-      where: { id, tenantId },
+      where,
       include: {
         children: {
           where: { status: 'active' },
@@ -38,7 +54,15 @@ export class GroupsService {
       throw new NotFoundException('Grupo no encontrado');
     }
 
-    return group;
+    return {
+      ...group,
+      children: group.children.map((child) => ({
+        ...child,
+        photoUrl: child.photoUrl
+          ? this.filesService.resolveStoredFileUrl(child.photoUrl)
+          : null,
+      })),
+    };
   }
 
   async create(

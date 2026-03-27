@@ -238,4 +238,31 @@ export class ChildrenController {
   ) {
     return this.childrenService.deleteEmergencyContact(contactId, childId, tenantId, userId, userRole);
   }
+
+  @Post(':id/parents')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Vincular padre o tutor con niño/a' })
+  assignParent(
+    @Param('id') childId: string,
+    @CurrentTenant() tenantId: string,
+    @Body() dto: {
+      userId: string;
+      relationship: string;
+      isPrimary?: boolean;
+      canPickup?: boolean;
+    },
+  ) {
+    return this.childrenService.assignParent(childId, tenantId, dto);
+  }
+
+  @Delete(':id/parents/:userId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.DIRECTOR, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Eliminar vínculo entre padre/tutor y niño/a' })
+  removeParent(
+    @Param('id') childId: string,
+    @Param('userId') userId: string,
+    @CurrentTenant() tenantId: string,
+  ) {
+    return this.childrenService.removeParent(childId, userId, tenantId);
+  }
 }

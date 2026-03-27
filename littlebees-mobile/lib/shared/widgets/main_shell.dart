@@ -10,14 +10,21 @@ import '../../features/auth/application/auth_provider.dart';
 import '../../features/ai_assistant/presentation/ai_assistant_fab.dart';
 import '../../features/messaging/application/call_provider.dart';
 import '../../features/messaging/application/conversations_provider.dart';
+import '../../features/messaging/presentation/call_screen.dart';
+import '../../features/messaging/presentation/chat_screen.dart';
+import '../../features/messaging/presentation/conversations_screen.dart';
+import '../../features/messaging/presentation/new_conversation_screen.dart';
 import '../../routing/role_navigation.dart';
-
-final aiFabEnabledProvider = StateProvider<bool>((ref) => true);
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
+  final String currentLocation;
 
-  const MainShell({super.key, required this.child});
+  const MainShell({
+    super.key,
+    required this.child,
+    required this.currentLocation,
+  });
 
   @override
   ConsumerState<MainShell> createState() => _MainShellState();
@@ -60,28 +67,38 @@ class _MainShellState extends ConsumerState<MainShell> {
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
     final incomingCall = ref.watch(incomingCallProvider);
     final activeCallId = ref.watch(activeCallIdProvider);
-    final aiFabEnabled = ref.watch(aiFabEnabledProvider);
     ref.watch(chatRealtimeSyncProvider);
 
     // Obtener items de navegación según el rol
     final navigationItems = RoleNavigation.getNavigationItems(userRole);
-    final location = GoRouterState.of(context).matchedLocation;
+    final location = GoRouter.of(context).routeInformationProvider.value.uri.path;
     final currentIndex = RoleNavigation.calculateSelectedIndex(
       location,
       navigationItems,
     );
     final aiFabRoutes = {
-      ...navigationItems.map((item) => item.route),
+      '/home',
+      '/activity',
+      '/groups',
+      '/reports',
+      '/profile',
       '/payments',
+      '/children',
+      '/excuses',
     };
     final showIncomingCallScreen =
         incomingCall != null && activeCallId != incomingCall.callId;
-    final isMessagesRoute = location.startsWith('/messages');
+    final child = widget.child;
+    final isExcludedChildScreen =
+        child is ConversationsScreen ||
+        child is ChatScreen ||
+        child is CallScreen ||
+        child is NewConversationScreen ||
+        child is AiAssistantScreen;
     final showAiFab =
         aiFabRoutes.contains(location) &&
         !showIncomingCallScreen &&
-        !isMessagesRoute &&
-        aiFabEnabled;
+        !isExcludedChildScreen;
 
     return Scaffold(
       body: Stack(

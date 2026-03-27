@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/resolve_image_url.dart';
 import '../../domain/photo_model.dart';
 
 class PhotoTile extends StatelessWidget {
@@ -11,6 +12,11 @@ class PhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = resolveImageUrl(photo.url);
+    if (resolvedUrl == null) {
+      return const SizedBox.shrink();
+    }
+
     // Generate a hero tag based on ID
     final heroTag = 'photo_${photo.id}';
 
@@ -37,7 +43,7 @@ class PhotoTile extends StatelessWidget {
                     children: [
                       Hero(
                         tag: heroTag,
-                        child: Image.network(photo.url, fit: BoxFit.cover),
+                        child: Image.network(resolvedUrl, fit: BoxFit.cover),
                       ),
                       if (photo.caption != null)
                         Positioned(

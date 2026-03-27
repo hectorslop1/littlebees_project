@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Groq from 'groq-sdk';
 import { ContextBuilderService } from './services/context-builder.service';
@@ -56,7 +60,7 @@ export class AiService {
       },
       include: {
         messages: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: 'desc' },
           take: 1,
         },
       },
@@ -168,7 +172,7 @@ export class AiService {
     const contextFormatted = this.contextBuilder.formatContextForAI(context);
 
     // Construir historial de mensajes para el contexto
-    const messages = session.messages.map((msg) => ({
+    const messages = session.messages.slice(-12).map((msg) => ({
       role: msg.role as 'user' | 'assistant' | 'system',
       content: msg.content,
     }));
@@ -190,9 +194,9 @@ export class AiService {
       // Llamar a Groq API sin function calling
       const completion = await this.groq.chat.completions.create({
         messages: chatMessages,
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.7,
-        max_tokens: 1024,
+        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+        temperature: 0.2,
+        max_tokens: 900,
         top_p: 1,
         stream: false,
       });
@@ -217,7 +221,13 @@ export class AiService {
       // Actualizar timestamp de la sesión
       await this.prisma.aiChatSession.update({
         where: { id: sessionId },
-        data: { updatedAt: new Date() },
+        data: {
+          updatedAt: new Date(),
+          title:
+            session.title && session.title.trim().length > 0
+              ? session.title
+              : userMessage.slice(0, 60),
+        },
       });
 
       return {
@@ -226,6 +236,15 @@ export class AiService {
       };
     } catch (error: any) {
       console.error('Error calling Groq API:', error);
+      const rawMessage = String(error?.message ?? '');
+      if (
+        rawMessage.includes('invalid_api_key') ||
+        rawMessage.includes('Invalid API Key')
+      ) {
+        throw new ServiceUnavailableException(
+          'Beea no esta disponible porque la configuracion de Groq del servidor no es valida.',
+        );
+      }
       throw new BadRequestException(
         error.message || 'Error al comunicarse con el asistente IA',
       );
@@ -233,43 +252,55 @@ export class AiService {
   }
 
   private buildSystemMessage(userRole: string, contextData?: string): string {
-    const baseContext = `Eres un asistente inteligente para LittleBees, un sistema de gestión de guarderías y jardines de niños. 
-Tu objetivo es ayudar a los usuarios con información, consejos y respuestas relacionadas con la administración educativa, el cuidado infantil y el uso del sistema.
+    const baseContext = `Eres el asistente inteligente de LittleBees, una app escolar para familias, maestras y dirección.
 
-Características importantes:
-- Sé amable, profesional y empático
-- Proporciona respuestas claras y concisas
-- Si no sabes algo, admítelo honestamente
-- Enfócate en temas relacionados con educación infantil, administración escolar y el sistema LittleBees`;
+Reglas obligatorias:
+- Responde SOLO con base en el contexto proporcionado por el backend.
+- Nunca inventes alumnos, pagos, grupos, actividades, justificantes ni métricas.
+- Si la respuesta no está en el contexto, dilo explícitamente.
+- Nunca reveles información de usuarios o alumnos fuera del alcance del rol.
+- No decidas permisos: el backend ya filtró el contexto permitido. Tú solo puedes usar ese contexto.
+- Mantén un tono profesional, claro, útil y cálido.
+- Prioriza respuestas accionables y fáciles de entender.
+- Cuando hables de fechas o actividad reciente, sé específico y menciona los datos disponibles.`;
 
     const roleContexts: Record<string, string> = {
-      teacher: `\n\nEres un asistente para una MAESTRA. Puedes ayudar con:
-- Planificación de actividades educativas
-- Registro de desarrollo infantil
-- Comunicación con padres
-- Gestión de grupos y alumnos
-- Consejos pedagógicos`,
+      teacher: `\n\nEstás asistiendo a una MAESTRA.
+Puedes ayudar con:
+- organización del aula y de la jornada
+- resúmenes de grupo
+- sugerencias pedagógicas
+- interpretación de justificantes y actividad reciente
+- recomendaciones para registrar mejor el día
+Restricciones:
+- solo usa alumnos y grupos incluidos en el contexto
+- no hables de finanzas ni cobros`,
       
-      director: `\n\nEres un asistente para una DIRECTORA. Puedes ayudar con:
-- Gestión administrativa
-- Supervisión de maestras
-- Reportes y estadísticas
-- Planificación institucional
-- Toma de decisiones estratégicas`,
+      director: `\n\nEstás asistiendo a una DIRECTORA.
+Puedes ayudar con:
+- visión operativa general
+- pagos, morosidad e ingresos
+- justificantes y pendientes
+- supervisión de grupos
+- decisiones administrativas y reportes`,
       
-      admin: `\n\nEres un asistente para un ADMINISTRADOR. Puedes ayudar con:
-- Configuración del sistema
-- Gestión de usuarios
-- Reportes financieros
-- Análisis de datos
-- Soporte técnico`,
+      admin: `\n\nEstás asistiendo a un ADMINISTRADOR.
+Puedes ayudar con:
+- operación del sistema
+- usuarios, grupos y métricas globales
+- finanzas y reportes
+- soporte funcional`,
       
-      parent: `\n\nEres un asistente para un PADRE/MADRE. Puedes ayudar con:
-- Información sobre el desarrollo de su hijo/a
-- Actividades educativas en casa
-- Comprensión de reportes
-- Comunicación con maestras
-- Consejos de crianza`,
+      parent: `\n\nEstás asistiendo a un PADRE o MADRE.
+Puedes ayudar con:
+- entender el día de su hijo o hija
+- traducir la información escolar en recomendaciones útiles en casa
+- explicar asistencia, actividad y seguimiento
+- sugerir hábitos, productividad y apoyo educativo
+Restricciones:
+- solo usa datos de sus propios hijos
+- no menciones otros alumnos
+- no hables de finanzas escolares salvo pagos propios que aparezcan en el contexto`,
     };
 
     let fullContext = baseContext + (roleContexts[userRole] || '');

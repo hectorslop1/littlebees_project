@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:circular_menu/circular_menu.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -24,7 +25,6 @@ import '../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
-import '../../../shared/widgets/main_shell.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
 import '../application/conversations_provider.dart';
@@ -53,6 +53,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<CircularMenuState> _attachmentMenuKey =
+      GlobalKey<CircularMenuState>();
   final ImageService _imageService = ImageService();
   final FileUploadService _fileUploadService = FileUploadService();
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -62,6 +64,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _isTyping = false;
   bool _isUploadingAttachment = false;
   bool _isRecordingVoiceNote = false;
+  bool _isAttachmentMenuOpen = false;
   String? _voiceRecordingPath;
   String _searchQuery = '';
 
@@ -70,7 +73,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     _controller.addListener(_onTextChanged);
     Future.microtask(() {
-      ref.read(aiFabEnabledProvider.notifier).state = false;
       ref.read(activeConversationIdProvider.notifier).state =
           widget.conversationId;
       ref
@@ -139,55 +141,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _openAttachmentSheet() async {
-    final selected = await showModalBottomSheet<_AttachmentOption>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(LucideIcons.camera),
-              title: const Text('Tomar foto'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AttachmentOption.camera),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.image),
-              title: const Text('Elegir imagen'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AttachmentOption.gallery),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.video),
-              title: const Text('Grabar video'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AttachmentOption.videoCamera),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.film),
-              title: const Text('Elegir video'),
-              onTap: () => Navigator.of(
-                sheetContext,
-              ).pop(_AttachmentOption.videoGallery),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.file),
-              title: const Text('Enviar archivo'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AttachmentOption.file),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.mic),
-              title: const Text('Grabar nota de voz'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(_AttachmentOption.audio),
-            ),
-          ],
-        ),
-      ),
-    );
+    if (_isUploadingAttachment || _isRecordingVoiceNote) return;
 
-    switch (selected) {
+    final menuState = _attachmentMenuKey.currentState;
+    if (menuState == null) return;
+
+    if (_isAttachmentMenuOpen) {
+      menuState.reverseAnimation();
+    } else {
+      menuState.forwardAnimation();
+    }
+
+    setState(() {
+      _isAttachmentMenuOpen = !_isAttachmentMenuOpen;
+    });
+  }
+
+  Future<void> _selectAttachmentOption(_AttachmentOption option) async {
+    if (_isAttachmentMenuOpen) {
+      _attachmentMenuKey.currentState?.reverseAnimation();
+      if (mounted) {
+        setState(() {
+          _isAttachmentMenuOpen = false;
+        });
+      }
+    }
+
+    switch (option) {
       case _AttachmentOption.camera:
         await _sendImageFromCamera();
         break;
@@ -205,8 +185,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         break;
       case _AttachmentOption.audio:
         await _handleVoiceNoteTap();
-        break;
-      case null:
         break;
     }
   }
@@ -482,7 +460,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
-    ref.read(aiFabEnabledProvider.notifier).state = true;
     final activeConversationId = ref.read(activeConversationIdProvider);
     if (activeConversationId == widget.conversationId) {
       ref.read(activeConversationIdProvider.notifier).state = null;
@@ -546,28 +523,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     statusColor: AppColors.success,
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.participantName,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      connectionAsync.when(
-                        data: (isConnected) => Text(
-                          isConnected ? 'En linea' : 'Sin conexion',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: isConnected
-                                    ? AppColors.success
-                                    : AppColors.textTertiary,
-                              ),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.participantName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, _) => const SizedBox.shrink(),
-                      ),
-                    ],
+                        connectionAsync.when(
+                          data: (isConnected) => Text(
+                            isConnected ? 'En linea' : 'Sin conexion',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: isConnected
+                                      ? AppColors.success
+                                      : AppColors.textTertiary,
+                                ),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, _) => const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -581,6 +565,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 _isSearchMode ? LucideIcons.x : LucideIcons.search,
                 size: 20,
               ),
+              visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
               onPressed: () {
                 setState(() {
                   _isSearchMode = !_isSearchMode;
@@ -596,6 +581,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 icon: const Icon(LucideIcons.phone, size: 22),
                 onPressed: _makeVoiceCall,
                 tooltip: 'Llamar',
+                visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 100.ms)
@@ -604,6 +590,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 icon: const Icon(LucideIcons.video, size: 22),
                 onPressed: _makeVideoCall,
                 tooltip: 'Videollamada',
+                visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 200.ms)
@@ -642,7 +629,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ).animate().fadeIn(duration: 300.ms, delay: 300.ms),
         ],
       ),
-      body: Column(
+      body: _showCallHistory
+          ? Column(
         children: [
           Expanded(
             child: _showCallHistory
@@ -690,7 +678,114 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           if (!_showCallHistory) _buildInputBar(),
         ],
-      ),
+      )
+          : CircularMenu(
+              key: _attachmentMenuKey,
+              alignment: Alignment.bottomLeft,
+              radius: 132,
+              animationDuration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              toggleButtonColor: Colors.transparent,
+              toggleButtonAnimatedIconData: AnimatedIcons.close_menu,
+              toggleButtonBoxShadow: const [],
+              toggleButtonSize: 8,
+              toggleButtonMargin: 28,
+              toggleButtonPadding: 0,
+              toggleButtonIconColor: Colors.transparent,
+              startingAngleInRadian: 4.82,
+              endingAngleInRadian: 6.18,
+              backgroundWidget: Column(
+                children: [
+                  Expanded(
+                    child: messagesAsync.when(
+                      data: (messages) {
+                        final visibleMessages = _filterMessages(messages);
+                        return visibleMessages.isEmpty
+                            ? LBEmptyState(
+                                icon: LucideIcons.messageSquare,
+                                title: _searchQuery.isEmpty
+                                    ? tr.tr('noMessages')
+                                    : 'Sin resultados',
+                                message: _searchQuery.isEmpty
+                                    ? tr.tr('noMessagesMsg')
+                                    : 'No encontramos mensajes con ese texto.',
+                              )
+                            : _buildMessagesList(
+                                visibleMessages,
+                                currentUser?.id,
+                              );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => LBErrorState(
+                        title: tr.tr('errorLoadingData'),
+                        message: error.toString(),
+                        onRetry: () => ref.refresh(
+                          realtimeMessagingProvider(widget.conversationId),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _buildInputBar(),
+                ],
+              ),
+              items: [
+                CircularMenuItem(
+                  icon: LucideIcons.camera,
+                  color: AppColors.primary,
+                  iconSize: 20,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x16000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                  onTap: () => _selectAttachmentOption(_AttachmentOption.camera),
+                ),
+                CircularMenuItem(
+                  icon: LucideIcons.image,
+                  color: AppColors.info,
+                  iconSize: 20,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x16000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                  onTap: () =>
+                      _selectAttachmentOption(_AttachmentOption.gallery),
+                ),
+                CircularMenuItem(
+                  icon: LucideIcons.film,
+                  color: const Color(0xFF8A74F8),
+                  iconSize: 20,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x16000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                  onTap: () =>
+                      _selectAttachmentOption(_AttachmentOption.videoGallery),
+                ),
+                CircularMenuItem(
+                  icon: LucideIcons.file,
+                  color: AppColors.secondary,
+                  iconSize: 20,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x16000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                  onTap: () => _selectAttachmentOption(_AttachmentOption.file),
+                ),
+              ],
+            ),
     );
   }
 
@@ -1123,10 +1218,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               IconButton(
                 onPressed: _isUploadingAttachment ? null : _openAttachmentSheet,
                 icon: Icon(
-                  LucideIcons.paperclip,
+                  _isAttachmentMenuOpen ? LucideIcons.x : LucideIcons.paperclip,
                   color: _isUploadingAttachment
                       ? AppColors.textTertiary
-                      : AppColors.textSecondary,
+                      : (_isAttachmentMenuOpen
+                            ? AppColors.primary
+                            : AppColors.textSecondary),
+                ),
+                visualDensity: const VisualDensity(
+                  horizontal: -2,
+                  vertical: -2,
                 ),
               ),
               Expanded(

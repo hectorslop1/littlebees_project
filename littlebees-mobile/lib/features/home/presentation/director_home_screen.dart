@@ -73,10 +73,12 @@ class DirectorHomeScreen extends ConsumerWidget {
                       Text(
                         '${tr.tr('hello')}, ${authState.user?.firstName ?? ''}',
                         style: const TextStyle(
-                          fontSize: 28,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -87,9 +89,12 @@ class DirectorHomeScreen extends ConsumerWidget {
                           orElse: () => 'Panel de dirección',
                         ),
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: AppColors.textSecondary,
+                          height: 1.35,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -353,7 +358,9 @@ class DirectorHomeScreen extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(

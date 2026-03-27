@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
+import '../../child_profile/application/child_profile_provider.dart';
+import '../../home/application/home_providers.dart';
 import '../application/groups_provider.dart';
 
 class GroupDetailScreen extends ConsumerWidget {
@@ -15,6 +17,10 @@ class GroupDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupAsync = ref.watch(groupByIdProvider(groupId));
+    final knownChildren = ref.watch(myChildrenProvider).valueOrNull ?? const [];
+    final childPhotoIndex = {
+      for (final child in knownChildren) child.id: child.photoUrl,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -240,8 +246,10 @@ class GroupDetailScreen extends ConsumerWidget {
                         final child = groupChildren[index];
                         final firstName = child['firstName'] as String? ?? '';
                         final lastName = child['lastName'] as String? ?? '';
-                        final photoUrl = child['photoUrl'] as String?;
                         final childId = child['id'] as String;
+                        final photoUrl =
+                            (child['photoUrl'] as String?) ??
+                            childPhotoIndex[childId];
                         final dob = child['dateOfBirth'] != null
                             ? DateTime.tryParse(child['dateOfBirth'] as String)
                             : null;
@@ -257,11 +265,21 @@ class GroupDetailScreen extends ConsumerWidget {
                             },
                             child: Row(
                               children: [
-                                LBAvatar(
-                                  placeholder: firstName.isNotEmpty
-                                      ? firstName[0]
-                                      : '?',
-                                  imageUrl: photoUrl,
+                                Consumer(
+                                  builder: (context, ref, _) {
+                                    final childProfileAsync = ref.watch(
+                                      childProfileProvider(childId),
+                                    );
+                                    final profilePhotoUrl =
+                                        childProfileAsync.valueOrNull?.photoUrl;
+
+                                    return LBAvatar(
+                                      placeholder: firstName.isNotEmpty
+                                          ? firstName[0]
+                                          : '?',
+                                      imageUrl: profilePhotoUrl ?? photoUrl,
+                                    );
+                                  },
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(

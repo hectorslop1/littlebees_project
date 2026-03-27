@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../../core/utils/resolve_image_url.dart';
 import '../../../../design_system/theme/app_colors.dart';
+import '../../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../domain/timeline_event.dart';
 
 class DailyActivityStack extends StatefulWidget {
@@ -20,6 +22,7 @@ class _DailyActivityStackState extends State<DailyActivityStack> {
   @override
   Widget build(BuildContext context) {
     final previewEvents = widget.events.take(3).toList();
+    final collapsedHeight = _collapsedPreviewHeight(previewEvents);
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 260),
@@ -34,7 +37,7 @@ class _DailyActivityStackState extends State<DailyActivityStack> {
               });
             },
             child: SizedBox(
-              height: _expanded ? 0 : 172,
+              height: _expanded ? 0 : collapsedHeight,
               child: Stack(
                 children: [
                   for (var i = previewEvents.length - 1; i >= 0; i--)
@@ -115,7 +118,7 @@ class _ActivityPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _accentForType(event.type);
     final photoUrl = event.photoUrls?.isNotEmpty == true
-        ? event.photoUrls!.first
+        ? resolveImageUrl(event.photoUrls!.first)
         : null;
 
     return Container(
@@ -189,15 +192,25 @@ class _ActivityPreviewCard extends StatelessWidget {
                 ],
                 if (photoUrl != null && !compact) ...[
                   const SizedBox(height: 14),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.network(
-                      photoUrl,
-                      height: 146,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const SizedBox.shrink(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              FullScreenImageViewer(imageUrl: photoUrl),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.network(
+                        photoUrl,
+                        height: 146,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ],
@@ -208,6 +221,12 @@ class _ActivityPreviewCard extends StatelessWidget {
       ),
     );
   }
+}
+
+double _collapsedPreviewHeight(List<TimelineEvent> events) {
+  final primaryEventHasPhoto =
+      events.isNotEmpty && (events.first.photoUrls?.isNotEmpty == true);
+  return primaryEventHasPhoto ? 320 : 172;
 }
 
 IconData _iconForType(TimelineEventType type) {

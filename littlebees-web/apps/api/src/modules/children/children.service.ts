@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ChildStatus, Gender } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChildProfileDto } from './dto/child-profile.dto';
@@ -299,6 +305,115 @@ export class ChildrenService {
     return this.prisma.emergencyContact.delete({
       where: { id: contactId },
     });
+  }
+
+  async assignParent(
+    childId: string,
+    tenantId: string,
+    data: {
+      userId: string;
+      relationship: string;
+      isPrimary?: boolean;
+      canPickup?: boolean;
+    },
+  ) {
+    await this.findById(childId, tenantId);
+
+    const userTenant = await this.prisma.userTenant.findUnique({
+      where: {
+        userId_tenantId: {
+          userId: data.userId,
+          tenantId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            deletedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!userTenant || !userTenant.user || userTenant.user.deletedAt) {
+      throw new NotFoundException('Padre o tutor no encontrado');
+    }
+
+    if (userTenant.role !== 'parent') {
+      throw new BadRequestException(
+        'Solo se pueden vincular usuarios con rol padre de familia',
+      );
+    }
+
+    const existingRelation = await this.prisma.childParent.findUnique({
+      where: {
+        childId_userId: {
+          childId,
+          userId: data.userId,
+        },
+      },
+    });
+
+    if (existingRelation) {
+      throw new ConflictException('Este padre ya está vinculado con el niño');
+    }
+
+    if (data.isPrimary) {
+      await this.prisma.childParent.updateMany({
+        where: { childId, isPrimary: true },
+        data: { isPrimary: false },
+      });
+    }
+
+    return this.prisma.childParent.create({
+      data: {
+        childId,
+        userId: data.userId,
+        relationship: data.relationship,
+        isPrimary: data.isPrimary ?? false,
+        canPickup: data.canPickup ?? true,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeParent(childId: string, userId: string, tenantId: string) {
+    await this.findById(childId, tenantId);
+
+    const relation = await this.prisma.childParent.findUnique({
+      where: {
+        childId_userId: {
+          childId,
+          userId,
+        },
+      },
+    });
+
+    if (!relation) {
+      throw new NotFoundException('Vínculo padre-hijo no encontrado');
+    }
+
+    await this.prisma.childParent.delete({
+      where: {
+        childId_userId: {
+          childId,
+          userId,
+        },
+      },
+    });
+
+    return { message: 'Vínculo eliminado exitosamente' };
   }
 
   // Get complete child profile

@@ -13,9 +13,11 @@ import '../../../routing/route_names.dart';
 import '../../../shared/enums/enums.dart';
 import '../../../shared/models/auth_models.dart';
 import '../../../shared/models/child_model.dart';
+import '../../../shared/providers/theme_provider.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../ai_assistant/presentation/ai_assistant_fab.dart';
+import '../../ai_assistant/presentation/widgets/beea_avatar.dart';
 import '../../home/application/home_providers.dart';
-import 'widgets/theme_switcher.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -24,12 +26,20 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(translationsProvider);
     final currentLocale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeProvider);
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
     final childrenAsync = ref.watch(myChildrenProvider);
+    final isDarkMode = themeMode == ThemeMode.dark;
+    final isParent = user?.role == UserRole.parent;
+    final isTeacher = user?.role == UserRole.teacher;
+    final isDirector =
+        user?.role == UserRole.director ||
+        user?.role == UserRole.admin ||
+        user?.role == UserRole.superAdmin;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(title: Text(tr.tr('profile'))),
       body: SafeArea(
         child: childrenAsync.when(
@@ -42,20 +52,18 @@ class ProfileScreen extends ConsumerWidget {
                 childrenCount: children.length,
               ),
               const SizedBox(height: 18),
-              _ProfileOverview(
-                user: user,
-                childrenCount: children.length,
-              ),
-              const SizedBox(height: 18),
-              _ChildrenSummaryCard(
-                user: user,
-                children: children,
-              ),
-              const SizedBox(height: 18),
-              const ThemeSwitcher(),
+              _ProfileOverview(user: user, childrenCount: children.length),
+              if (isParent || isTeacher) ...[
+                const SizedBox(height: 18),
+                _ChildrenSummaryCard(user: user, children: children),
+              ],
               const SizedBox(height: 18),
               _SettingsSection(
                 tr: tr,
+                isDarkMode: isDarkMode,
+                onToggleTheme: () {
+                  ref.read(themeProvider.notifier).toggleTheme();
+                },
                 currentLocale: currentLocale.languageCode,
                 onLanguageChanged: (value) {
                   ref.read(localeProvider.notifier).state = Locale(value);
@@ -65,42 +73,58 @@ class ProfileScreen extends ConsumerWidget {
               LBCard(
                 child: Column(
                   children: [
-                    if (user != null &&
-                        (user.role == UserRole.parent ||
-                            user.role == UserRole.teacher ||
-                            user.role == UserRole.director ||
-                            user.role == UserRole.admin ||
-                            user.role == UserRole.superAdmin)) ...[
+                    if (user != null) ...[
+                      _ActionRow(
+                        leading: const BeeaAvatar(size: 40),
+                        title: 'Beea',
+                        subtitle: 'Tu asistente con contexto real según tu rol',
+                        onTap: () => showAiAssistantSheet(context),
+                      ),
+                      const Divider(height: 24),
                       _ActionRow(
                         icon: LucideIcons.fileCheck2,
                         title: 'Justificantes',
-                        subtitle: user.role == UserRole.parent
+                        subtitle: isParent
                             ? 'Crea y consulta justificantes de tus hijos'
                             : 'Revisa avisos y justificantes vinculados a tus alumnos',
                         onTap: () => context.pushNamed(RouteNames.excuses),
                       ),
-                      const Divider(height: 24),
+                      if (isParent) ...[
+                        const Divider(height: 24),
+                        _ActionRow(
+                          icon: LucideIcons.creditCard,
+                          title: tr.tr('billing'),
+                          subtitle: 'Estado de cuenta y pagos registrados',
+                          onTap: () => context.pushNamed(RouteNames.payments),
+                        ),
+                      ] else if (isTeacher) ...[
+                        const Divider(height: 24),
+                        _ActionRow(
+                          icon: LucideIcons.users,
+                          title: 'Mis grupos',
+                          subtitle:
+                              'Consulta salones, alumnos y actividad del aula',
+                          onTap: () => context.pushNamed(RouteNames.groups),
+                        ),
+                      ] else if (isDirector) ...[
+                        const Divider(height: 24),
+                        _ActionRow(
+                          icon: LucideIcons.barChart3,
+                          title: 'Reportes',
+                          subtitle:
+                              'Resumen operativo, asistencia y pendientes',
+                          onTap: () => context.pushNamed(RouteNames.reports),
+                        ),
+                        const Divider(height: 24),
+                        _ActionRow(
+                          icon: LucideIcons.users,
+                          title: 'Familias',
+                          subtitle:
+                              'Registra padres y vincúlalos con sus hijos',
+                          onTap: () => context.pushNamed(RouteNames.families),
+                        ),
+                      ],
                     ],
-                    _ActionRow(
-                      icon: LucideIcons.creditCard,
-                      title: tr.tr('billing'),
-                      subtitle: 'Estado de cuenta y pagos registrados',
-                      onTap: () => context.pushNamed(RouteNames.payments),
-                    ),
-                    const Divider(height: 24),
-                    _ActionRow(
-                      icon: LucideIcons.bellRing,
-                      title: tr.tr('notifications'),
-                      subtitle: 'Alertas, mensajes y recordatorios',
-                      onTap: () => context.push('/notifications'),
-                    ),
-                    const Divider(height: 24),
-                    _ActionRow(
-                      icon: LucideIcons.messageCircle,
-                      title: tr.tr('chat'),
-                      subtitle: 'Conversaciones con maestras y dirección',
-                      onTap: () => context.pushNamed(RouteNames.messages),
-                    ),
                   ],
                 ),
               ),
@@ -142,7 +166,10 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     const Text(
                       'No fue posible cargar el perfil',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -200,7 +227,8 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
             ListTile(
               leading: const Icon(LucideIcons.image),
               title: const Text('Elegir de galería'),
-              onTap: () => Navigator.of(sheetContext).pop(_AvatarSource.gallery),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(_AvatarSource.gallery),
             ),
           ],
         ),
@@ -256,8 +284,10 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF7F0DE), Color(0xFFFFFFFF), Color(0xFFF0F5EF)],
+        gradient: LinearGradient(
+          colors: context.isDark
+              ? const [Color(0xFF1C1912), Color(0xFF1E1E1E), Color(0xFF182019)]
+              : const [Color(0xFFF7F0DE), Color(0xFFFFFFFF), Color(0xFFF0F5EF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -275,7 +305,10 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(999),
@@ -291,7 +324,10 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withAlpha(220),
                   borderRadius: BorderRadius.circular(999),
@@ -299,7 +335,11 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.baby, size: 14, color: AppColors.secondary),
+                    const Icon(
+                      LucideIcons.baby,
+                      size: 14,
+                      color: AppColors.secondary,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '$childrenCount perfiles',
@@ -360,18 +400,18 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
           const SizedBox(height: 16),
           Text(
             user?.fullName ?? 'Usuario',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             user?.email ?? '',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -380,8 +420,8 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
           const SizedBox(height: 6),
           Text(
             tenant?.name ?? 'Institución',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
               fontSize: 13,
             ),
             textAlign: TextAlign.center,
@@ -395,16 +435,17 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
 enum _AvatarSource { camera, gallery }
 
 class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({
-    required this.user,
-    required this.childrenCount,
-  });
+  const _ProfileOverview({required this.user, required this.childrenCount});
 
   final UserInfo? user;
   final int childrenCount;
 
   @override
   Widget build(BuildContext context) {
+    final linkedLabel = user?.role == UserRole.parent ? 'Familia' : 'Perfiles';
+    final linkedValue = user?.role == UserRole.parent
+        ? '$childrenCount vinculados'
+        : '$childrenCount visibles';
     final items = [
       (
         'Rol',
@@ -412,12 +453,7 @@ class _ProfileOverview extends StatelessWidget {
         LucideIcons.badgeCheck,
         AppColors.primary,
       ),
-      (
-        'Familia',
-        '$childrenCount vinculados',
-        LucideIcons.users,
-        AppColors.secondary,
-      ),
+      (linkedLabel, linkedValue, LucideIcons.users, AppColors.secondary),
       (
         'Contacto',
         user?.phone ?? 'Sin teléfono',
@@ -426,55 +462,33 @@ class _ProfileOverview extends StatelessWidget {
       ),
     ];
 
-    return Row(
-      children: items
-          .map(
-            (item) => Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: item == items.last ? 0 : 12,
-                ),
-                child: LBCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(item.$3, color: item.$4, size: 18),
-                      const SizedBox(height: 14),
-                      Text(
-                        item.$2,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.$1,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+    return Column(
+      children: [
+        Row(
+          children: items
+              .take(2)
+              .map(
+                (item) => Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: item == items[1] ? 0 : 12),
+                    child: _OverviewCard(item: item),
                   ),
                 ),
-              ),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: _OverviewCard(item: items[2], compact: true),
+        ),
+      ],
     );
   }
 }
 
 class _ChildrenSummaryCard extends StatelessWidget {
-  const _ChildrenSummaryCard({
-    required this.user,
-    required this.children,
-  });
+  const _ChildrenSummaryCard({required this.user, required this.children});
 
   final UserInfo? user;
   final List<Child> children;
@@ -491,7 +505,10 @@ class _ChildrenSummaryCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const Spacer(),
               if (children.length > 1)
@@ -508,12 +525,14 @@ class _ChildrenSummaryCard extends StatelessWidget {
               style: TextStyle(color: AppColors.textSecondary, height: 1.5),
             )
           else ...[
-            ...children.take(3).map(
-              (child) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _CompactChildRow(child: child),
-              ),
-            ),
+            ...children
+                .take(3)
+                .map(
+                  (child) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _CompactChildRow(child: child),
+                  ),
+                ),
           ],
         ],
       ),
@@ -534,13 +553,15 @@ class _CompactChildRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: context.appColor(AppColors.surfaceVariant),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: [
             LBAvatar(
-              placeholder: child.firstName.isNotEmpty ? child.firstName[0] : 'N',
+              placeholder: child.firstName.isNotEmpty
+                  ? child.firstName[0]
+                  : 'N',
               imageUrl: child.photoUrl,
               size: LBAvatarSize.small,
             ),
@@ -559,8 +580,8 @@ class _CompactChildRow extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     child.groupName ?? 'Sin grupo asignado',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: context.appColor(AppColors.textSecondary),
                       fontSize: 12,
                     ),
                   ),
@@ -578,11 +599,15 @@ class _CompactChildRow extends StatelessWidget {
 class _SettingsSection extends StatelessWidget {
   const _SettingsSection({
     required this.tr,
+    required this.isDarkMode,
+    required this.onToggleTheme,
     required this.currentLocale,
     required this.onLanguageChanged,
   });
 
   final dynamic tr;
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
   final String currentLocale;
   final ValueChanged<String> onLanguageChanged;
 
@@ -597,25 +622,24 @@ class _SettingsSection extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(LucideIcons.palette, color: AppColors.primary),
-            title: const Text(
-              'Tema visual',
-              style: TextStyle(fontWeight: FontWeight.w700),
+          _PreferenceRow(
+            icon: isDarkMode ? LucideIcons.moon : LucideIcons.sun,
+            iconColor: AppColors.primary,
+            title: 'Tema visual',
+            subtitle: isDarkMode
+                ? 'Modo oscuro activado'
+                : 'Modo claro activado',
+            trailing: _AnimatedThemeSwitcher(
+              isDarkMode: isDarkMode,
+              onToggle: onToggleTheme,
             ),
-            subtitle: const Text('Personaliza la apariencia de la app'),
-            trailing: const SizedBox(width: 84, child: ThemeSwitcher()),
           ),
           const Divider(height: 24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(LucideIcons.globe, color: AppColors.primary),
-            title: Text(
-              tr.tr('language'),
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: const Text('Cambia el idioma de la experiencia'),
+          _PreferenceRow(
+            icon: LucideIcons.globe,
+            iconColor: AppColors.primary,
+            title: tr.tr('language'),
+            subtitle: 'Cambia el idioma de la experiencia',
             trailing: SegmentedButton<String>(
               segments: const [
                 ButtonSegment(value: 'en', label: Text('EN')),
@@ -625,8 +649,14 @@ class _SettingsSection extends StatelessWidget {
               onSelectionChanged: (selection) {
                 onLanguageChanged(selection.first);
               },
-              style: const ButtonStyle(
-                visualDensity: VisualDensity.compact,
+              style: ButtonStyle(
+                visualDensity: const VisualDensity(
+                  horizontal: -2,
+                  vertical: -3,
+                ),
+                padding: WidgetStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                ),
               ),
             ),
           ),
@@ -636,15 +666,234 @@ class _SettingsSection extends StatelessWidget {
   }
 }
 
+class _OverviewCard extends StatelessWidget {
+  const _OverviewCard({required this.item, this.compact = false});
+
+  final (String, String, IconData, Color) item;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return LBCard(
+      child: Row(
+        children: [
+          Container(
+            width: compact ? 44 : 40,
+            height: compact ? 44 : 40,
+            decoration: BoxDecoration(
+              color: item.$4.withAlpha(24),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(item.$3, color: item.$4, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.$2,
+                  maxLines: compact ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: compact ? 16 : 15,
+                    fontWeight: FontWeight.w800,
+                    color: context.appColor(AppColors.textPrimary),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.$1,
+                  style: TextStyle(
+                    color: context.appColor(AppColors.textSecondary),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedThemeSwitcher extends StatelessWidget {
+  const _AnimatedThemeSwitcher({
+    required this.isDarkMode,
+    required this.onToggle,
+  });
+
+  final bool isDarkMode;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        width: 88,
+        height: 42,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? const Color(0xFF1E2633)
+              : const Color(0xFFF3E3A6),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(isDarkMode ? 28 : 16),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              alignment: isDarkMode
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: Icon(
+                    isDarkMode ? LucideIcons.moon : LucideIcons.sun,
+                    key: ValueKey(isDarkMode),
+                    color: isDarkMode ? const Color(0xFF4D5B86) : AppColors.primary,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 12,
+              top: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: isDarkMode ? 0 : 1,
+                  child: const Icon(
+                    LucideIcons.sun,
+                    size: 15,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 12,
+              top: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: isDarkMode ? 1 : 0,
+                  child: const Icon(
+                    LucideIcons.moon,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PreferenceRow extends StatelessWidget {
+  const _PreferenceRow({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: context.appColor(AppColors.surfaceVariant),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: context.appColor(AppColors.textPrimary),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: context.appColor(AppColors.textSecondary),
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(child: trailing),
+      ],
+    );
+  }
+}
+
 class _ActionRow extends StatelessWidget {
   const _ActionRow({
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -656,14 +905,15 @@ class _ActionRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 18),
-          ),
+          leading ??
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 18),
+              ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -671,13 +921,16 @@ class _ActionRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: context.appColor(AppColors.textSecondary),
                     fontSize: 12,
                     height: 1.4,
                   ),
