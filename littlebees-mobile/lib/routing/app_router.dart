@@ -19,6 +19,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
 import '../features/auth/application/auth_provider.dart';
 import '../features/groups/presentation/groups_screen.dart';
+import '../features/attendance/presentation/teacher_attendance_screen.dart';
 import '../features/children/presentation/children_list_screen.dart';
 import '../features/reports/presentation/reports_screen.dart';
 import '../features/excuses/presentation/excuses_list_screen.dart';
@@ -190,6 +191,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: '/attendance',
+            name: RouteNames.attendance,
+            builder: (context, state) => const TeacherAttendanceScreen(),
           ),
           GoRoute(
             path: '/children',

@@ -13,6 +13,12 @@ interface ChatMessage {
   content: string;
 }
 
+interface ChildReference {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 @Injectable()
 export class AiService {
   private groq: Groq;
@@ -171,6 +177,42 @@ export class AiService {
     const context = await this.contextBuilder.buildContext(userId, userRole, tenantId);
     const contextFormatted = this.contextBuilder.formatContextForAI(context);
 
+    const deterministicReply = this.tryBuildDeterministicReply(
+      userMessage,
+      userRole,
+      context,
+    );
+
+    if (deterministicReply) {
+      const savedMessage = await this.prisma.aiChatMessage.create({
+        data: {
+          sessionId,
+          role: 'assistant',
+          content: deterministicReply,
+          metadata: {
+            mode: 'deterministic_context',
+            dataAccessed: context.dataAccessed,
+          } as any,
+        },
+      });
+
+      await this.prisma.aiChatSession.update({
+        where: { id: sessionId },
+        data: {
+          updatedAt: new Date(),
+          title:
+            session.title && session.title.trim().length > 0
+              ? session.title
+              : userMessage.slice(0, 60),
+        },
+      });
+
+      return {
+        message: savedMessage,
+        usage: null,
+      };
+    }
+
     // Construir historial de mensajes para el contexto
     const messages = session.messages.slice(-12).map((msg) => ({
       role: msg.role as 'user' | 'assistant' | 'system',
@@ -258,6 +300,8 @@ Reglas obligatorias:
 - Responde SOLO con base en el contexto proporcionado por el backend.
 - Nunca inventes alumnos, pagos, grupos, actividades, justificantes ni métricas.
 - Si la respuesta no está en el contexto, dilo explícitamente.
+- Si el contexto sí incluye actividades, asistencia o eventos, menciona los detalles concretos disponibles en vez de responder de forma vaga.
+- Interpreta "hoy", "ayer" y periodos relativos usando la zona horaria operativa incluida en el contexto.
 - Nunca reveles información de usuarios o alumnos fuera del alcance del rol.
 - No decidas permisos: el backend ya filtró el contexto permitido. Tú solo puedes usar ese contexto.
 - Mantén un tono profesional, claro, útil y cálido.
@@ -310,5 +354,246 @@ Restricciones:
     }
     
     return fullContext;
+  }
+
+  private tryBuildDeterministicReply(
+    userMessage: string,
+    userRole: string,
+    context: any,
+  ): string | null {
+    if (userRole !== 'parent') {
+      return null;
+    }
+
+    const normalizedMessage = this.normalizeText(userMessage);
+    const child = this.findReferencedChild(normalizedMessage, context.children ?? []);
+
+    if (!child) {
+      return null;
+    }
+
+    const timeZone = context.tenantTimezone ?? 'America/Mexico_City';
+    const targetDate = this.resolveRelativeDate(normalizedMessage, timeZone);
+
+    if (this.isAttendanceQuestion(normalizedMessage)) {
+      return this.buildAttendanceReply(child, targetDate, context.recentAttendance ?? [], timeZone);
+    }
+
+    if (this.isActivitiesQuestion(normalizedMessage)) {
+      return this.buildActivitiesReply(child, targetDate, context.recentActivities ?? [], timeZone);
+    }
+
+    return null;
+  }
+
+  private buildAttendanceReply(
+    child: ChildReference,
+    targetDate: Date,
+    attendanceEntries: any[],
+    timeZone: string,
+  ) {
+    const targetIso = this.toIsoDate(targetDate);
+    const childEntries = attendanceEntries.filter(
+      (entry) =>
+        entry.child?.firstName === child.firstName &&
+        entry.child?.lastName === child.lastName &&
+        this.toIsoDate(entry.date) === targetIso,
+    );
+    const entry = childEntries[0];
+    const absoluteDate = this.formatLongDate(targetDate, timeZone);
+
+    if (!entry) {
+      return `Revisé la asistencia de ${child.firstName} ${child.lastName} para ${absoluteDate} y no encuentro una confirmación de llegada en el sistema.`;
+    }
+
+    if (entry.status === 'absent' && !entry.checkInAt) {
+      return `Revisé la asistencia de ${child.firstName} ${child.lastName} para ${absoluteDate} y aparece como ausente.`;
+    }
+
+    if (entry.checkInAt) {
+      const checkInTime = this.formatTime(entry.checkInAt, timeZone);
+      return `Sí. La llegada de ${child.firstName} ${child.lastName} sí está registrada para ${absoluteDate}. Hora de llegada: ${checkInTime}.`;
+    }
+
+    return `Revisé la asistencia de ${child.firstName} ${child.lastName} para ${absoluteDate} y no veo una llegada confirmada todavía.`;
+  }
+
+  private buildActivitiesReply(
+    child: ChildReference,
+    targetDate: Date,
+    activityEntries: any[],
+    timeZone: string,
+  ) {
+    const targetIso = this.toIsoDate(targetDate);
+    const childActivities = activityEntries.filter(
+      (entry) =>
+        entry.child?.firstName === child.firstName &&
+        entry.child?.lastName === child.lastName &&
+        this.toIsoDate(entry.date) === targetIso,
+    );
+    const absoluteDate = this.formatLongDate(targetDate, timeZone);
+
+    if (childActivities.length === 0) {
+      const latestActivities = activityEntries
+        .filter(
+          (entry) =>
+            entry.child?.firstName === child.firstName &&
+            entry.child?.lastName === child.lastName,
+        )
+        .slice(0, 3);
+
+      if (latestActivities.length === 0) {
+        return `Revisé las actividades de ${child.firstName} ${child.lastName} para ${absoluteDate} y no hay actividades registradas todavía.`;
+      }
+
+      const latestDate = new Date(latestActivities[0].date);
+      const latestDateLabel = this.formatLongDate(latestDate, timeZone);
+      const details = latestActivities
+        .map((entry) => this.formatActivityLine(entry))
+        .join('\n');
+
+      return `Para ${absoluteDate} no veo actividades registradas todavía.\n\nLa fecha más reciente con actividades para ${child.firstName} ${child.lastName} es ${latestDateLabel}:\n${details}`;
+    }
+
+    const details = childActivities
+      .map((entry) => this.formatActivityLine(entry))
+      .join('\n');
+
+    return `Estas son las actividades registradas para ${child.firstName} ${child.lastName} en ${absoluteDate}:\n${details}`;
+  }
+
+  private formatActivityLine(entry: any) {
+    const time = entry.time?.toString();
+    const title = entry.title?.toString() ?? 'Actividad';
+    const description = entry.description?.toString();
+    const prefix = time && time.trim().length > 0 ? `- ${time}: ` : '- ';
+
+    if (description && description.trim().length > 0) {
+      return `${prefix}${title}. ${description.trim()}`;
+    }
+
+    return `${prefix}${title}`;
+  }
+
+  private isAttendanceQuestion(message: string) {
+    return message.includes('llegada') ||
+        message.includes('llego') ||
+        message.includes('asistencia') ||
+        message.includes('registro la llegada') ||
+        message.includes('confirmo la llegada') ||
+        message.includes('ya registro');
+  }
+
+  private isActivitiesQuestion(message: string) {
+    return message.includes('actividad') ||
+        message.includes('actividades') ||
+        message.includes('que hizo') ||
+        message.includes('que ha hecho') ||
+        message.includes('que hizo ') ||
+        message.includes('hizo hoy');
+  }
+
+  private findReferencedChild(
+    normalizedMessage: string,
+    children: any[],
+  ): ChildReference | null {
+    const typedChildren: ChildReference[] = children.map((child) => ({
+      id: child.id as string,
+      firstName: child.firstName as string,
+      lastName: child.lastName as string,
+    }));
+
+    for (const child of typedChildren) {
+      const firstName = this.normalizeText(child.firstName);
+      const lastName = this.normalizeText(child.lastName);
+      const fullName = this.normalizeText(`${child.firstName} ${child.lastName}`);
+
+      if (normalizedMessage.includes(fullName)) {
+        return child;
+      }
+
+      if (normalizedMessage.includes(firstName)) {
+        const sameFirstNameCount = typedChildren.filter(
+          (candidate) => this.normalizeText(candidate.firstName) === firstName,
+        ).length;
+        if (sameFirstNameCount === 1 || normalizedMessage.includes(lastName)) {
+          return child;
+        }
+      }
+    }
+
+    if (typedChildren.length === 1) {
+      return typedChildren[0];
+    }
+
+    return null;
+  }
+
+  private resolveRelativeDate(message: string, timeZone: string) {
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const today = this.getLogicalDateInTimezone(timeZone);
+
+    if (message.includes('ayer')) {
+      return new Date(today.getTime() - oneDayMs);
+    }
+
+    return today;
+  }
+
+  private normalizeText(input: string) {
+    const replacements: Record<string, string> = {
+      'á': 'a',
+      'é': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ñ': 'n',
+    };
+
+    return input
+        .toLowerCase()
+        .split('')
+        .map((char) => replacements[char] ?? char)
+        .join('')
+        .replace(/\s+/g, ' ')
+        .trim();
+  }
+
+  private getLogicalDateInTimezone(timeZone: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = Number(parts.find((part) => part.type === 'year')?.value);
+    const month = Number(parts.find((part) => part.type === 'month')?.value);
+    const day = Number(parts.find((part) => part.type === 'day')?.value);
+
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+
+  private formatTime(date: Date, timeZone: string) {
+    return new Intl.DateTimeFormat('es-MX', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(new Date(date));
+  }
+
+  private formatLongDate(date: Date, _timeZone: string) {
+    return new Intl.DateTimeFormat('es-MX', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(date));
+  }
+
+  private toIsoDate(date: Date) {
+    return new Date(date).toISOString().split('T')[0];
   }
 }

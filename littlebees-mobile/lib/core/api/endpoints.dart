@@ -27,6 +27,7 @@ class Endpoints {
   static const String attendance = '/attendance';
   static const String checkIn = '/attendance/check-in';
   static const String checkOut = '/attendance/check-out';
+  static const String attendanceMark = '/attendance/mark';
 
   // Daily Logs
   static const String dailyLogs = '/daily-logs';

@@ -59,12 +59,18 @@ final todayRoleAttendanceProvider = FutureProvider<List<AttendanceRecord>>((
   ref,
 ) async {
   try {
+    final repository = ref.watch(attendanceRepositoryProvider);
+    final user = ref.watch(currentUserProvider);
+
+    if (user?.role.isStaff == true) {
+      return repository.getAttendanceByDate(date: DateTime.now());
+    }
+
     final children = await ref.watch(myChildrenProvider.future);
     if (children.isEmpty) {
       return [];
     }
 
-    final repository = ref.watch(attendanceRepositoryProvider);
     return repository.getAttendanceForChildren(
       childIds: children.map((child) => child.id).toList(),
       date: DateTime.now(),

@@ -10,13 +10,9 @@ class StatusCard extends ConsumerWidget {
   const StatusCard({
     super.key,
     required this.status,
-    this.onConfirmAttendance,
-    this.isConfirmingAttendance = false,
   });
 
   final ChildStatus status;
-  final Future<void> Function()? onConfirmAttendance;
-  final bool isConfirmingAttendance;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,36 +30,41 @@ class StatusCard extends ConsumerWidget {
         status.checkedOutBy?.trim().isNotEmpty == true
             ? status.checkedOutBy!
             : 'Salida sin responsable',
-      ChildPresenceStatus.absent => 'Sin asistencia registrada',
+      ChildPresenceStatus.absent =>
+        status.checkedInBy?.trim().isNotEmpty == true
+            ? status.checkedInBy!
+            : 'Pendiente de registro',
       ChildPresenceStatus.expected => 'Pendiente de llegada',
     };
 
     final subtitle = switch (status.status) {
       ChildPresenceStatus.checkedIn =>
-        'Ingreso confirmado y visible para el colegio.',
+        'La maestra ya confirmó la llegada del niño.',
       ChildPresenceStatus.checkedOut =>
         'Salida registrada y cerrada correctamente.',
       ChildPresenceStatus.absent =>
-        'No hay check-in para este dia en el sistema.',
+        status.checkedInBy?.trim().isNotEmpty == true
+            ? 'No llego a clase. Registro capturado por la profesora.'
+            : 'Todavia no se registra la llegada del niño.',
       ChildPresenceStatus.expected =>
-        'Se espera la llegada del niño durante el dia.',
+        'La llegada sigue pendiente de confirmacion por la maestra.',
     };
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [theme.surface, Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: theme.border),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
-            blurRadius: 24,
-            offset: Offset(0, 12),
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -73,15 +74,15 @@ class StatusCard extends ConsumerWidget {
           Row(
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: theme.color.withAlpha(24),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(theme.icon, color: theme.color, size: 24),
+                child: Icon(theme.icon, color: theme.color, size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +90,7 @@ class StatusCard extends ConsumerWidget {
                     Text(
                       theme.label(tr),
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: theme.color,
                       ),
@@ -98,6 +99,7 @@ class StatusCard extends ConsumerWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
+                        fontSize: 13,
                         height: 1.4,
                         color: AppColors.textSecondary,
                       ),
@@ -107,7 +109,7 @@ class StatusCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -117,7 +119,7 @@ class StatusCard extends ConsumerWidget {
                   icon: LucideIcons.clock3,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: _StatusDetail(
                   label: 'Registrado por',
@@ -127,43 +129,6 @@ class StatusCard extends ConsumerWidget {
               ),
             ],
           ),
-          if (onConfirmAttendance != null &&
-              (status.status == ChildPresenceStatus.expected ||
-                  status.status == ChildPresenceStatus.absent)) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: isConfirmingAttendance
-                    ? null
-                    : () => onConfirmAttendance!.call(),
-                icon: isConfirmingAttendance
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(LucideIcons.badgeCheck),
-                label: Text(
-                  isConfirmingAttendance
-                      ? 'Confirmando asistencia...'
-                      : 'Confirmar asistencia de hoy',
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.color,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -184,17 +149,17 @@ class _StatusDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             label,
             style: const TextStyle(
@@ -209,7 +174,7 @@ class _StatusDetail extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),

@@ -178,18 +178,20 @@ export class AiFunctionsService {
 
     let dateFilter: any = {};
     if (date) {
-      dateFilter = { date: new Date(date) };
+      dateFilter = { date: this.parseLogicalDate(date) };
     } else if (startDate && endDate) {
       dateFilter = {
         date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: this.parseLogicalDate(startDate),
+          lte: this.parseLogicalDate(endDate),
         },
       };
     } else {
       // Por defecto, últimos 7 días
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgo = await this.getRelativeLogicalDate(
+        context.tenantId,
+        -7,
+      );
       dateFilter = { date: { gte: sevenDaysAgo } };
     }
 
@@ -263,8 +265,9 @@ export class AiFunctionsService {
   private async queryAttendance(args: any, context: FunctionContext) {
     const { childId, groupId, date } = args;
 
-    const targetDate = date ? new Date(date) : new Date();
-    targetDate.setHours(0, 0, 0, 0);
+    const targetDate = date
+      ? this.parseLogicalDate(date)
+      : await this.getRelativeLogicalDate(context.tenantId, 0);
 
     let whereClause: any = { date: targetDate };
 
@@ -320,21 +323,23 @@ export class AiFunctionsService {
   private async generateSummary(args: any, context: FunctionContext) {
     const { childId, groupId, period } = args;
 
-    const now = new Date();
+    const today = await this.getRelativeLogicalDate(context.tenantId, 0);
     let startDate: Date;
 
     switch (period) {
       case 'today':
-        startDate = new Date(now.setHours(0, 0, 0, 0));
+        startDate = today;
         break;
       case 'week':
-        startDate = new Date(now.setDate(now.getDate() - 7));
+        startDate = await this.getRelativeLogicalDate(context.tenantId, -7);
         break;
       case 'month':
-        startDate = new Date(now.setMonth(now.getMonth() - 1));
+        startDate = new Date(
+          Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, today.getUTCDate()),
+        );
         break;
       default:
-        startDate = new Date(now.setHours(0, 0, 0, 0));
+        startDate = today;
     }
 
     let whereClause: any = {
@@ -365,7 +370,7 @@ export class AiFunctionsService {
     const summary = {
       period,
       startDate,
-      endDate: new Date(),
+      endDate: today,
       totalActivities: activities.length,
       byType: {} as Record<string, number>,
       highlights: [] as string[],
@@ -523,5 +528,38 @@ export class AiFunctionsService {
       age--;
     }
     return age;
+  }
+
+  private async getRelativeLogicalDate(tenantId: string, offsetDays: number) {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { timezone: true },
+    });
+
+    const base = this.getLogicalDateInTimezone(
+      tenant?.timezone ?? 'America/Mexico_City',
+    );
+    base.setUTCDate(base.getUTCDate() + offsetDays);
+    return base;
+  }
+
+  private getLogicalDateInTimezone(timeZone: string) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = Number(parts.find((part) => part.type == 'year')?.value);
+    const month = Number(parts.find((part) => part.type == 'month')?.value);
+    const day = Number(parts.find((part) => part.type == 'day')?.value);
+
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+
+  private parseLogicalDate(rawDate: string) {
+    const [year, month, day] = rawDate.split('-').map((value) => Number(value));
+    return new Date(Date.UTC(year, month - 1, day));
   }
 }

@@ -9,6 +9,7 @@ class AttendanceRepository {
   Future<void> checkIn({
     required String childId,
     String method = 'parent_app',
+    DateTime? date,
   }) async {
     try {
       await _api.post<Map<String, dynamic>>(
@@ -16,6 +17,7 @@ class AttendanceRepository {
         data: {
           'childId': childId,
           'method': method,
+          'date': _logicalDate(date ?? DateTime.now()),
         },
       );
     } catch (e) {
@@ -27,11 +29,21 @@ class AttendanceRepository {
     required String childId,
     required DateTime date,
   }) async {
+    return getAttendanceByDate(date: date, childId: childId);
+  }
+
+  Future<List<AttendanceRecord>> getAttendanceByDate({
+    required DateTime date,
+    String? childId,
+  }) async {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
       final response = await _api.get<Map<String, dynamic>>(
         Endpoints.attendance,
-        queryParameters: {'childId': childId, 'date': dateStr},
+        queryParameters: {
+          'date': dateStr,
+          ...?childId == null ? null : {'childId': childId},
+        },
       );
 
       final items = (response['data'] as List? ?? []);
@@ -46,17 +58,43 @@ class AttendanceRepository {
     required DateTime date,
   }) async {
     try {
-      final allRecords = <AttendanceRecord>[];
-
-      for (final childId in childIds) {
-        final records = await getAttendance(childId: childId, date: date);
-        allRecords.addAll(records);
-      }
-
-      return allRecords;
+      final records = await Future.wait(
+        childIds.map((childId) => getAttendance(childId: childId, date: date)),
+      );
+      return records.expand((entry) => entry).toList();
     } catch (e) {
       throw Exception('Error loading attendance: $e');
     }
+  }
+
+  Future<void> markAttendance({
+    required String childId,
+    required AttendanceStatus status,
+    String? method,
+    String? observations,
+    DateTime? date,
+  }) async {
+    try {
+      await _api.post<Map<String, dynamic>>(
+        Endpoints.attendanceMark,
+        data: {
+          'childId': childId,
+          'status': status.value,
+          'date': _logicalDate(date ?? DateTime.now()),
+          ...?method == null ? null : {'method': method},
+          ...?observations == null ? null : {'observations': observations},
+        },
+      );
+    } catch (e) {
+      throw Exception('Error updating attendance: $e');
+    }
+  }
+
+  String _logicalDate(DateTime date) {
+    final local = date.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year}-$month-$day';
   }
 
   AttendanceRecord _parseAttendance(Map<String, dynamic> json) {
@@ -71,8 +109,10 @@ class AttendanceRepository {
       checkOutAt: json['checkOutAt'] != null
           ? DateTime.parse(json['checkOutAt'] as String).toLocal()
           : null,
-      checkInBy: json['checkInBy'] as String?,
-      checkOutBy: json['checkOutBy'] as String?,
+      checkInBy:
+          json['checkInByName'] as String? ?? json['checkInBy'] as String?,
+      checkOutBy:
+          json['checkOutByName'] as String? ?? json['checkOutBy'] as String?,
       checkInMethod: json['checkInMethod'] as String?,
       status: AttendanceStatus.fromString(json['status'] as String),
       observations: json['observations'] as String?,

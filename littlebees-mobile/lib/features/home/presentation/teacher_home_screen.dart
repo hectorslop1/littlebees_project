@@ -205,6 +205,15 @@ class TeacherHomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  _TeacherActionCard(
+                    icon: LucideIcons.clipboardCheck,
+                    title: 'Asistencia',
+                    subtitle:
+                        'Abre la lista completa de alumnos y registra si llegaron o no llegaron a clase.',
+                    accent: AppColors.success,
+                    onTap: () => context.push('/attendance'),
+                  ),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

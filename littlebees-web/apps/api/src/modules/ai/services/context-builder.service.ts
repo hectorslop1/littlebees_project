@@ -5,6 +5,7 @@ interface UserContext {
   userId: string;
   role: string;
   tenantId: string;
+  tenantTimezone?: string;
   permissions: string[];
   children?: any[];
   groups?: any[];
@@ -25,11 +26,18 @@ export class ContextBuilderService {
     role: string,
     tenantId: string,
   ): Promise<UserContext> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { timezone: true },
+    });
+
     const context: UserContext = {
       userId,
       role,
       tenantId,
+      tenantTimezone: tenant?.timezone ?? 'America/Mexico_City',
       permissions: this.getPermissions(role),
+      recentExcuses: [],
       dataAccessed: [],
     };
 
@@ -82,8 +90,10 @@ export class ContextBuilderService {
       const childIds = context.children.map((c) => c.id);
 
       // Actividades recientes de sus hijos (últimos 7 días)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgo = this.addDays(
+        this.getLogicalDateInTimezone(context.tenantTimezone),
+        -7,
+      );
 
       context.recentActivities = await this.prisma.dailyLogEntry.findMany({
         where: {
@@ -120,27 +130,29 @@ export class ContextBuilderService {
         take: 10,
       });
 
-      context.recentExcuses = await this.prisma.excuse.findMany({
-        where: {
-          childId: { in: childIds },
-        },
-        include: {
-          child: {
-            select: {
-              firstName: true,
-              lastName: true,
+      const excuseDelegate = this.getExcuseDelegate();
+      if (excuseDelegate) {
+        context.recentExcuses = await excuseDelegate.findMany({
+          where: {
+            childId: { in: childIds },
+          },
+          include: {
+            child: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 8,
-      });
+          orderBy: { createdAt: 'desc' },
+          take: 8,
+        });
+      }
 
       context.dataAccessed.push('attendance', 'excuses');
 
       // Estadísticas básicas
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = this.getLogicalDateInTimezone(context.tenantTimezone);
 
       const todayActivities = await this.prisma.dailyLogEntry.count({
         where: {
@@ -191,8 +203,10 @@ export class ContextBuilderService {
       const childIds = context.groups.flatMap((g) => g.children.map((c) => c.id));
 
       // Actividades recientes del grupo (últimos 3 días)
-      const threeDaysAgo = new Date();
-      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      const threeDaysAgo = this.addDays(
+        this.getLogicalDateInTimezone(context.tenantTimezone),
+        -3,
+      );
 
       context.recentActivities = await this.prisma.dailyLogEntry.findMany({
         where: {
@@ -213,26 +227,28 @@ export class ContextBuilderService {
 
       context.dataAccessed.push('activities');
 
-      context.recentExcuses = await this.prisma.excuse.findMany({
-        where: {
-          childId: { in: childIds },
-          status: 'pending',
-        },
-        include: {
-          child: {
-            select: {
-              firstName: true,
-              lastName: true,
+      const excuseDelegate = this.getExcuseDelegate();
+      if (excuseDelegate) {
+        context.recentExcuses = await excuseDelegate.findMany({
+          where: {
+            childId: { in: childIds },
+            status: 'pending',
+          },
+          include: {
+            child: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      });
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        });
+      }
 
       // Estadísticas del grupo
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = this.getLogicalDateInTimezone(context.tenantTimezone);
 
       const attendance = await this.prisma.attendanceRecord.count({
         where: {
@@ -266,7 +282,7 @@ export class ContextBuilderService {
         this.prisma.dailyLogEntry.count({
           where: {
             child: { tenantId: context.tenantId },
-            date: new Date(),
+            date: this.getLogicalDateInTimezone(context.tenantTimezone),
           },
         }),
       ]);
@@ -300,8 +316,10 @@ export class ContextBuilderService {
     await this.loadAdminContext(context);
 
     // Información adicional financiera y operativa
-    const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const today = this.getLogicalDateInTimezone(context.tenantTimezone);
+    const startOfMonth = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1),
+    );
 
     const monthlyActivities = await this.prisma.dailyLogEntry.count({
       where: {
@@ -334,12 +352,7 @@ export class ContextBuilderService {
             paidAt: { gte: startOfMonth },
           },
         }),
-        this.prisma.excuse.count({
-          where: {
-            tenantId: context.tenantId,
-            status: 'pending',
-          },
-        }),
+        this.countPendingExcuses(context.tenantId),
       ]);
 
     context.stats = {
@@ -395,7 +408,12 @@ export class ContextBuilderService {
   formatContextForAI(context: UserContext): string {
     let formatted = `Contexto del usuario:\n`;
     formatted += `- Rol: ${this.getRoleLabel(context.role)}\n`;
+    formatted += `- Zona horaria operativa: ${context.tenantTimezone ?? 'America/Mexico_City'}\n`;
     formatted += `- Permisos: ${context.permissions.join(', ')}\n\n`;
+
+    const todayLabel = this.formatDate(
+      this.getLogicalDateInTimezone(context.tenantTimezone),
+    );
 
     if (context.children && context.children.length > 0) {
       formatted += `Hijos del usuario:\n`;
@@ -428,7 +446,20 @@ export class ContextBuilderService {
 
     if (context.recentActivities && context.recentActivities.length > 0) {
       formatted += `Actividades recientes:\n`;
-      context.recentActivities.slice(0, 5).forEach((activity) => {
+      const todayActivities = context.recentActivities.filter(
+        (activity) =>
+          this.toIsoDate(activity.date) ===
+          this.toIsoDate(this.getLogicalDateInTimezone(context.tenantTimezone)),
+      );
+      const activitiesToShow = todayActivities.length > 0
+          ? todayActivities.slice(0, 8)
+          : context.recentActivities.slice(0, 5);
+
+      if (todayActivities.length > 0) {
+        formatted += `- Hoy (${todayLabel}) hay ${todayActivities.length} actividades registradas.\n`;
+      }
+
+      activitiesToShow.forEach((activity) => {
         formatted += `- ${activity.title} / ${activity.type} - ${activity.child.firstName} ${activity.child.lastName} (${this.formatDate(activity.date)})`;
         if (activity.description) {
           formatted += `: ${activity.description}\n`;
@@ -441,8 +472,22 @@ export class ContextBuilderService {
 
     if (context.recentAttendance && context.recentAttendance.length > 0) {
       formatted += `Asistencia reciente:\n`;
-      context.recentAttendance.slice(0, 5).forEach((entry) => {
-        formatted += `- ${entry.child.firstName} ${entry.child.lastName}: ${entry.status} (${this.formatDate(entry.date)})\n`;
+      const todayAttendance = context.recentAttendance.filter(
+        (entry) =>
+          this.toIsoDate(entry.date) ===
+          this.toIsoDate(this.getLogicalDateInTimezone(context.tenantTimezone)),
+      );
+
+      if (todayAttendance.length > 0) {
+        formatted += `- Hoy (${todayLabel}) hay ${todayAttendance.length} registros de asistencia.\n`;
+      }
+
+      context.recentAttendance.slice(0, 8).forEach((entry) => {
+        const statusLabel = entry.checkInAt ? 'presente' : entry.status;
+        const checkInLabel = entry.checkInAt
+          ? `, llegada ${this.formatTime(entry.checkInAt, context.tenantTimezone)}`
+          : '';
+        formatted += `- ${entry.child.firstName} ${entry.child.lastName}: ${statusLabel} (${this.formatDate(entry.date)}${checkInLabel})\n`;
       });
       formatted += `\n`;
     }
@@ -498,7 +543,63 @@ export class ContextBuilderService {
     return new Date(date).toLocaleDateString('es-MX', {
       day: '2-digit',
       month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
     });
+  }
+
+  private formatTime(date: Date, timeZone = 'America/Mexico_City'): string {
+    return new Date(date).toLocaleTimeString('es-MX', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone,
+    });
+  }
+
+  private getLogicalDateInTimezone(timeZone = 'America/Mexico_City') {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+
+    const year = Number(parts.find((part) => part.type == 'year')?.value);
+    const month = Number(parts.find((part) => part.type == 'month')?.value);
+    const day = Number(parts.find((part) => part.type == 'day')?.value);
+
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+
+  private addDays(date: Date, days: number) {
+    const result = new Date(date);
+    result.setUTCDate(result.getUTCDate() + days);
+    return result;
+  }
+
+  private getExcuseDelegate() {
+    return (this.prisma as Record<string, any>).excuse as
+      | { findMany: (args: any) => Promise<any[]>; count: (args: any) => Promise<number> }
+      | undefined;
+  }
+
+  private async countPendingExcuses(tenantId: string) {
+    const excuseDelegate = this.getExcuseDelegate();
+    if (!excuseDelegate) {
+      return 0;
+    }
+
+    return excuseDelegate.count({
+      where: {
+        tenantId,
+        status: 'pending',
+      },
+    });
+  }
+
+  private toIsoDate(date: Date) {
+    return new Date(date).toISOString().split('T')[0];
   }
 
   private formatStatKey(key: string): string {

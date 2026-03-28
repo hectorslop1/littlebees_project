@@ -126,13 +126,16 @@ class RemoteHomeRepository {
       final attendanceData = attendanceResponse['data'] as List?;
       if (attendanceData != null && attendanceData.isNotEmpty) {
         final record = attendanceData.first;
+        final statusValue = record['status'] as String? ?? 'absent';
         status = ChildStatus(
-          status: _parsePresenceStatus(record['status']),
-          lastStatusChange: record['checkInAt'] != null
-              ? DateTime.parse(record['checkInAt']).toLocal()
-              : null,
-          checkedInBy: record['checkInBy'],
-          checkedOutBy: record['checkOutBy'],
+          status: _parsePresenceStatus(statusValue),
+          lastStatusChange: _resolveAttendanceTimestamp(record),
+          checkedInBy:
+              record['checkInByName'] as String? ??
+              record['checkInBy'] as String?,
+          checkedOutBy:
+              record['checkOutByName'] as String? ??
+              record['checkOutBy'] as String?,
         );
       } else {
         status = const ChildStatus(
@@ -190,6 +193,20 @@ class RemoteHomeRepository {
       default:
         return ChildPresenceStatus.expected;
     }
+  }
+
+  DateTime? _resolveAttendanceTimestamp(Map<String, dynamic> record) {
+    final rawTimestamp =
+        record['checkOutAt'] ??
+        record['checkInAt'] ??
+        record['updatedAt'] ??
+        record['createdAt'];
+
+    if (rawTimestamp is! String) {
+      return null;
+    }
+
+    return DateTime.parse(rawTimestamp).toLocal();
   }
 
   TimelineEvent _parseTimelineEvent(Map<String, dynamic> json) {

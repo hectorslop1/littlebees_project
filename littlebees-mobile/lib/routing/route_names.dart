@@ -11,6 +11,7 @@ class RouteNames {
   static const String profile = 'profile';
   static const String payments = 'payments';
   static const String groups = 'groups';
+  static const String attendance = 'attendance';
   static const String children = 'children';
   static const String reports = 'reports';
   static const String excuses = 'excuses';

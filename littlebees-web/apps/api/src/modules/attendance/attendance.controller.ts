@@ -8,6 +8,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AttendanceService } from './attendance.service';
 import { createPaginatedResponse } from '../../common/helpers/pagination.helper';
 import { BulkCheckInDto, BulkCheckInResponseDto } from './dto/bulk-check-in.dto';
+import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -36,12 +37,12 @@ export class AttendanceController {
   }
 
   @Post('check-in')
-  @Roles('teacher', 'director', 'admin', 'super_admin', 'parent')
+  @Roles('teacher', 'director', 'admin', 'super_admin')
   @ApiOperation({ summary: 'Registrar entrada' })
   checkIn(
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: { id: string; role: string },
-    @Body() dto: { childId: string; method: string },
+    @Body() dto: { childId: string; method: string; date?: string },
   ) {
     return this.attendanceService.checkIn(
       tenantId,
@@ -49,6 +50,27 @@ export class AttendanceController {
       user.id,
       dto.method,
       user.role,
+      dto.date,
+    );
+  }
+
+  @Post('mark')
+  @Roles('teacher', 'director', 'admin', 'super_admin')
+  @ApiOperation({ summary: 'Registrar presente o ausente para hoy' })
+  markAttendance(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: { id: string; role: string },
+    @Body() dto: MarkAttendanceDto,
+  ) {
+    return this.attendanceService.markAttendance(
+      tenantId,
+      dto.childId,
+      user.id,
+      user.role,
+      dto.status,
+      dto.method,
+      dto.observations,
+      dto.date,
     );
   }
 
@@ -58,9 +80,9 @@ export class AttendanceController {
   checkOut(
     @CurrentTenant() tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body() dto: { childId: string },
+    @Body() dto: { childId: string; date?: string },
   ) {
-    return this.attendanceService.checkOut(tenantId, dto.childId, userId);
+    return this.attendanceService.checkOut(tenantId, dto.childId, userId, dto.date);
   }
 
   @Post('bulk-check-in')

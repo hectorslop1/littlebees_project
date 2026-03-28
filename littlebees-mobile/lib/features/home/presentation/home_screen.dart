@@ -7,7 +7,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../routing/route_names.dart';
-import '../../../shared/providers/repository_providers.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../messaging/application/conversations_provider.dart';
 import '../application/home_providers.dart';
@@ -72,8 +71,6 @@ class _ParentHomeContent extends ConsumerStatefulWidget {
 
 class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
     with WidgetsBindingObserver {
-  bool _isConfirmingAttendance = false;
-
   @override
   void initState() {
     super.initState();
@@ -98,41 +95,6 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
 
   void _refreshStory() {
     ref.invalidate(dailyStoryProvider(widget.currentChildId));
-  }
-
-  Future<void> _confirmAttendance() async {
-    if (_isConfirmingAttendance) return;
-
-    setState(() {
-      _isConfirmingAttendance = true;
-    });
-
-    try {
-      final repository = ref.read(attendanceRepositoryProvider);
-      await repository.checkIn(childId: widget.currentChildId);
-      _refreshStory();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Asistencia confirmada correctamente'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No fue posible confirmar asistencia: $error'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isConfirmingAttendance = false;
-        });
-      }
-    }
   }
 
   @override
@@ -191,8 +153,6 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                           const SizedBox(height: 18),
                           StatusCard(
                             status: dailyStory.status,
-                            isConfirmingAttendance: _isConfirmingAttendance,
-                            onConfirmAttendance: _confirmAttendance,
                           )
                               .animate()
                               .fadeIn(delay: 120.ms, duration: 320.ms)
