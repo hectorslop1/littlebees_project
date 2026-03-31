@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../../design_system/theme/app_colors.dart';
 import '../../../../design_system/widgets/compact_layout.dart';
+import '../../../../design_system/widgets/date_selection_sheet.dart';
 import '../application/activity_controller.dart';
 import 'widgets/photo_grid.dart';
 import '../../../../core/i18n/app_translations.dart';
@@ -12,6 +14,7 @@ import '../../../../design_system/widgets/lb_avatar.dart';
 import '../../../../core/utils/resolve_image_url.dart';
 import '../../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../auth/application/auth_provider.dart';
+import '../../home/application/home_providers.dart';
 import 'create_activity_screen.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -26,19 +29,44 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
     final photosAsync = ref.watch(photosProvider);
     final activityFeedAsync = ref.watch(activityFeedProvider);
     final tr = ref.watch(translationsProvider);
     final authState = ref.watch(authProvider);
     final isTeacher =
         authState.isTeacher || authState.isDirector || authState.isAdmin;
+    final isSelectedToday = isToday(selectedDate);
     final photosCount = photosAsync.valueOrNull?.length ?? 0;
     final logsCount = activityFeedAsync.valueOrNull?.length ?? 0;
+    final dateLabel = formatShortDateLabel(
+      selectedDate,
+      locale: Localizations.localeOf(context).toLanguageTag(),
+      uppercaseToday: true,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isTeacher ? 'Actividad del día' : tr.tr('activity')),
+        title: Text(
+          isTeacher
+              ? 'Actividad de $dateLabel'
+              : '${tr.tr('activity')} · $dateLabel',
+        ),
         actions: [
+          IconButton(
+            tooltip: 'Seleccionar fecha',
+            icon: const Icon(LucideIcons.calendarDays),
+            onPressed: () async {
+              final pickedDate = await showDateSelectionSheet(
+                context: context,
+                initialDate: selectedDate,
+              );
+              if (pickedDate != null) {
+                ref.read(selectedDashboardDateProvider.notifier).state =
+                    pickedDate;
+              }
+            },
+          ),
           if (isTeacher)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
@@ -46,27 +74,31 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 icon: const Icon(LucideIcons.plus, size: 18),
                 label: const Text('Nueva'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
+                  foregroundColor: isSelectedToday
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
                   textStyle: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                onPressed: () {
-                  Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateActivityScreen(),
-                    ),
-                  ).then((saved) {
-                    if (saved == true) {
-                      if (mounted) {
-                        setState(() {
-                          _showGallery = false;
+                onPressed: isSelectedToday
+                    ? () {
+                        Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateActivityScreen(),
+                          ),
+                        ).then((saved) {
+                          if (saved == true) {
+                            if (mounted) {
+                              setState(() {
+                                _showGallery = false;
+                              });
+                            }
+                            ref.invalidate(photosProvider);
+                            ref.invalidate(activityFeedProvider);
+                          }
                         });
                       }
-                      ref.invalidate(photosProvider);
-                      ref.invalidate(activityFeedProvider);
-                    }
-                  });
-                },
+                    : null,
               ),
             ),
         ],
@@ -77,13 +109,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
               child: CompactHeroCard(
-                eyebrow: isTeacher ? 'Jornada del aula' : 'Actividad compartida',
+                eyebrow: isTeacher
+                    ? 'Jornada del aula'
+                    : 'Actividad compartida',
                 title: isTeacher
-                    ? 'Todo lo que registras hoy, en un solo lugar'
-                    : 'Momentos y registros del dia',
+                    ? isSelectedToday
+                          ? 'Todo lo que registras hoy, en un solo lugar'
+                          : 'Consulta la jornada registrada para $dateLabel'
+                    : 'Momentos y registros de $dateLabel',
                 subtitle: isTeacher
-                    ? 'Usa Jornada para revisar registros y Galeria para compartir evidencia visual con las familias.'
-                    : 'Consulta primero los registros mas recientes y despues las fotos del dia.',
+                    ? isSelectedToday
+                          ? 'Usa Jornada para revisar registros y Galeria para compartir evidencia visual con las familias.'
+                          : 'Estas viendo una fecha anterior. La jornada y la galeria se muestran en modo consulta.'
+                    : 'Consulta primero los registros mas recientes y despues las fotos de la fecha seleccionada.',
                 child: Row(
                   children: [
                     Expanded(
@@ -207,10 +245,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           return LBEmptyState(
                             icon: LucideIcons.image,
                             title: isTeacherRole
-                                ? tr.tr('noPhotosTeacher')
+                                ? isSelectedToday
+                                      ? tr.tr('noPhotosTeacher')
+                                      : 'Sin fotos en $dateLabel'
                                 : tr.tr('noPhotosParent'),
                             message: isTeacherRole
-                                ? tr.tr('noPhotosTeacherMsg')
+                                ? isSelectedToday
+                                      ? tr.tr('noPhotosTeacherMsg')
+                                      : 'No hay evidencia visual registrada para la fecha seleccionada.'
                                 : tr.tr('noPhotosParentMsg'),
                           );
                         }
@@ -232,9 +274,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         if (items.isEmpty) {
                           return LBEmptyState(
                             icon: LucideIcons.clipboardList,
-                            title: 'Aún no hay registros en la jornada',
+                            title: isSelectedToday
+                                ? 'Aún no hay registros en la jornada'
+                                : 'Sin registros para $dateLabel',
                             message: isTeacher
-                                ? 'Cuando registres actividades del aula, aquí verás la jornada ordenada por hora y por alumno.'
+                                ? isSelectedToday
+                                      ? 'Cuando registres actividades del aula, aquí verás la jornada ordenada por hora y por alumno.'
+                                      : 'Cuando existan actividades para esa fecha, aquí verás la jornada ordenada por hora y por alumno.'
                                 : tr.tr('activityLogMsg'),
                           );
                         }
@@ -350,8 +396,12 @@ class _CompactActivityFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedUrl = photoUrls.isEmpty ? null : resolveImageUrl(photoUrls.first);
-    final summary = (description ?? '').trim().isEmpty ? title : description!.trim();
+    final resolvedUrl = photoUrls.isEmpty
+        ? null
+        : resolveImageUrl(photoUrls.first);
+    final summary = (description ?? '').trim().isEmpty
+        ? title
+        : description!.trim();
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -371,7 +421,9 @@ class _CompactActivityFeedCard extends StatelessWidget {
         children: [
           LBAvatar(
             imageUrl: childPhotoUrl,
-            placeholder: childName.isNotEmpty ? childName.trim().split(' ').first[0] : '?',
+            placeholder: childName.isNotEmpty
+                ? childName.trim().split(' ').first[0]
+                : '?',
             size: LBAvatarSize.normal,
           ),
           const SizedBox(width: 10),
@@ -467,7 +519,8 @@ class _CompactActivityFeedCard extends StatelessWidget {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => FullScreenImageViewer(imageUrl: resolvedUrl),
+                    builder: (_) =>
+                        FullScreenImageViewer(imageUrl: resolvedUrl),
                   ),
                 );
               },

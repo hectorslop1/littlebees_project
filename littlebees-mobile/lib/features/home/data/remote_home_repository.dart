@@ -125,18 +125,7 @@ class RemoteHomeRepository {
       ChildStatus status;
       final attendanceData = attendanceResponse['data'] as List?;
       if (attendanceData != null && attendanceData.isNotEmpty) {
-        final record = attendanceData.first;
-        final statusValue = record['status'] as String? ?? 'absent';
-        status = ChildStatus(
-          status: _parsePresenceStatus(statusValue),
-          lastStatusChange: _resolveAttendanceTimestamp(record),
-          checkedInBy:
-              record['checkInByName'] as String? ??
-              record['checkInBy'] as String?,
-          checkedOutBy:
-              record['checkOutByName'] as String? ??
-              record['checkOutBy'] as String?,
-        );
+        status = _resolveChildStatus(attendanceData);
       } else {
         status = const ChildStatus(
           status: ChildPresenceStatus.expected,
@@ -184,6 +173,8 @@ class RemoteHomeRepository {
     switch (status) {
       case 'present':
         return ChildPresenceStatus.checkedIn;
+      case 'checked_out':
+        return ChildPresenceStatus.checkedOut;
       case 'absent':
         return ChildPresenceStatus.absent;
       case 'late':
@@ -195,18 +186,61 @@ class RemoteHomeRepository {
     }
   }
 
-  DateTime? _resolveAttendanceTimestamp(Map<String, dynamic> record) {
-    final rawTimestamp =
-        record['checkOutAt'] ??
-        record['checkInAt'] ??
-        record['updatedAt'] ??
-        record['createdAt'];
+  ChildStatus _resolveChildStatus(List attendanceData) {
+    final records =
+        attendanceData
+            .whereType<Map>()
+            .map((record) => Map<String, dynamic>.from(record))
+            .toList()
+          ..sort(
+            (a, b) => _resolveRecordOrderingTimestamp(
+              b,
+            ).compareTo(_resolveRecordOrderingTimestamp(a)),
+          );
 
-    if (rawTimestamp is! String) {
+    final record = records.first;
+    final statusValue = record['status'] as String? ?? 'absent';
+    final checkOutAt = _tryParseAttendanceDate(record['checkOutAt']);
+    final checkInAt = _tryParseAttendanceDate(record['checkInAt']);
+
+    final presenceStatus = checkOutAt != null
+        ? ChildPresenceStatus.checkedOut
+        : checkInAt != null
+        ? ChildPresenceStatus.checkedIn
+        : _parsePresenceStatus(statusValue);
+
+    return ChildStatus(
+      status: presenceStatus,
+      lastStatusChange: _resolveAttendanceTimestamp(record),
+      checkedInBy:
+          record['checkInByName'] as String? ?? record['checkInBy'] as String?,
+      checkedOutBy:
+          record['checkOutByName'] as String? ??
+          record['checkOutBy'] as String?,
+    );
+  }
+
+  DateTime _resolveRecordOrderingTimestamp(Map<String, dynamic> record) {
+    return _tryParseAttendanceDate(record['updatedAt']) ??
+        _tryParseAttendanceDate(record['checkOutAt']) ??
+        _tryParseAttendanceDate(record['checkInAt']) ??
+        _tryParseAttendanceDate(record['createdAt']) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime? _resolveAttendanceTimestamp(Map<String, dynamic> record) {
+    return _tryParseAttendanceDate(record['checkOutAt']) ??
+        _tryParseAttendanceDate(record['checkInAt']) ??
+        _tryParseAttendanceDate(record['updatedAt']) ??
+        _tryParseAttendanceDate(record['createdAt']);
+  }
+
+  DateTime? _tryParseAttendanceDate(dynamic value) {
+    if (value is! String || value.isEmpty) {
       return null;
     }
 
-    return DateTime.parse(rawTimestamp).toLocal();
+    return DateTime.tryParse(value)?.toLocal();
   }
 
   TimelineEvent _parseTimelineEvent(Map<String, dynamic> json) {

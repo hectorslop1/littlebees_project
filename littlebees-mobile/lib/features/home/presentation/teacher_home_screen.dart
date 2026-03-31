@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/i18n/app_translations.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/compact_layout.dart';
+import '../../../design_system/widgets/date_selection_sheet.dart';
 import '../../auth/application/auth_provider.dart';
 import '../application/home_providers.dart';
 import '../../groups/application/groups_provider.dart';
@@ -20,6 +22,7 @@ class TeacherHomeScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final groupsAsync = ref.watch(groupsProvider);
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
     final dashboardAsync = ref.watch(teacherDashboardProvider);
 
     return Scaffold(
@@ -48,7 +51,18 @@ class TeacherHomeScreen extends ConsumerWidget {
                 children: [
                   _TeacherTopBar(
                     name: authState.user?.firstName ?? 'Maestra',
+                    selectedDate: selectedDate,
                     unreadMessages: unreadMessages,
+                    onDateTap: () async {
+                      final pickedDate = await showDateSelectionSheet(
+                        context: context,
+                        initialDate: selectedDate,
+                      );
+                      if (pickedDate != null) {
+                        ref.read(selectedDashboardDateProvider.notifier).state =
+                            pickedDate;
+                      }
+                    },
                     onNotificationsTap: () => context.push('/notifications'),
                     onMessagesTap: () => context.push('/messages'),
                   ),
@@ -58,8 +72,8 @@ class TeacherHomeScreen extends ConsumerWidget {
                     eyebrowIcon: LucideIcons.sparkles,
                     title: 'Tu salon, organizado y al dia',
                     subtitle: groups.isEmpty
-                        ? 'Cuando tengas grupos asignados, aqui veras un resumen rapido de tu jornada.'
-                        : 'Revisa tus grupos, registra actividades y manten a las familias informadas en tiempo real.',
+                        ? 'Cuando tengas grupos asignados, aqui veras un resumen rapido para ${_teacherDateReference(selectedDate, context)}.'
+                        : 'Revisa la asistencia y actividad de ${_teacherDateReference(selectedDate, context)} sin perder contexto.',
                     child: Column(
                       children: [
                         Row(
@@ -120,8 +134,8 @@ class TeacherHomeScreen extends ConsumerWidget {
                           icon: LucideIcons.plusSquare,
                           title: 'Registrar',
                           subtitle: todayActivities > 0
-                              ? '$todayActivities registros hoy'
-                              : 'Crea la primera actividad del día',
+                              ? '$todayActivities registros en ${_teacherDateLabel(selectedDate, context)}'
+                              : 'Sin actividades en ${_teacherDateLabel(selectedDate, context)}',
                           accent: AppColors.primary,
                           onTap: () => context.push('/activity'),
                         ),
@@ -144,8 +158,9 @@ class TeacherHomeScreen extends ConsumerWidget {
                   _TeacherActionCard(
                     icon: LucideIcons.clipboardCheck,
                     title: 'Asistencia',
-                    subtitle:
-                        'Abre la lista completa de alumnos y registra si llegaron o no llegaron a clase.',
+                    subtitle: isToday(selectedDate)
+                        ? 'Abre la lista completa y registra quienes llegaron hoy.'
+                        : 'Consulta la asistencia registrada para ${_teacherDateLabel(selectedDate, context)}.',
                     accent: AppColors.success,
                     onTap: () => context.push('/attendance'),
                   ),
@@ -243,13 +258,17 @@ class TeacherHomeScreen extends ConsumerWidget {
 class _TeacherTopBar extends StatelessWidget {
   const _TeacherTopBar({
     required this.name,
+    required this.selectedDate,
     required this.unreadMessages,
+    required this.onDateTap,
     required this.onNotificationsTap,
     required this.onMessagesTap,
   });
 
   final String name;
+  final DateTime selectedDate;
   final int unreadMessages;
+  final Future<void> Function() onDateTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onMessagesTap;
 
@@ -263,6 +282,8 @@ class _TeacherTopBar extends StatelessWidget {
             children: [
               Text(
                 'Hola, $name',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 24,
                   height: 1,
@@ -272,7 +293,9 @@ class _TeacherTopBar extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Gestiona grupos, mensajes y actividad del día.',
+                'Gestiona grupos, mensajes y actividad de ${_teacherDateReference(selectedDate, context)}.',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 13,
@@ -283,6 +306,8 @@ class _TeacherTopBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
+        _TeacherDateButton(selectedDate: selectedDate, onTap: onDateTap),
+        const SizedBox(width: 10),
         _TeacherRoundButton(icon: LucideIcons.bell, onTap: onNotificationsTap),
         const SizedBox(width: 10),
         _TeacherRoundButton(
@@ -292,6 +317,60 @@ class _TeacherTopBar extends StatelessWidget {
           badgeCount: unreadMessages,
         ),
       ],
+    );
+  }
+}
+
+class _TeacherDateButton extends StatelessWidget {
+  const _TeacherDateButton({required this.selectedDate, required this.onTap});
+
+  final DateTime selectedDate;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final label = formatShortDateLabel(
+      selectedDate,
+      locale: locale,
+      uppercaseToday: true,
+    );
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: () {
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 76, minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                LucideIcons.calendarDays,
+                color: AppColors.textPrimary,
+                size: 16,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -528,4 +607,23 @@ class _TeacherGroupCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _teacherDateLabel(DateTime selectedDate, BuildContext context) {
+  return formatShortDateLabel(
+    selectedDate,
+    locale: Localizations.localeOf(context).toLanguageTag(),
+    uppercaseToday: true,
+  );
+}
+
+String _teacherDateReference(DateTime selectedDate, BuildContext context) {
+  if (isToday(selectedDate)) {
+    return 'hoy';
+  }
+
+  return formatShortDateLabel(
+    selectedDate,
+    locale: Localizations.localeOf(context).toLanguageTag(),
+  );
 }

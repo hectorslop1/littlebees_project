@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../shared/enums/enums.dart';
 import '../../../shared/models/child_model.dart';
 import '../../../shared/models/attendance_model.dart';
@@ -43,27 +44,32 @@ final myChildrenProvider = FutureProvider<List<Child>>((ref) async {
 // Will be set to the first child's ID once children are loaded
 final currentChildIdProvider = StateProvider<String?>((ref) => null);
 
+final selectedDashboardDateProvider = StateProvider<DateTime>(
+  (ref) => normalizeDate(DateTime.now()),
+);
+
 // Provider for the daily story of the selected child
 final dailyStoryProvider = FutureProvider.family<DailyStory, String>((
   ref,
   childId,
 ) async {
   final repository = ref.watch(remoteHomeRepositoryProvider);
-  final date = DateTime.now();
+  final date = ref.watch(selectedDashboardDateProvider);
 
   // Fetch real data from API
   return await repository.getDailyStory(childId, date);
 });
 
-final todayRoleAttendanceProvider = FutureProvider<List<AttendanceRecord>>((
+final selectedRoleAttendanceProvider = FutureProvider<List<AttendanceRecord>>((
   ref,
 ) async {
   try {
     final repository = ref.watch(attendanceRepositoryProvider);
     final user = ref.watch(currentUserProvider);
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
 
     if (user?.role.isStaff == true) {
-      return repository.getAttendanceByDate(date: DateTime.now());
+      return repository.getAttendanceByDate(date: selectedDate);
     }
 
     final children = await ref.watch(myChildrenProvider.future);
@@ -73,19 +79,20 @@ final todayRoleAttendanceProvider = FutureProvider<List<AttendanceRecord>>((
 
     return repository.getAttendanceForChildren(
       childIds: children.map((child) => child.id).toList(),
-      date: DateTime.now(),
+      date: selectedDate,
     );
   } catch (_) {
     return [];
   }
 });
 
-final todayRoleDailyLogsProvider = FutureProvider<List<DailyLogEntry>>((
+final selectedRoleDailyLogsProvider = FutureProvider<List<DailyLogEntry>>((
   ref,
 ) async {
   try {
     final repository = ref.watch(dailyLogsRepositoryProvider);
-    return repository.getDailyLogsByDate(date: DateTime.now());
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
+    return repository.getDailyLogsByDate(date: selectedDate);
   } catch (_) {
     return [];
   }
@@ -117,10 +124,10 @@ final teacherDashboardProvider = FutureProvider<TeacherDashboardSnapshot>((
     () => ref.watch(myChildrenProvider.future),
   ).then((value) => value.value ?? const <Child>[]);
   final attendance = await AsyncValue.guard(
-    () => ref.watch(todayRoleAttendanceProvider.future),
+    () => ref.watch(selectedRoleAttendanceProvider.future),
   ).then((value) => value.value ?? const <AttendanceRecord>[]);
   final logs = await AsyncValue.guard(
-    () => ref.watch(todayRoleDailyLogsProvider.future),
+    () => ref.watch(selectedRoleDailyLogsProvider.future),
   ).then((value) => value.value ?? const <DailyLogEntry>[]);
   final excuses = await AsyncValue.guard(
     () => ref.watch(
@@ -173,10 +180,10 @@ final directorDashboardProvider = FutureProvider<DirectorDashboardSnapshot>((
     () => ref.watch(myChildrenProvider.future),
   ).then((value) => value.value ?? const <Child>[]);
   final attendance = await AsyncValue.guard(
-    () => ref.watch(todayRoleAttendanceProvider.future),
+    () => ref.watch(selectedRoleAttendanceProvider.future),
   ).then((value) => value.value ?? const <AttendanceRecord>[]);
   final logs = await AsyncValue.guard(
-    () => ref.watch(todayRoleDailyLogsProvider.future),
+    () => ref.watch(selectedRoleDailyLogsProvider.future),
   ).then((value) => value.value ?? const <DailyLogEntry>[]);
   final excuses = await AsyncValue.guard(
     () => ref.watch(

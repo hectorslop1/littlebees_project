@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/i18n/app_translations.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/compact_layout.dart';
+import '../../../design_system/widgets/date_selection_sheet.dart';
 import '../../../routing/route_names.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../messaging/application/conversations_provider.dart';
@@ -109,6 +111,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
     final tr = ref.watch(translationsProvider);
     final user = ref.watch(currentUserProvider);
     final tenant = ref.watch(currentTenantProvider);
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
     final dailyStoryAsync = ref.watch(
       dailyStoryProvider(widget.currentChildId),
     );
@@ -140,7 +143,23 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                           _HomeTopBar(
                             userName: user?.firstName ?? 'Familia',
                             tenantName: tenant?.name ?? 'LittleBees',
+                            selectedDate: selectedDate,
                             unreadMessages: unreadMessages,
+                            onDateTap: () async {
+                              final pickedDate = await showDateSelectionSheet(
+                                context: context,
+                                initialDate: selectedDate,
+                              );
+                              if (pickedDate != null) {
+                                ref
+                                        .read(
+                                          selectedDashboardDateProvider
+                                              .notifier,
+                                        )
+                                        .state =
+                                    pickedDate;
+                              }
+                            },
                             onNotificationsTap: () =>
                                 context.push('/notifications'),
                             onMessagesTap: () =>
@@ -152,9 +171,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                               .fadeIn(delay: 40.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           const SizedBox(height: 10),
-                          StatusCard(
-                            status: dailyStory.status,
-                          )
+                          StatusCard(status: dailyStory.status)
                               .animate()
                               .fadeIn(delay: 120.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
@@ -166,9 +183,9 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                           ],
                           const SizedBox(height: 14),
                           CompactSectionCard(
-                            title: tr.tr('todaySummary'),
+                            title: _summaryTitle(tr, selectedDate),
                             subtitle: dailyStory.events.isEmpty
-                                ? 'Sin eventos por mostrar hoy.'
+                                ? _emptySummarySubtitle(selectedDate)
                                 : '${dailyStory.events.length} eventos en orden cronologico.',
                             icon: LucideIcons.sparkles,
                             trailing: Container(
@@ -197,7 +214,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                           ).animate().fadeIn(delay: 200.ms, duration: 320.ms),
                           const SizedBox(height: 8),
                           if (dailyStory.events.isEmpty)
-                            const _EmptyTimelineState(),
+                            _EmptyTimelineState(selectedDate: selectedDate),
                         ],
                       ),
                     ),
@@ -232,14 +249,18 @@ class _HomeTopBar extends StatelessWidget {
   const _HomeTopBar({
     required this.userName,
     required this.tenantName,
+    required this.selectedDate,
     required this.unreadMessages,
+    required this.onDateTap,
     required this.onNotificationsTap,
     required this.onMessagesTap,
   });
 
   final String userName;
   final String tenantName;
+  final DateTime selectedDate;
   final int unreadMessages;
+  final Future<void> Function() onDateTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onMessagesTap;
 
@@ -262,6 +283,8 @@ class _HomeTopBar extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 userName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 28,
                   height: 1,
@@ -272,6 +295,8 @@ class _HomeTopBar extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 tenantName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: context.appColor(AppColors.textSecondary),
                   fontSize: 14,
@@ -282,6 +307,8 @@ class _HomeTopBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
+        _DateActionButton(selectedDate: selectedDate, onTap: onDateTap),
+        const SizedBox(width: 10),
         _RoundActionButton(icon: LucideIcons.bell, onTap: onNotificationsTap),
         const SizedBox(width: 10),
         _RoundActionButton(
@@ -291,6 +318,60 @@ class _HomeTopBar extends StatelessWidget {
           badgeCount: unreadMessages,
         ),
       ],
+    );
+  }
+}
+
+class _DateActionButton extends StatelessWidget {
+  const _DateActionButton({required this.selectedDate, required this.onTap});
+
+  final DateTime selectedDate;
+  final Future<void> Function() onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final label = formatShortDateLabel(
+      selectedDate,
+      locale: locale,
+      uppercaseToday: true,
+    );
+
+    return Material(
+      color: context.appColor(AppColors.surface),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: () {
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 76, minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                LucideIcons.calendarDays,
+                size: 16,
+                color: context.appColor(AppColors.textPrimary),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: context.appColor(AppColors.textPrimary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -382,10 +463,14 @@ class _UnreadBadge extends StatelessWidget {
 }
 
 class _EmptyTimelineState extends StatelessWidget {
-  const _EmptyTimelineState();
+  const _EmptyTimelineState({required this.selectedDate});
+
+  final DateTime selectedDate;
 
   @override
   Widget build(BuildContext context) {
+    final isSelectedToday = isToday(selectedDate);
+
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -400,12 +485,14 @@ class _EmptyTimelineState extends StatelessWidget {
           ),
         ],
       ),
-      child: const Column(
+      child: Column(
         children: [
           Icon(LucideIcons.clock3, size: 36, color: AppColors.textTertiary),
           SizedBox(height: 14),
           Text(
-            'Aun no hay registros del dia',
+            isSelectedToday
+                ? 'Aun no hay registros del dia'
+                : 'Aun no hay registros para esta fecha',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -415,7 +502,9 @@ class _EmptyTimelineState extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Cuando la escuela registre actividades, alimentos o siestas apareceran aqui.',
+            isSelectedToday
+                ? 'Cuando la escuela registre actividades, alimentos o siestas apareceran aqui.'
+                : 'Cuando exista actividad registrada para esta fecha, aparecera aqui.',
             style: TextStyle(height: 1.5, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
@@ -423,6 +512,22 @@ class _EmptyTimelineState extends StatelessWidget {
       ),
     );
   }
+}
+
+String _summaryTitle(AppTranslations tr, DateTime selectedDate) {
+  if (isToday(selectedDate)) {
+    return tr.tr('todaySummary');
+  }
+
+  return 'Resumen del ${formatShortDateLabel(selectedDate, uppercaseToday: true)}';
+}
+
+String _emptySummarySubtitle(DateTime selectedDate) {
+  if (isToday(selectedDate)) {
+    return 'Sin eventos por mostrar hoy.';
+  }
+
+  return 'Sin eventos por mostrar para esta fecha.';
 }
 
 class _ParentHomeEmptyState extends StatelessWidget {

@@ -22,6 +22,7 @@ final photosProvider = FutureProvider<List<Photo>>((ref) async {
   final authState = ref.watch(authProvider);
   final repository = ref.watch(dailyLogsRepositoryProvider);
   final childrenRepository = ref.watch(childrenRepositoryProvider);
+  final selectedDate = ref.watch(selectedDashboardDateProvider);
 
   if (!authState.isAuthenticated) {
     return [];
@@ -36,10 +37,10 @@ final photosProvider = FutureProvider<List<Photo>>((ref) async {
 
           return repository.getDailyLogsForChildren(
             childIds: children.map((c) => c.id).toList(),
-            date: DateTime.now(),
+            date: selectedDate,
           );
         })()
-      : await repository.getDailyLogsByDate(date: DateTime.now());
+      : await repository.getDailyLogsByDate(date: selectedDate);
 
   for (final childId in logs.map((log) => log.childId).toSet()) {
     try {
@@ -73,6 +74,7 @@ final activityFeedProvider = FutureProvider<List<ActivityFeedItem>>((
   final authState = ref.watch(authProvider);
   final repository = ref.watch(dailyLogsRepositoryProvider);
   final childrenRepository = ref.watch(childrenRepositoryProvider);
+  final selectedDate = ref.watch(selectedDashboardDateProvider);
 
   if (!authState.isAuthenticated) {
     return [];
@@ -87,10 +89,10 @@ final activityFeedProvider = FutureProvider<List<ActivityFeedItem>>((
 
           return repository.getDailyLogsForChildren(
             childIds: children.map((c) => c.id).toList(),
-            date: DateTime.now(),
+            date: selectedDate,
           );
         })()
-      : await repository.getDailyLogsByDate(date: DateTime.now());
+      : await repository.getDailyLogsByDate(date: selectedDate);
 
   final childIndex = <String, ({String name, String? photoUrl})>{};
   for (final childId in logs.map((log) => log.childId).toSet()) {

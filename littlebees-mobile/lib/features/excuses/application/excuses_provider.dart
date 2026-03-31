@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/file_upload_service.dart';
 import '../data/excuses_repository.dart';
 import '../../../shared/models/excuse_model.dart';
 import '../../../shared/enums/enums.dart';
 
 final excusesRepositoryProvider = Provider<ExcusesRepository>((ref) {
   return ExcusesRepository();
+});
+
+final fileUploadServiceProvider = Provider<FileUploadService>((ref) {
+  return FileUploadService();
 });
 
 /// Provider para listar justificantes
@@ -29,6 +34,11 @@ final excusesByChildProvider = FutureProvider.autoDispose.family<List<Excuse>, S
 final excuseDetailProvider = FutureProvider.autoDispose.family<Excuse, String>((ref, id) async {
   final repository = ref.watch(excusesRepositoryProvider);
   return repository.getExcuseById(id);
+});
+
+final excuseAttachmentProvider = FutureProvider.autoDispose.family<FileUploadResult, String>((ref, fileId) async {
+  final filesService = ref.watch(fileUploadServiceProvider);
+  return filesService.getFileById(fileId);
 });
 
 /// Notifier para acciones de justificantes

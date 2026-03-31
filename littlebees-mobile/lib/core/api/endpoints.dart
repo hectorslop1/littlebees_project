@@ -61,6 +61,7 @@ class Endpoints {
 
   // Files
   static const String fileUpload = '/files/upload';
+  static String file(String id) => '/files/$id';
 
   // Reports
   static const String reports = '/reports';

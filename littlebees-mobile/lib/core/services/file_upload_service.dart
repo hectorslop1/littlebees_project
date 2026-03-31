@@ -6,6 +6,16 @@ import '../api/endpoints.dart';
 class FileUploadService {
   final ApiClient _api = ApiClient.instance;
 
+  FileUploadResult _mapResult(Map<String, dynamic> response) {
+    return FileUploadResult(
+      fileId: response['id'] as String? ?? response['fileId'] as String,
+      filename: response['filename'] as String? ?? '',
+      url: response['url'] as String? ?? response['storageKey'] as String?,
+      mimeType: response['mimeType'] as String? ?? '',
+      sizeBytes: _parseSizeBytes(response['sizeBytes']),
+    );
+  }
+
   /// Subir archivo al servidor
   /// Retorna el ID del archivo y la URL
   Future<FileUploadResult> uploadFile({
@@ -30,15 +40,20 @@ class FileUploadService {
         },
       );
 
-      return FileUploadResult(
-        fileId: response['id'] as String,
-        filename: response['filename'] as String,
-        url: response['storageKey'] as String?,
-        mimeType: response['mimeType'] as String,
-        sizeBytes: _parseSizeBytes(response['sizeBytes']),
-      );
+      return _mapResult(response);
     } catch (e) {
       throw Exception('Error al subir archivo: $e');
+    }
+  }
+
+  Future<FileUploadResult> getFileById(String fileId) async {
+    try {
+      final response = await _api.get<Map<String, dynamic>>(
+        Endpoints.file(fileId),
+      );
+      return _mapResult(response);
+    } catch (e) {
+      throw Exception('Error al obtener archivo: $e');
     }
   }
 
@@ -79,6 +94,16 @@ class FileUploadResult {
     required this.mimeType,
     required this.sizeBytes,
   });
+
+  factory FileUploadResult.fromJson(Map<String, dynamic> json) {
+    return FileUploadResult(
+      fileId: json['id'] as String? ?? json['fileId'] as String,
+      filename: json['filename'] as String? ?? '',
+      url: json['url'] as String? ?? json['storageKey'] as String?,
+      mimeType: json['mimeType'] as String? ?? '',
+      sizeBytes: _parseSizeBytes(json['sizeBytes']),
+    );
+  }
 
   String get displaySize {
     final mb = sizeBytes / (1024 * 1024);

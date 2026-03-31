@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../../core/utils/date_utils.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/date_selection_sheet.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../shared/enums/enums.dart';
 import '../../../shared/models/attendance_model.dart';
@@ -26,6 +28,7 @@ class _TeacherAttendanceScreenState
   Future<void> _markAttendance(
     Child child,
     AttendanceStatus status,
+    DateTime selectedDate,
   ) async {
     if (_updatingChildIds.contains(child.id)) return;
 
@@ -43,9 +46,10 @@ class _TeacherAttendanceScreenState
         status: status,
         method: isPresent ? 'teacher_manual' : 'teacher_absence',
         observations: isPresent ? null : 'No llego a clase',
+        date: selectedDate,
       );
 
-      ref.invalidate(todayRoleAttendanceProvider);
+      ref.invalidate(selectedRoleAttendanceProvider);
       ref.invalidate(teacherDashboardProvider);
 
       if (!mounted) return;
@@ -78,14 +82,37 @@ class _TeacherAttendanceScreenState
 
   @override
   Widget build(BuildContext context) {
+    final selectedDate = ref.watch(selectedDashboardDateProvider);
+    final isSelectedToday = isToday(selectedDate);
     final childrenAsync = ref.watch(myChildrenProvider);
-    final attendanceAsync = ref.watch(todayRoleAttendanceProvider);
+    final attendanceAsync = ref.watch(selectedRoleAttendanceProvider);
+    final dateLabel = formatShortDateLabel(
+      selectedDate,
+      locale: Localizations.localeOf(context).toLanguageTag(),
+      uppercaseToday: true,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F8),
       appBar: AppBar(
-        title: const Text('Asistencia de hoy'),
+        title: Text('Asistencia de $dateLabel'),
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Seleccionar fecha',
+            icon: const Icon(LucideIcons.calendarDays),
+            onPressed: () async {
+              final pickedDate = await showDateSelectionSheet(
+                context: context,
+                initialDate: selectedDate,
+              );
+              if (pickedDate != null) {
+                ref.read(selectedDashboardDateProvider.notifier).state =
+                    pickedDate;
+              }
+            },
+          ),
+        ],
       ),
       body: childrenAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -98,7 +125,7 @@ class _TeacherAttendanceScreenState
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _AttendanceErrorState(
               message: 'No fue posible cargar asistencia: $error',
-              onRetry: () => ref.invalidate(todayRoleAttendanceProvider),
+              onRetry: () => ref.invalidate(selectedRoleAttendanceProvider),
             ),
             data: (attendance) {
               final attendanceByChild = {
@@ -108,8 +135,8 @@ class _TeacherAttendanceScreenState
               final filteredChildren = _selectedGroupId == null
                   ? children
                   : children
-                      .where((child) => child.groupId == _selectedGroupId)
-                      .toList();
+                        .where((child) => child.groupId == _selectedGroupId)
+                        .toList();
               final presentCount = attendanceByChild.values
                   .where(
                     (record) =>
@@ -125,17 +152,21 @@ class _TeacherAttendanceScreenState
               return RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(myChildrenProvider);
-                  ref.invalidate(todayRoleAttendanceProvider);
+                  ref.invalidate(selectedRoleAttendanceProvider);
                   ref.invalidate(teacherDashboardProvider);
                   await Future.wait([
                     ref.read(myChildrenProvider.future),
-                    ref.read(todayRoleAttendanceProvider.future),
+                    ref.read(selectedRoleAttendanceProvider.future),
                   ]);
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                   children: [
+                    if (!isSelectedToday) ...[
+                      _HistoricalAttendanceBanner(dateLabel: dateLabel),
+                      const SizedBox(height: 12),
+                    ],
                     _AttendanceSummaryCard(
                       totalChildren: children.length,
                       presentCount: presentCount,
@@ -196,13 +227,16 @@ class _TeacherAttendanceScreenState
                             child: child,
                             record: attendanceByChild[child.id],
                             isUpdating: _updatingChildIds.contains(child.id),
+                            readOnly: !isSelectedToday,
                             onMarkPresent: () => _markAttendance(
                               child,
                               AttendanceStatus.present,
+                              selectedDate,
                             ),
                             onMarkAbsent: () => _markAttendance(
                               child,
                               AttendanceStatus.absent,
+                              selectedDate,
                             ),
                           ),
                         ),
@@ -228,9 +262,12 @@ class _TeacherAttendanceScreenState
       }
 
       seen.add(groupId);
-      groups.add((groupId, child.groupName?.trim().isNotEmpty == true
-          ? child.groupName!.trim()
-          : 'Sin grupo'));
+      groups.add((
+        groupId,
+        child.groupName?.trim().isNotEmpty == true
+            ? child.groupName!.trim()
+            : 'Sin grupo',
+      ));
     }
 
     groups.sort((left, right) => left.$2.compareTo(right.$2));
@@ -378,11 +415,7 @@ class _SummaryMetric extends StatelessWidget {
               color: color,
               borderRadius: BorderRadius.circular(999),
               boxShadow: [
-                BoxShadow(
-                  color: tint,
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
+                BoxShadow(color: tint, blurRadius: 10, spreadRadius: 2),
               ],
             ),
           ),
@@ -450,6 +483,7 @@ class _AttendanceChildCard extends StatelessWidget {
     required this.child,
     required this.record,
     required this.isUpdating,
+    required this.readOnly,
     required this.onMarkPresent,
     required this.onMarkAbsent,
   });
@@ -457,6 +491,7 @@ class _AttendanceChildCard extends StatelessWidget {
   final Child child;
   final AttendanceRecord? record;
   final bool isUpdating;
+  final bool readOnly;
   final VoidCallback onMarkPresent;
   final VoidCallback onMarkAbsent;
 
@@ -467,8 +502,9 @@ class _AttendanceChildCard extends StatelessWidget {
         record?.status == AttendanceStatus.present ||
         record?.status == AttendanceStatus.late_;
     final isAbsent = record?.status == AttendanceStatus.absent;
-    final canMarkPresent = !isUpdating && !hasConfirmedArrival;
-    final canMarkAbsent = !isUpdating && !hasConfirmedArrival && !isAbsent;
+    final canMarkPresent = !readOnly && !isUpdating && !hasConfirmedArrival;
+    final canMarkAbsent =
+        !readOnly && !isUpdating && !hasConfirmedArrival && !isAbsent;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -584,9 +620,7 @@ class _AttendanceChildCard extends StatelessWidget {
                           ),
                         )
                       : const Icon(LucideIcons.badgeCheck, size: 18),
-                  label: Text(
-                    hasConfirmedArrival ? 'Confirmado' : 'Llegó',
-                  ),
+                  label: Text(hasConfirmedArrival ? 'Confirmado' : 'Llegó'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -603,6 +637,25 @@ class _AttendanceChildCard extends StatelessWidget {
               ),
             ],
           ),
+          if (readOnly) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Vista de consulta. Para registrar cambios, vuelve a HOY.',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -632,6 +685,44 @@ class _AttendanceChildCard extends StatelessWidget {
   }
 }
 
+class _HistoricalAttendanceBanner extends StatelessWidget {
+  const _HistoricalAttendanceBanner({required this.dateLabel});
+
+  final String dateLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primarySurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            LucideIcons.calendarSearch,
+            color: AppColors.primary,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Estás consultando la asistencia de $dateLabel. Esta vista es solo de lectura.',
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AttendanceStatusBadge extends StatelessWidget {
   const _AttendanceStatusBadge({required this.record});
 
@@ -641,25 +732,25 @@ class _AttendanceStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, background, foreground) = switch (record?.status) {
       AttendanceStatus.present || AttendanceStatus.late_ => (
-          'Presente',
-          AppColors.success.withValues(alpha: 0.14),
-          AppColors.success,
-        ),
+        'Presente',
+        AppColors.success.withValues(alpha: 0.14),
+        AppColors.success,
+      ),
       AttendanceStatus.absent => (
-          'Ausente',
-          AppColors.warning.withValues(alpha: 0.16),
-          AppColors.warning,
-        ),
+        'Ausente',
+        AppColors.warning.withValues(alpha: 0.16),
+        AppColors.warning,
+      ),
       AttendanceStatus.excused => (
-          'Justificado',
-          AppColors.info.withValues(alpha: 0.16),
-          AppColors.info,
-        ),
+        'Justificado',
+        AppColors.info.withValues(alpha: 0.16),
+        AppColors.info,
+      ),
       null => (
-          'Pendiente',
-          AppColors.primary.withValues(alpha: 0.12),
-          AppColors.primary,
-        ),
+        'Pendiente',
+        AppColors.primary.withValues(alpha: 0.12),
+        AppColors.primary,
+      ),
     };
 
     return Container(
@@ -742,19 +833,12 @@ class _EmptyAttendanceState extends StatelessWidget {
       ),
       child: const Column(
         children: [
-          Icon(
-            LucideIcons.users,
-            size: 46,
-            color: AppColors.textTertiary,
-          ),
+          Icon(LucideIcons.users, size: 46, color: AppColors.textTertiary),
           SizedBox(height: 12),
           Text(
             'No hay alumnos para este filtro.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -763,10 +847,7 @@ class _EmptyAttendanceState extends StatelessWidget {
 }
 
 class _AttendanceErrorState extends StatelessWidget {
-  const _AttendanceErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _AttendanceErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -791,10 +872,7 @@ class _AttendanceErrorState extends StatelessWidget {
               style: const TextStyle(color: AppColors.error),
             ),
             const SizedBox(height: 14),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar'),
-            ),
+            ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
           ],
         ),
       ),

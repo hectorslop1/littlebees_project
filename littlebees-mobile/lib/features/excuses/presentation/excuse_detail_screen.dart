@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/utils/resolve_image_url.dart';
+import '../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../application/excuses_provider.dart';
@@ -14,10 +16,7 @@ import '../../notifications/application/notifications_provider.dart';
 class ExcuseDetailScreen extends ConsumerWidget {
   final String excuseId;
 
-  const ExcuseDetailScreen({
-    super.key,
-    required this.excuseId,
-  });
+  const ExcuseDetailScreen({super.key, required this.excuseId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -142,7 +141,10 @@ class ExcuseDetailScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(LucideIcons.fileText, color: AppColors.primary),
+                            Icon(
+                              LucideIcons.fileText,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             Text(
                               'Detalles',
@@ -208,6 +210,45 @@ class ExcuseDetailScreen extends ConsumerWidget {
                     ),
                   ),
 
+                  if ((excuse.attachments ?? const []).isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    LBCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                LucideIcons.paperclip,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Evidencias adjuntas',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: (excuse.attachments ?? const [])
+                                .map(
+                                  (fileId) =>
+                                      _ExcuseAttachmentTile(fileId: fileId),
+                                )
+                                .toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // Notas de revisión (si existen)
                   if (excuse.reviewNotes != null) ...[
                     const SizedBox(height: 16),
@@ -217,7 +258,10 @@ class ExcuseDetailScreen extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(LucideIcons.messageSquare, color: AppColors.primary),
+                              Icon(
+                                LucideIcons.messageSquare,
+                                color: AppColors.primary,
+                              ),
                               const SizedBox(width: 12),
                               Text(
                                 'Notas de revisión',
@@ -326,7 +370,8 @@ class ExcuseDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.refresh(excuseDetailProvider(excuseId)),
+                    onPressed: () =>
+                        ref.refresh(excuseDetailProvider(excuseId)),
                     child: const Text('Reintentar'),
                   ),
                 ],
@@ -356,10 +401,7 @@ class ExcuseDetailScreen extends ConsumerWidget {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -378,7 +420,9 @@ class ExcuseDetailScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(isApproving ? 'Aprobar Justificante' : 'Rechazar Justificante'),
+        title: Text(
+          isApproving ? 'Aprobar Justificante' : 'Rechazar Justificante',
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -408,14 +452,14 @@ class ExcuseDetailScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.of(dialogContext).pop();
-              
+
               try {
                 final notifier = ref.read(excusesNotifierProvider.notifier);
                 await notifier.updateStatus(
                   id: excuseId,
                   status: status,
-                  reviewNotes: notesController.text.isNotEmpty 
-                      ? notesController.text 
+                  reviewNotes: notesController.text.isNotEmpty
+                      ? notesController.text
                       : null,
                 );
 
@@ -423,23 +467,23 @@ class ExcuseDetailScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        isApproving 
-                            ? 'Justificante aprobado' 
+                        isApproving
+                            ? 'Justificante aprobado'
                             : 'Justificante rechazado',
                       ),
                       backgroundColor: isApproving ? Colors.green : Colors.red,
                     ),
                   );
-                  
+
                   // Refresh the detail
                   ref.invalidate(excuseDetailProvider(excuseId));
                   ref.invalidate(excusesListProvider);
                   ref.invalidate(teacherDashboardProvider);
                   ref.invalidate(directorDashboardProvider);
-                  ref.invalidate(todayRoleAttendanceProvider);
+                  ref.invalidate(selectedRoleAttendanceProvider);
                   ref.invalidate(notificationsProvider);
                   ref.invalidate(notificationUnreadCountProvider);
-                  
+
                   // Go back after a short delay
                   Future.delayed(const Duration(seconds: 1), () {
                     if (context.mounted) {
@@ -451,7 +495,9 @@ class ExcuseDetailScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+                      content: Text(
+                        'Error: ${e.toString().replaceAll('Exception: ', '')}',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -463,6 +509,117 @@ class ExcuseDetailScreen extends ConsumerWidget {
               foregroundColor: Colors.white,
             ),
             child: Text(isApproving ? 'Aprobar' : 'Rechazar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExcuseAttachmentTile extends ConsumerWidget {
+  const _ExcuseAttachmentTile({required this.fileId});
+
+  final String fileId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final fileAsync = ref.watch(excuseAttachmentProvider(fileId));
+
+    return fileAsync.when(
+      data: (file) {
+        final imageUrl = resolveImageUrl(file.url ?? file.fileId);
+        if (imageUrl == null) {
+          return _AttachmentFallback(filename: file.filename);
+        }
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => FullScreenImageViewer(imageUrl: imageUrl),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              children: [
+                Image.network(
+                  imageUrl,
+                  width: 104,
+                  height: 104,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  left: 8,
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.58),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      file.filename.isNotEmpty ? file.filename : 'Adjunto',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => Container(
+        width: 104,
+        height: 104,
+        decoration: BoxDecoration(
+          color: AppColors.primarySurface,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (_, _) => const _AttachmentFallback(),
+    );
+  }
+}
+
+class _AttachmentFallback extends StatelessWidget {
+  const _AttachmentFallback({this.filename});
+
+  final String? filename;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 104,
+      height: 104,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primarySurface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(LucideIcons.imageOff, color: AppColors.primary),
+          const SizedBox(height: 8),
+          Text(
+            filename?.isNotEmpty == true ? filename! : 'Adjunto',
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
           ),
         ],
       ),
