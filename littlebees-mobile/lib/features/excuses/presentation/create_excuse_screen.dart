@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/services/image_service.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../routing/route_names.dart';
 import '../application/excuses_provider.dart';
@@ -63,7 +64,8 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
           final attachment = _attachments[index];
           if (!mounted) return;
           setState(() {
-            _loadingLabel = 'Subiendo foto ${index + 1} de ${_attachments.length}';
+            _loadingLabel =
+                'Subiendo foto ${index + 1} de ${_attachments.length}';
           });
 
           final uploaded = await fileUploadService.uploadFile(
@@ -142,9 +144,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
       if (!_imageService.validateFileSize(file, maxSizeMB: 10)) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('La imagen excede el límite de 10 MB'),
-          ),
+          const SnackBar(content: Text('La imagen excede el límite de 10 MB')),
         );
         return;
       }
@@ -248,7 +248,9 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                                 width: 42,
                                 height: 42,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.12),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.12,
+                                  ),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: const Icon(
@@ -318,7 +320,9 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                             items: children.map((child) {
                               return DropdownMenuItem(
                                 value: child.id,
-                                child: Text('${child.firstName} ${child.lastName}'),
+                                child: Text(
+                                  '${child.firstName} ${child.lastName}',
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {
@@ -436,7 +440,8 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                           TextFormField(
                             controller: _titleController,
                             decoration: InputDecoration(
-                              hintText: 'Ej: Consulta médica o reposo por fiebre',
+                              hintText:
+                                  'Ej: Consulta médica o reposo por fiebre',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -461,7 +466,8 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                             controller: _descriptionController,
                             maxLines: 4,
                             decoration: InputDecoration(
-                              hintText: 'Agrega contexto que ayude a revisar el justificante con rapidez.',
+                              hintText:
+                                  'Agrega contexto que ayude a revisar el justificante con rapidez.',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -501,8 +507,13 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
                                 ),
                               ),
                               TextButton.icon(
-                                onPressed: _isLoading ? null : _showAttachmentOptions,
-                                icon: const Icon(LucideIcons.paperclip, size: 16),
+                                onPressed: _isLoading
+                                    ? null
+                                    : _showAttachmentOptions,
+                                icon: const Icon(
+                                  LucideIcons.paperclip,
+                                  size: 16,
+                                ),
                                 label: const Text('Agregar'),
                               ),
                             ],
@@ -550,7 +561,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.detail),
           error: (error, stack) => Center(child: Text('Error: $error')),
         ),
       ),
@@ -576,10 +587,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
 
   List<Widget> _buildAttachmentPreviewWidgets() {
     if (_attachments.isEmpty) {
-      return const [
-        SizedBox(height: 16),
-        _EmptyAttachmentsCard(),
-      ];
+      return const [SizedBox(height: 16), _EmptyAttachmentsCard()];
     }
 
     return [
@@ -605,10 +613,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
 enum ImageSourceOption { camera, gallery }
 
 class _SelectedAttachment {
-  _SelectedAttachment({
-    required this.id,
-    required this.file,
-  });
+  _SelectedAttachment({required this.id, required this.file});
 
   final String id;
   final File file;
@@ -667,23 +672,15 @@ class _EmptyAttachmentsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primarySurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
       ),
       child: const Column(
         children: [
-          Icon(
-            LucideIcons.imagePlus,
-            color: AppColors.primary,
-            size: 30,
-          ),
+          Icon(LucideIcons.imagePlus, color: AppColors.primary, size: 30),
           SizedBox(height: 10),
           Text(
             'Sin fotos adjuntas',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 4),
           Text(

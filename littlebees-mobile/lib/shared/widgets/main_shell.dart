@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -71,7 +73,9 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     // Obtener items de navegación según el rol
     final navigationItems = RoleNavigation.getNavigationItems(userRole);
-    final location = GoRouter.of(context).routeInformationProvider.value.uri.path;
+    final location = GoRouter.of(
+      context,
+    ).routeInformationProvider.value.uri.path;
     final currentIndex = RoleNavigation.calculateSelectedIndex(
       location,
       navigationItems,
@@ -116,63 +120,12 @@ class _MainShellState extends ConsumerState<MainShell> {
       floatingActionButton: showAiFab ? const AiAssistantFab() : null,
       bottomNavigationBar: showIncomingCallScreen
           ? null
-          : Container(
-              decoration: const BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0A000000),
-                    blurRadius: 20,
-                    offset: Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(18),
-                ),
-                child: BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  onTap: (int idx) =>
-                      _onItemTapped(idx, context, navigationItems),
-                  type: BottomNavigationBarType.fixed,
-                  backgroundColor: context.isDark
-                      ? const Color(0xFF1E1E1E)
-                      : AppColors.surface,
-                  selectedItemColor: context.isDark
-                      ? const Color(0xFFE5C068)
-                      : AppColors.primary,
-                  unselectedItemColor: context.isDark
-                      ? const Color(0xFF808080)
-                      : AppColors.textTertiary,
-                  selectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11,
-                  ),
-                  selectedFontSize: 11,
-                  unselectedFontSize: 11,
-                  iconSize: 20,
-                  elevation: 0,
-                  items: navigationItems.map((item) {
-                    final isMessagesItem = item.route == '/messages';
-                    return BottomNavigationBarItem(
-                      icon: _ShellNavIcon(
-                        icon: item.icon,
-                        badgeCount: isMessagesItem ? unreadMessages : 0,
-                      ),
-                      activeIcon: _ShellNavIcon(
-                        icon: item.activeIcon,
-                        badgeCount: isMessagesItem ? unreadMessages : 0,
-                        active: true,
-                      ),
-                      label: tr.tr(item.labelKey),
-                    );
-                  }).toList(),
-                ),
-              ),
+          : _PremiumBottomNav(
+              items: navigationItems,
+              currentIndex: currentIndex,
+              unreadMessages: unreadMessages,
+              tr: tr,
+              onTap: (idx) => _onItemTapped(idx, context, navigationItems),
             ),
     );
   }
@@ -333,34 +286,153 @@ class _IncomingCallAction extends StatelessWidget {
   }
 }
 
-class _ShellNavIcon extends StatelessWidget {
-  const _ShellNavIcon({
-    required this.icon,
-    required this.badgeCount,
-    this.active = false,
+class _PremiumBottomNav extends StatelessWidget {
+  const _PremiumBottomNav({
+    required this.items,
+    required this.currentIndex,
+    required this.unreadMessages,
+    required this.tr,
+    required this.onTap,
   });
 
-  final IconData icon;
-  final int badgeCount;
-  final bool active;
+  final List<NavigationItem> items;
+  final int currentIndex;
+  final int unreadMessages;
+  final AppTranslations tr;
+  final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = active
-        ? (context.isDark ? const Color(0xFFE5C068) : AppColors.primary)
-        : (context.isDark ? const Color(0xFF808080) : AppColors.textTertiary);
+    final isDark = context.isDark;
+    final activeColor = isDark ? const Color(0xFFE5C068) : AppColors.primary;
+    final inactiveColor = isDark
+        ? const Color(0xFF808080)
+        : AppColors.textTertiary;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Icon(icon, color: iconColor),
-        if (badgeCount > 0)
-          Positioned(
-            right: -10,
-            top: -6,
-            child: _UnreadBadge(count: badgeCount),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          padding: EdgeInsets.only(bottom: bottomPadding, top: 6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1E1E1E).withAlpha(230)
+                : AppColors.surface.withAlpha(235),
+            border: Border(
+              top: BorderSide(
+                color: isDark
+                    ? Colors.white.withAlpha(15)
+                    : Colors.black.withAlpha(8),
+              ),
+            ),
           ),
-      ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(items.length, (i) {
+              final item = items[i];
+              final isActive = i == currentIndex;
+              final isMessages = item.route == '/messages';
+              final badge = isMessages ? unreadMessages : 0;
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(i);
+                  },
+                  child: _PremiumNavItem(
+                    icon: isActive ? item.activeIcon : item.icon,
+                    label: tr.tr(item.labelKey),
+                    isActive: isActive,
+                    activeColor: activeColor,
+                    inactiveColor: inactiveColor,
+                    badgeCount: badge,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumNavItem extends StatelessWidget {
+  const _PremiumNavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.badgeCount,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final Color activeColor;
+  final Color inactiveColor;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Pill indicator
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            width: isActive ? 32 : 0,
+            height: 3,
+            margin: const EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              color: isActive ? activeColor : Colors.transparent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Icon + badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedScale(
+                scale: isActive ? 1.1 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: isActive ? activeColor : inactiveColor,
+                ),
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  right: -10,
+                  top: -6,
+                  child: _UnreadBadge(count: badgeCount),
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          // Label
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? activeColor : inactiveColor,
+            ),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -374,19 +446,22 @@ class _UnreadBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = count > 99 ? '99+' : count.toString();
     return Container(
-      constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
         color: AppColors.error,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(
+          color: context.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          width: 2,
+        ),
       ),
       alignment: Alignment.center,
       child: Text(
         label,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w800,
           height: 1,
         ),

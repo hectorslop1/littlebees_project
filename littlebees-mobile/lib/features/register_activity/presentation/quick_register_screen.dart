@@ -290,7 +290,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      backgroundColor: AppColors.primary.withAlpha(26),
                       child: Text(
                         widget.childName.substring(0, 1).toUpperCase(),
                         style: TextStyle(
@@ -352,7 +352,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? color.withOpacity(0.1)
+                          ? color.withAlpha(26)
                           : Colors.grey[100],
                       border: Border.all(
                         color: isSelected ? color : Colors.grey[300]!,
@@ -584,7 +584,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
       onSelected: (selected) {
         setState(() => _mood = selected ? value : null);
       },
-      selectedColor: AppColors.primary.withOpacity(0.2),
+      selectedColor: AppColors.primary.withAlpha(51),
       checkmarkColor: AppColors.primary,
     );
   }

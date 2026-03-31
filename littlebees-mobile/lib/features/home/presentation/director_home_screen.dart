@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_card.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../groups/application/groups_provider.dart';
 import '../../auth/application/auth_provider.dart';
@@ -30,12 +31,12 @@ class DirectorHomeScreen extends ConsumerWidget {
               backgroundColor: Colors.transparent,
               elevation: 0,
               floating: true,
-              expandedHeight: 104,
+              expandedHeight: MediaQuery.of(context).textScaler.scale(104),
               actions: [
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     LucideIcons.bell,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                   ),
                   onPressed: () => context.push('/notifications'),
                 ),
@@ -54,9 +55,9 @@ class DirectorHomeScreen extends ConsumerWidget {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         LucideIcons.messageCircle,
-                        color: AppColors.textOnPrimary,
+                        color: context.appColor(AppColors.textOnPrimary),
                         size: 20,
                       ),
                       onPressed: () => context.push('/messages'),
@@ -72,10 +73,10 @@ class DirectorHomeScreen extends ConsumerWidget {
                     children: [
                       Text(
                         '${tr.tr('hello')}, ${authState.user?.firstName ?? ''}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: context.appColor(AppColors.textPrimary),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -90,7 +91,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                         ),
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textSecondary,
+                          color: context.appColor(AppColors.textSecondary),
                           height: 1.35,
                         ),
                         maxLines: 2,
@@ -199,7 +200,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                       ? Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: context.appColor(AppColors.surface),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: AppColors.primary.withValues(alpha: 0.18),
@@ -214,20 +215,22 @@ class DirectorHomeScreen extends ConsumerWidget {
                                   color: AppColors.primarySurface,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   LucideIcons.bellRing,
                                   size: 18,
-                                  color: AppColors.primary,
+                                  color: context.appColor(AppColors.primary),
                                 ),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(
                                   'Tienes $count notificaciones sin leer entre mensajes, avisos y revisiones pendientes.',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     height: 1.4,
-                                    color: AppColors.textSecondary,
+                                    color: context.appColor(
+                                      AppColors.textSecondary,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -356,7 +359,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                           child: Row(
                             children: [
                               Container(
-                          padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withValues(
                                     alpha: 0.1,
@@ -421,10 +424,11 @@ class DirectorHomeScreen extends ConsumerWidget {
                 );
               },
               loading: () => const SliverToBoxAdapter(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: LBLoadingState(
+                    layout: LBLoadingLayout.cards,
+                    itemCount: 3,
                   ),
                 ),
               ),
@@ -484,11 +488,11 @@ class _DashboardStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColor(AppColors.surface),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withAlpha(context.isDark ? 30 : 10),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -513,13 +517,19 @@ class _DashboardStatCard extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(
+              fontSize: 13,
+              color: context.appColor(AppColors.textSecondary),
+            ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 2),
             Text(
               subtitle!,
-              style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
+              style: TextStyle(
+                fontSize: 11,
+                color: context.appColor(AppColors.textTertiary),
+              ),
             ),
           ],
         ],
@@ -546,7 +556,7 @@ class _QuickActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.appColor(AppColors.surface),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -590,13 +600,16 @@ class _QuickActionTile extends StatelessWidget {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: context.appColor(AppColors.textSecondary),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+              Icon(
+                LucideIcons.chevronRight,
+                color: context.appColor(AppColors.textTertiary),
+              ),
             ],
           ),
         ),

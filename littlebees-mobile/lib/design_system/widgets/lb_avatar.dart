@@ -96,7 +96,8 @@ class LBAvatar extends StatelessWidget {
       );
     }
 
-    final effectiveOnTap = onTap ??
+    final effectiveOnTap =
+        onTap ??
         (resolvedImageUrl != null
             ? () {
                 Navigator.of(context).push(
@@ -110,11 +111,13 @@ class LBAvatar extends StatelessWidget {
               }
             : null);
 
+    // Wrap in Hero if tag provided
+    if (heroTag != null) {
+      avatarContent = Hero(tag: heroTag!, child: avatarContent);
+    }
+
     if (effectiveOnTap != null) {
-      return GestureDetector(
-        onTap: effectiveOnTap,
-        child: avatarContent,
-      );
+      return GestureDetector(onTap: effectiveOnTap, child: avatarContent);
     }
 
     return avatarContent;
@@ -122,10 +125,7 @@ class LBAvatar extends StatelessWidget {
 }
 
 class _AvatarPlaceholder extends StatelessWidget {
-  const _AvatarPlaceholder({
-    required this.initial,
-    required this.size,
-  });
+  const _AvatarPlaceholder({required this.initial, required this.size});
 
   final String initial;
   final double size;

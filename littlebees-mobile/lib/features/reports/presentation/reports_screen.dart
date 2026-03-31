@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
@@ -17,10 +18,7 @@ class ReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.appColor(AppColors.background),
-      appBar: AppBar(
-        title: Text(tr.tr('reports')),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(tr.tr('reports')), elevation: 0),
       body: SafeArea(
         child: summaryAsync.when(
           data: (summary) {
@@ -30,10 +28,9 @@ class ReportsScreen extends ConsumerWidget {
                 (summary['activities'] as Map<String, dynamic>? ?? {});
             final payments =
                 (summary['payments'] as Map<String, dynamic>? ?? {});
-            final groups =
-                (attendance['groups'] as List? ?? const [])
-                    .whereType<Map<String, dynamic>>()
-                    .toList();
+            final groups = (attendance['groups'] as List? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .toList();
             final activityTypes =
                 (activities['activitiesByType'] as List? ?? const [])
                     .whereType<Map<String, dynamic>>()
@@ -111,7 +108,8 @@ class ReportsScreen extends ConsumerWidget {
                   if (groups.isEmpty)
                     const _InlineEmptyCard(
                       title: 'Sin datos de asistencia',
-                      subtitle: 'Todavía no hay registros suficientes para mostrar este corte.',
+                      subtitle:
+                          'Todavía no hay registros suficientes para mostrar este corte.',
                     )
                   else
                     ...groups.map(
@@ -168,7 +166,8 @@ class ReportsScreen extends ConsumerWidget {
                   if (activityTypes.isEmpty)
                     const _InlineEmptyCard(
                       title: 'Sin actividad registrada',
-                      subtitle: 'Cuando maestra o dirección registren eventos, aparecerán aquí.',
+                      subtitle:
+                          'Cuando maestra o dirección registren eventos, aparecerán aquí.',
                     )
                   else
                     ...activityTypes.map(
@@ -215,7 +214,7 @@ class ReportsScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.cards),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -292,18 +291,12 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 2),
           Text(
@@ -320,10 +313,7 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionTitle({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -338,20 +328,14 @@ class _SectionTitle extends StatelessWidget {
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
+        Text(subtitle, style: const TextStyle(color: AppColors.textSecondary)),
       ],
     );
   }
 }
 
 class _InlineEmptyCard extends StatelessWidget {
-  const _InlineEmptyCard({
-    required this.title,
-    required this.subtitle,
-  });
+  const _InlineEmptyCard({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -375,10 +359,7 @@ class _InlineEmptyCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
             textAlign: TextAlign.center,
           ),
         ],

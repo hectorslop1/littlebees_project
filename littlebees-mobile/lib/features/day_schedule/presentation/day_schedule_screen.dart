@@ -297,9 +297,9 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withAlpha(26),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withAlpha(77)),
         ),
         child: Column(
           children: [
@@ -394,7 +394,7 @@ class _DayScheduleScreenState extends ConsumerState<DayScheduleScreen> {
               // Avatar
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.primary.withOpacity(0.2),
+                backgroundColor: AppColors.primary.withAlpha(51),
                 child: child.avatarUrl != null
                     ? ClipOval(
                         child: Image.network(

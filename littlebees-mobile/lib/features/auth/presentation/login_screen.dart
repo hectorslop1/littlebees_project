@@ -61,7 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
+      backgroundColor: context.appColor(AppColors.background),
       body: SafeArea(
         child: Stack(
           children: [
@@ -144,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   fontSize: 22,
                   height: 1.08,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
               const SizedBox(height: 6),
@@ -154,7 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   height: 1.45,
-                  color: AppColors.textSecondary,
+                  color: context.appColor(AppColors.textSecondary),
                 ),
               ),
             ],
@@ -169,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Container(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.appColor(AppColors.surface),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -186,15 +186,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 'Inicia sesión',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Usa tus credenciales institucionales para entrar.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: context.appColor(AppColors.textSecondary),
+                ),
               ),
               const SizedBox(height: 18),
               LBInput(
@@ -224,7 +224,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   icon: Icon(
                     _isPasswordVisible ? LucideIcons.eyeOff : LucideIcons.eye,
                     size: 20,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                   ),
                   onPressed: () {
                     setState(() => _isPasswordVisible = !_isPasswordVisible);
@@ -265,15 +265,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 10),
               LBButton(
-                text: _isLoading ? 'Entrando...' : 'Entrar a LittleBees',
+                text: 'Entrar a LittleBees',
                 onPressed: _isLoading ? null : _handleLogin,
-                icon: _isLoading
-                    ? null
-                    : const Icon(
-                        LucideIcons.logIn,
-                        size: 20,
-                        color: AppColors.textOnPrimary,
-                      ),
+                isLoading: _isLoading,
+                icon: Icon(
+                  LucideIcons.logIn,
+                  size: 20,
+                  color: context.appColor(AppColors.textOnPrimary),
+                ),
               ),
             ],
           ),

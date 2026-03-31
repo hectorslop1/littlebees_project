@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/resolve_image_url.dart';
 import '../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../application/excuses_provider.dart';
 import '../../../shared/enums/enums.dart';
@@ -351,7 +352,7 @@ class ExcuseDetailScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.detail),
           error: (error, stack) {
             return Center(
               child: Column(

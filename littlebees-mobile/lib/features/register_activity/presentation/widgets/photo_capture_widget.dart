@@ -52,7 +52,7 @@ class PhotoCaptureWidget extends StatelessWidget {
                     Icon(
                       LucideIcons.camera,
                       size: 44,
-                      color: AppColors.primary.withOpacity(0.5),
+                      color: AppColors.primary.withAlpha(128),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -94,11 +94,7 @@ class PhotoCaptureWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 child: const Padding(
                   padding: EdgeInsets.all(8),
-                  child: Icon(
-                    LucideIcons.x,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: Icon(LucideIcons.x, color: Colors.white, size: 20),
                 ),
               ),
             ),
@@ -115,11 +111,7 @@ class PhotoCaptureWidget extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  LucideIcons.check,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                const Icon(LucideIcons.check, color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(
                   'Foto capturada',

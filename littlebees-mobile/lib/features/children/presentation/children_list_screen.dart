@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
@@ -32,8 +33,9 @@ class ChildrenListScreen extends ConsumerWidget {
                 .whereType<String>()
                 .toSet()
                 .length;
-            final activeProfiles =
-                children.where((child) => child.status == 'active').length;
+            final activeProfiles = children
+                .where((child) => child.status == 'active')
+                .length;
 
             return RefreshIndicator(
               onRefresh: () => ref.refresh(myChildrenProvider.future),
@@ -51,7 +53,8 @@ class ChildrenListScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _ChildSpotlightCard(
                         child: entry.value,
-                        onTap: () => context.push('/children/${entry.value.id}/profile'),
+                        onTap: () =>
+                            context.push('/children/${entry.value.id}/profile'),
                       ),
                     ),
                   ),
@@ -59,7 +62,7 @@ class ChildrenListScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.list),
           error: (error, stack) {
             return _ChildrenErrorState(
               message: '$error',
@@ -121,7 +124,10 @@ class _ChildrenHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: context.appColor(AppColors.primarySurface),
                   borderRadius: BorderRadius.circular(999),
@@ -222,9 +228,9 @@ class _HeroMetric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: context.appColor(AppColors.surface).withAlpha(
-          context.isDark ? 255 : 220,
-        ),
+        color: context
+            .appColor(AppColors.surface)
+            .withAlpha(context.isDark ? 255 : 220),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: context.appColor(AppColors.border)),
       ),
@@ -257,10 +263,7 @@ class _HeroMetric extends StatelessWidget {
 }
 
 class _ChildSpotlightCard extends StatelessWidget {
-  const _ChildSpotlightCard({
-    required this.child,
-    required this.onTap,
-  });
+  const _ChildSpotlightCard({required this.child, required this.onTap});
 
   final Child child;
   final VoidCallback onTap;
@@ -280,10 +283,7 @@ class _ChildSpotlightCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
-            colors: [
-              context.appColor(AppColors.surface),
-              cardSurface,
-            ],
+            colors: [context.appColor(AppColors.surface), cardSurface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -379,9 +379,9 @@ class _ChildInfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: context.appColor(AppColors.surface).withAlpha(
-          context.isDark ? 255 : 220,
-        ),
+        color: context
+            .appColor(AppColors.surface)
+            .withAlpha(context.isDark ? 255 : 220),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: context.isDark
@@ -466,10 +466,7 @@ class _ChildrenEmptyState extends StatelessWidget {
 }
 
 class _ChildrenErrorState extends StatelessWidget {
-  const _ChildrenErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ChildrenErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -504,10 +501,7 @@ class _ChildrenErrorState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Reintentar'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
             ],
           ),
         ),
@@ -533,7 +527,9 @@ String _formatExactAge(DateTime dob) {
 
 _GenderPalette _paletteForGender(String gender) {
   final normalized = gender.toLowerCase();
-  if (normalized == 'female' || normalized == 'femenino' || normalized == 'girl') {
+  if (normalized == 'female' ||
+      normalized == 'femenino' ||
+      normalized == 'girl') {
     return const _GenderPalette(
       surface: Color(0xFFFBE8EF),
       accent: Color(0xFFD88CA6),
@@ -547,10 +543,7 @@ _GenderPalette _paletteForGender(String gender) {
 }
 
 class _GenderPalette {
-  const _GenderPalette({
-    required this.surface,
-    required this.accent,
-  });
+  const _GenderPalette({required this.surface, required this.accent});
 
   final Color surface;
   final Color accent;

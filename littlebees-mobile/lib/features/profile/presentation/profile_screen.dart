@@ -7,6 +7,7 @@ import '../../../core/services/image_service.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/compact_layout.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../core/i18n/locale_provider.dart';
@@ -151,7 +152,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.profile),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -293,9 +294,9 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: context.appColor(AppColors.surface).withAlpha(
-            context.isDark ? 255 : 220,
-          ),
+          color: context
+              .appColor(AppColors.surface)
+              .withAlpha(context.isDark ? 255 : 220),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: context.appColor(AppColors.border)),
         ),
@@ -364,9 +365,9 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
                     vertical: 9,
                   ),
                   decoration: BoxDecoration(
-                    color: context.appColor(AppColors.surface).withAlpha(
-                      context.isDark ? 255 : 210,
-                    ),
+                    color: context
+                        .appColor(AppColors.surface)
+                        .withAlpha(context.isDark ? 255 : 210),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: context.appColor(AppColors.border).withAlpha(140),
@@ -430,12 +431,7 @@ class _ProfileOverview extends StatelessWidget {
     }
 
     return _OverviewCard(
-      item: (
-        'Contacto',
-        phone,
-        LucideIcons.phone,
-        AppColors.info,
-      ),
+      item: ('Contacto', phone, LucideIcons.phone, AppColors.info),
       compact: true,
     );
   }

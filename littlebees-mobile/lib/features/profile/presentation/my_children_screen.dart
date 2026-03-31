@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../design_system/widgets/compact_layout.dart';
@@ -36,17 +37,15 @@ class MyChildrenScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
                 children: [
-                  _MyChildrenHero(
-                    role: user?.role,
-                    children: children,
-                  ),
+                  _MyChildrenHero(role: user?.role, children: children),
                   const SizedBox(height: 12),
                   ...children.asMap().entries.map(
                     (entry) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _DetailedChildCard(
                         child: entry.value,
-                        onTap: () => context.push('/children/${entry.value.id}/profile'),
+                        onTap: () =>
+                            context.push('/children/${entry.value.id}/profile'),
                       ),
                     ),
                   ),
@@ -54,7 +53,7 @@ class MyChildrenScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.list),
           error: (error, _) => _ChildrenErrorState(
             message: '$error',
             onRetry: () => ref.refresh(myChildrenProvider),
@@ -66,10 +65,7 @@ class MyChildrenScreen extends ConsumerWidget {
 }
 
 class _MyChildrenHero extends StatelessWidget {
-  const _MyChildrenHero({
-    required this.role,
-    required this.children,
-  });
+  const _MyChildrenHero({required this.role, required this.children});
 
   final UserRole? role;
   final List<Child> children;
@@ -93,8 +89,9 @@ class _MyChildrenHero extends StatelessWidget {
         .whereType<String>()
         .toSet()
         .length;
-    final activeProfiles =
-        children.where((child) => child.status == 'active').length;
+    final activeProfiles = children
+        .where((child) => child.status == 'active')
+        .length;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -186,10 +183,7 @@ class _MyChildrenHero extends StatelessWidget {
 }
 
 class _DetailedChildCard extends StatelessWidget {
-  const _DetailedChildCard({
-    required this.child,
-    required this.onTap,
-  });
+  const _DetailedChildCard({required this.child, required this.onTap});
 
   final Child child;
   final VoidCallback onTap;
@@ -209,10 +203,7 @@ class _DetailedChildCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
-            colors: [
-              context.appColor(AppColors.surface),
-              cardSurface,
-            ],
+            colors: [context.appColor(AppColors.surface), cardSurface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -308,9 +299,9 @@ class _ChildInfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: context.appColor(AppColors.surface).withAlpha(
-          context.isDark ? 255 : 220,
-        ),
+        color: context
+            .appColor(AppColors.surface)
+            .withAlpha(context.isDark ? 255 : 220),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: context.isDark
@@ -385,10 +376,7 @@ class _ChildrenEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 'Cuando existan perfiles disponibles, apareceran aqui automaticamente.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -400,10 +388,7 @@ class _ChildrenEmptyState extends StatelessWidget {
 }
 
 class _ChildrenErrorState extends StatelessWidget {
-  const _ChildrenErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ChildrenErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -438,10 +423,7 @@ class _ChildrenErrorState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Reintentar'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
             ],
           ),
         ),
@@ -473,7 +455,9 @@ String _formatExactAge(DateTime dob) {
 
 _GenderPalette _paletteForGender(String gender) {
   final normalized = gender.toLowerCase();
-  if (normalized == 'female' || normalized == 'femenino' || normalized == 'girl') {
+  if (normalized == 'female' ||
+      normalized == 'femenino' ||
+      normalized == 'girl') {
     return const _GenderPalette(
       surface: Color(0xFFFBE8EF),
       accent: Color(0xFFD88CA6),
@@ -487,10 +471,7 @@ _GenderPalette _paletteForGender(String gender) {
 }
 
 class _GenderPalette {
-  const _GenderPalette({
-    required this.surface,
-    required this.accent,
-  });
+  const _GenderPalette({required this.surface, required this.accent});
 
   final Color surface;
   final Color accent;

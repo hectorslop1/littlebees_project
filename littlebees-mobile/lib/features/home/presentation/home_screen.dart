@@ -474,9 +474,9 @@ class _EmptyTimelineState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColor(AppColors.surface),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.appColor(AppColors.divider)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x10000000),
@@ -487,25 +487,32 @@ class _EmptyTimelineState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(LucideIcons.clock3, size: 36, color: AppColors.textTertiary),
+          Icon(
+            LucideIcons.clock3,
+            size: 36,
+            color: context.appColor(AppColors.textTertiary),
+          ),
           SizedBox(height: 14),
           Text(
             isSelectedToday
-                ? 'Aun no hay registros del dia'
-                : 'Aun no hay registros para esta fecha',
+                ? 'Aún no hay registros del día'
+                : 'Aún no hay registros para esta fecha',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 8),
           Text(
             isSelectedToday
-                ? 'Cuando la escuela registre actividades, alimentos o siestas apareceran aqui.'
-                : 'Cuando exista actividad registrada para esta fecha, aparecera aqui.',
-            style: TextStyle(height: 1.5, color: AppColors.textSecondary),
+                ? 'Cuando la escuela registre actividades, alimentos o siestas aparecerán aquí.'
+                : 'Cuando exista actividad registrada para esta fecha, aparecerá aquí.',
+            style: TextStyle(
+              height: 1.5,
+              color: context.appColor(AppColors.textSecondary),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -538,7 +545,7 @@ class _ParentHomeEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -546,13 +553,13 @@ class _ParentHomeEmptyState extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appColor(AppColors.surface),
                 borderRadius: BorderRadius.circular(32),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x14000000),
+                    color: Colors.black.withAlpha(context.isDark ? 30 : 20),
                     blurRadius: 24,
-                    offset: Offset(0, 12),
+                    offset: const Offset(0, 12),
                   ),
                 ],
               ),
@@ -563,32 +570,32 @@ class _ParentHomeEmptyState extends StatelessWidget {
                     width: 82,
                     height: 82,
                     decoration: BoxDecoration(
-                      color: AppColors.primarySurface,
+                      color: context.appColor(AppColors.primarySurface),
                       borderRadius: BorderRadius.circular(28),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       LucideIcons.baby,
                       size: 36,
-                      color: AppColors.primary,
+                      color: context.appColor(AppColors.primary),
                     ),
                   ),
                   const SizedBox(height: 22),
-                  const Text(
-                    'Aun no hay hijos vinculados',
+                  Text(
+                    'Aún no hay hijos vinculados',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: context.appColor(AppColors.textPrimary),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Cuando el colegio relacione tu cuenta, aqui veras asistencia, actividades, pagos y mensajes.',
+                  Text(
+                    'Cuando el colegio relacione tu cuenta, aquí verás asistencia, actividades, pagos y mensajes.',
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.5,
-                      color: AppColors.textSecondary,
+                      color: context.appColor(AppColors.textSecondary),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -596,8 +603,8 @@ class _ParentHomeEmptyState extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       email,
-                      style: const TextStyle(
-                        color: AppColors.textTertiary,
+                      style: TextStyle(
+                        color: context.appColor(AppColors.textTertiary),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -621,7 +628,7 @@ class _ParentHomeErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -629,39 +636,39 @@ class _ParentHomeErrorState extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appColor(AppColors.surface),
                 borderRadius: BorderRadius.circular(32),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x14000000),
+                    color: Colors.black.withAlpha(context.isDark ? 30 : 20),
                     blurRadius: 24,
-                    offset: Offset(0, 12),
+                    offset: const Offset(0, 12),
                   ),
                 ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     LucideIcons.alertCircle,
                     size: 42,
-                    color: AppColors.error,
+                    color: context.appColor(AppColors.error),
                   ),
                   const SizedBox(height: 18),
-                  const Text(
+                  Text(
                     'No fue posible cargar el inicio',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: context.appColor(AppColors.textPrimary),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: context.appColor(AppColors.textSecondary),
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -683,7 +690,7 @@ class _ParentHomeErrorState extends StatelessWidget {
 
 String _greetingForTime() {
   final hour = DateTime.now().hour;
-  if (hour < 12) return 'Buenos dias';
+  if (hour < 12) return 'Buenos días';
   if (hour < 19) return 'Buenas tardes';
   return 'Buenas noches';
 }

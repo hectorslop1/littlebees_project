@@ -24,6 +24,7 @@ import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/full_screen_image_viewer.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_empty_state.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_error_state.dart';
 import '../../../shared/models/message_model.dart';
 import '../../auth/application/auth_provider.dart';
@@ -584,7 +585,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 icon: const Icon(LucideIcons.phone, size: 22),
                 onPressed: _makeVoiceCall,
                 tooltip: 'Llamar',
-                visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                visualDensity: const VisualDensity(
+                  horizontal: -2,
+                  vertical: -2,
+                ),
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 100.ms)
@@ -593,7 +597,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 icon: const Icon(LucideIcons.video, size: 22),
                 onPressed: _makeVideoCall,
                 tooltip: 'Videollamada',
-                visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+                visualDensity: const VisualDensity(
+                  horizontal: -2,
+                  vertical: -2,
+                ),
               )
               .animate()
               .fadeIn(duration: 300.ms, delay: 200.ms)
@@ -634,54 +641,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: _showCallHistory
           ? Column(
-        children: [
-          Expanded(
-            child: _showCallHistory
-                ? messagesAsync.when(
-                    data: (messages) =>
-                        _buildCallHistory(messages, currentUser?.id),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => LBErrorState(
-                      title: tr.tr('errorLoadingData'),
-                      message: error.toString(),
-                      onRetry: () => ref.refresh(
-                        realtimeMessagingProvider(widget.conversationId),
-                      ),
-                    ),
-                  )
-                : messagesAsync.when(
-                    data: (messages) {
-                      final visibleMessages = _filterMessages(messages);
-                      return visibleMessages.isEmpty
-                          ? LBEmptyState(
-                              icon: LucideIcons.messageSquare,
-                              title: _searchQuery.isEmpty
-                                  ? tr.tr('noMessages')
-                                  : 'Sin resultados',
-                              message: _searchQuery.isEmpty
-                                  ? tr.tr('noMessagesMsg')
-                                  : 'No encontramos mensajes con ese texto.',
-                            )
-                          : _buildMessagesList(
-                              visibleMessages,
-                              currentUser?.id,
-                            );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => LBErrorState(
-                      title: tr.tr('errorLoadingData'),
-                      message: error.toString(),
-                      onRetry: () => ref.refresh(
-                        realtimeMessagingProvider(widget.conversationId),
-                      ),
-                    ),
-                  ),
-          ),
-          if (!_showCallHistory) _buildInputBar(),
-        ],
-      )
+              children: [
+                Expanded(
+                  child: _showCallHistory
+                      ? messagesAsync.when(
+                          data: (messages) =>
+                              _buildCallHistory(messages, currentUser?.id),
+                          loading: () => const LBLoadingState(
+                            layout: LBLoadingLayout.list,
+                          ),
+                          error: (error, _) => LBErrorState(
+                            title: tr.tr('errorLoadingData'),
+                            message: error.toString(),
+                            onRetry: () => ref.refresh(
+                              realtimeMessagingProvider(widget.conversationId),
+                            ),
+                          ),
+                        )
+                      : messagesAsync.when(
+                          data: (messages) {
+                            final visibleMessages = _filterMessages(messages);
+                            return visibleMessages.isEmpty
+                                ? LBEmptyState(
+                                    icon: LucideIcons.messageSquare,
+                                    title: _searchQuery.isEmpty
+                                        ? tr.tr('noMessages')
+                                        : 'Sin resultados',
+                                    message: _searchQuery.isEmpty
+                                        ? tr.tr('noMessagesMsg')
+                                        : 'No encontramos mensajes con ese texto.',
+                                  )
+                                : _buildMessagesList(
+                                    visibleMessages,
+                                    currentUser?.id,
+                                  );
+                          },
+                          loading: () => const LBLoadingState(
+                            layout: LBLoadingLayout.list,
+                          ),
+                          error: (error, stack) => LBErrorState(
+                            title: tr.tr('errorLoadingData'),
+                            message: error.toString(),
+                            onRetry: () => ref.refresh(
+                              realtimeMessagingProvider(widget.conversationId),
+                            ),
+                          ),
+                        ),
+                ),
+                if (!_showCallHistory) _buildInputBar(),
+              ],
+            )
           : CircularMenu(
               key: _attachmentMenuKey,
               alignment: Alignment.bottomLeft,
@@ -719,7 +728,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               );
                       },
                       loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                          const LBLoadingState(layout: LBLoadingLayout.list),
                       error: (error, stack) => LBErrorState(
                         title: tr.tr('errorLoadingData'),
                         message: error.toString(),
@@ -744,7 +753,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       offset: Offset(0, 6),
                     ),
                   ],
-                  onTap: () => _selectAttachmentOption(_AttachmentOption.camera),
+                  onTap: () =>
+                      _selectAttachmentOption(_AttachmentOption.camera),
                 ),
                 CircularMenuItem(
                   icon: LucideIcons.image,
@@ -1259,6 +1269,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 child: TextField(
                   controller: _controller,
                   enabled: !_isRecordingVoiceNote,
+                  minLines: 1,
+                  maxLines: 5,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: _isRecordingVoiceNote
                         ? 'La nota de voz se enviará al detener la grabación'
@@ -1391,7 +1404,9 @@ class _ChatBubble extends StatelessWidget {
                   size: 14,
                   color: isRead
                       ? AppColors.success.withAlpha(200)
-                      : context.appColor(AppColors.textOnPrimary).withAlpha(200),
+                      : context
+                            .appColor(AppColors.textOnPrimary)
+                            .withAlpha(200),
                 ),
               ],
             ],
@@ -1542,7 +1557,9 @@ class _FileAttachmentMessage extends StatelessWidget {
                         : 'Toca para abrir',
                     style: TextStyle(
                       color: isMe
-                          ? context.appColor(AppColors.textOnPrimary).withAlpha(180)
+                          ? context
+                                .appColor(AppColors.textOnPrimary)
+                                .withAlpha(180)
                           : context.appColor(AppColors.textSecondary),
                       fontSize: 12,
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../child_profile/application/child_profile_provider.dart';
@@ -50,7 +51,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
+                          AppColors.primary.withAlpha(204),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(18),
@@ -60,7 +61,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withAlpha(51),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -86,7 +87,7 @@ class GroupDetailScreen extends ConsumerWidget {
                               group.name,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withAlpha(204),
                               ),
                             ),
                           ),
@@ -116,13 +117,13 @@ class GroupDetailScreen extends ConsumerWidget {
                               Icon(
                                 LucideIcons.graduationCap,
                                 size: 14,
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withAlpha(230),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 group.teacherNames!.join(', '),
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withAlpha(230),
                                   fontSize: 13,
                                 ),
                               ),
@@ -323,7 +324,7 @@ class GroupDetailScreen extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.detail),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -376,7 +377,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withAlpha(51),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

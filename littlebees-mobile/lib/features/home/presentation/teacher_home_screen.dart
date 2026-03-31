@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/date_selection_sheet.dart';
 import '../../auth/application/auth_provider.dart';
@@ -227,7 +228,7 @@ class TeacherHomeScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.home),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),

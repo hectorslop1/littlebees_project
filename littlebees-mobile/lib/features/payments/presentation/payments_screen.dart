@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../design_system/theme/app_colors.dart';
+import '../../../../design_system/widgets/lb_loading_state.dart';
 import '../../../../design_system/widgets/compact_layout.dart';
 import '../../../../design_system/widgets/lb_card.dart';
 import '../../../../shared/enums/enums.dart';
@@ -50,7 +51,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           child: paymentsAsync.when(
             data: (payments) =>
                 _buildContent(context, payments, canPayFromThisRole),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const LBLoadingState(layout: LBLoadingLayout.cards),
             error: (error, _) => _buildErrorState(context, ref, error),
           ),
         ),

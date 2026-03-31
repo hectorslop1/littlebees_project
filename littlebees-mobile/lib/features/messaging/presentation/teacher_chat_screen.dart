@@ -205,7 +205,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
                         Icon(
                           LucideIcons.messageSquare,
                           size: 64,
-                          color: AppColors.textSecondary.withOpacity(0.3),
+                          color: AppColors.textSecondary.withAlpha(77),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -274,7 +274,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
       child: Row(
         children: [
           Expanded(
-            child: Divider(color: AppColors.textSecondary.withOpacity(0.2)),
+            child: Divider(color: AppColors.textSecondary.withAlpha(51)),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -288,7 +288,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
             ),
           ),
           Expanded(
-            child: Divider(color: AppColors.textSecondary.withOpacity(0.2)),
+            child: Divider(color: AppColors.textSecondary.withAlpha(51)),
           ),
         ],
       ),
@@ -327,7 +327,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withAlpha(13),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   ),
@@ -360,7 +360,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
                     DateFormat('h:mm a').format(message.createdAt),
                     style: TextStyle(
                       color: isMe
-                          ? Colors.white.withOpacity(0.7)
+                          ? Colors.white.withAlpha(179)
                           : AppColors.textSecondary,
                       fontSize: 11,
                     ),
@@ -382,7 +382,7 @@ class _TeacherChatScreenState extends ConsumerState<TeacherChatScreen> {
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),

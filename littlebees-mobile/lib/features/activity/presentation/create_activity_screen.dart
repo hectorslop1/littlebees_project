@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/services/file_upload_service.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../child_profile/application/child_profile_provider.dart';
@@ -478,9 +479,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                               16,
                                             ),
                                             border: Border.all(
-                                            color: AppColors.border,
+                                              color: AppColors.border,
+                                            ),
                                           ),
-                                        ),
                                           child: Text(
                                             'No hay niños asignados a este grupo todavía.',
                                             style: TextStyle(
@@ -510,7 +511,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                           selectedChild?['id'] as String?;
                                       final selectedChildPhotoUrl =
                                           (selectedChild?['photoUrl']
-                                                  as String?) ??
+                                              as String?) ??
                                           (selectedChildId != null
                                               ? childPhotoIndex[selectedChildId]
                                               : null);
@@ -807,7 +808,8 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                   ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () =>
+                  const LBLoadingState(layout: LBLoadingLayout.detail),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../home/application/home_providers.dart';
 import '../application/child_profile_provider.dart';
 import '../domain/child_profile_model.dart';
@@ -72,7 +73,7 @@ class ChildProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.detail),
           error: (error, _) => _ChildProfileErrorState(
             message: '$error',
             onRetry: () => ref.refresh(childProfileProvider(childId)),
@@ -123,7 +124,10 @@ class _ProfileHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: context.isDark
                       ? context.appColor(AppColors.primarySurface)
@@ -143,11 +147,14 @@ class _ProfileHero extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: context.appColor(AppColors.surface).withAlpha(
-                    context.isDark ? 255 : 220,
-                  ),
+                  color: context
+                      .appColor(AppColors.surface)
+                      .withAlpha(context.isDark ? 255 : 220),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -224,9 +231,9 @@ class _HeroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: context.appColor(AppColors.surface).withAlpha(
-          context.isDark ? 255 : 220,
-        ),
+        color: context
+            .appColor(AppColors.surface)
+            .withAlpha(context.isDark ? 255 : 220),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: context.isDark
@@ -350,7 +357,8 @@ class _MedicalSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final medical = child.medicalInfo;
-    final hasMedicalData = medical.allergies.isNotEmpty ||
+    final hasMedicalData =
+        medical.allergies.isNotEmpty ||
         medical.conditions.isNotEmpty ||
         medical.medications.isNotEmpty ||
         (medical.bloodType?.isNotEmpty ?? false) ||
@@ -409,8 +417,10 @@ class _MedicalSection extends StatelessWidget {
                 icon: LucideIcons.stethoscope,
                 title: 'Doctor responsable',
                 value: [
-                  if (medical.doctorName?.isNotEmpty ?? false) medical.doctorName!,
-                  if (medical.doctorPhone?.isNotEmpty ?? false) medical.doctorPhone!,
+                  if (medical.doctorName?.isNotEmpty ?? false)
+                    medical.doctorName!,
+                  if (medical.doctorPhone?.isNotEmpty ?? false)
+                    medical.doctorPhone!,
                 ].join(' • '),
                 accent: AppColors.info,
               ),
@@ -692,9 +702,9 @@ class _ChipSection extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: context.appColor(AppColors.surface).withAlpha(
-                        context.isDark ? 255 : 220,
-                      ),
+                      color: context
+                          .appColor(AppColors.surface)
+                          .withAlpha(context.isDark ? 255 : 220),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
                         color: context.appColor(AppColors.divider),
@@ -740,11 +750,7 @@ class _SectionEmptyState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 30,
-            color: context.appColor(AppColors.textTertiary),
-          ),
+          Icon(icon, size: 30, color: context.appColor(AppColors.textTertiary)),
           const SizedBox(height: 12),
           Text(
             title,
@@ -771,10 +777,7 @@ class _SectionEmptyState extends StatelessWidget {
 }
 
 class _ChildProfileErrorState extends StatelessWidget {
-  const _ChildProfileErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ChildProfileErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -809,10 +812,7 @@ class _ChildProfileErrorState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Reintentar'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
             ],
           ),
         ),
@@ -844,7 +844,9 @@ String _formatShortDate(DateTime date) {
 
 _GenderPalette _paletteForGender(String gender) {
   final normalized = gender.toLowerCase();
-  if (normalized == 'female' || normalized == 'femenino' || normalized == 'girl') {
+  if (normalized == 'female' ||
+      normalized == 'femenino' ||
+      normalized == 'girl') {
     return const _GenderPalette(
       surface: Color(0xFFFBE8EF),
       accent: Color(0xFFD88CA6),

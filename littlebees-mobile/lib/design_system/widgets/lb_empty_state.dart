@@ -31,10 +31,14 @@ class LBEmptyState extends StatelessWidget {
                   width: 88,
                   height: 88,
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: context.appColor(AppColors.surfaceVariant),
                     borderRadius: BorderRadius.circular(28),
                   ),
-                  child: Icon(icon, size: 42, color: AppColors.textTertiary),
+                  child: Icon(
+                    icon,
+                    size: 42,
+                    color: context.appColor(AppColors.textTertiary),
+                  ),
                 )
                 .animate()
                 .fadeIn(duration: 500.ms)
@@ -50,7 +54,7 @@ class LBEmptyState extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                   ),
                   textAlign: TextAlign.center,
                 )
@@ -63,7 +67,7 @@ class LBEmptyState extends StatelessWidget {
             Text(
                   message,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../routing/route_names.dart';
@@ -145,7 +146,8 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () =>
+                    const LBLoadingState(layout: LBLoadingLayout.list),
                 error: (error, _) => _ErrorState(
                   message: '$error',
                   onRetry: () => ref.invalidate(excusesListProvider(filters)),
@@ -199,10 +201,7 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _ExcuseCard extends StatelessWidget {
-  const _ExcuseCard({
-    required this.excuse,
-    required this.onTap,
-  });
+  const _ExcuseCard({required this.excuse, required this.onTap});
 
   final Excuse excuse;
   final VoidCallback onTap;
@@ -219,7 +218,10 @@ class _ExcuseCard extends StatelessWidget {
       ExcuseStatus.approved => LucideIcons.badgeCheck,
       ExcuseStatus.rejected => LucideIcons.xCircle,
     };
-    final dateLabel = DateFormat('dd MMM', 'es_MX').format(excuse.date.toLocal());
+    final dateLabel = DateFormat(
+      'dd MMM',
+      'es_MX',
+    ).format(excuse.date.toLocal());
 
     return LBCard(
       onTap: onTap,
@@ -367,10 +369,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 20),
           const Text(
             'No hay justificantes para mostrar',
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-            ),
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -390,10 +389,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -426,10 +422,7 @@ class _ErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar'),
-            ),
+            ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
           ],
         ),
       ),

@@ -12,6 +12,7 @@ class LBButton extends StatefulWidget {
   final LBButtonVariant variant;
   final bool isFullWidth;
   final Widget? icon;
+  final bool isLoading;
 
   const LBButton({
     super.key,
@@ -20,6 +21,7 @@ class LBButton extends StatefulWidget {
     this.variant = LBButtonVariant.primary,
     this.isFullWidth = true,
     this.icon,
+    this.isLoading = false,
   });
 
   @override
@@ -75,44 +77,68 @@ class _LBButtonState extends State<LBButton>
     Border? border;
     List<BoxShadow>? shadows;
 
-    final isDisabled = widget.onPressed == null;
+    final isDisabled = widget.onPressed == null || widget.isLoading;
 
     switch (widget.variant) {
       case LBButtonVariant.primary:
-        bgColor = isDisabled ? AppColors.surfaceVariant : AppColors.primary;
+        bgColor = isDisabled
+            ? context.appColor(AppColors.surfaceVariant)
+            : context.appColor(AppColors.primary);
         textColor = isDisabled
-            ? AppColors.textTertiary
-            : AppColors.textOnPrimary;
+            ? context.appColor(AppColors.textTertiary)
+            : context.appColor(AppColors.textOnPrimary);
         shadows = isDisabled ? null : [AppShadows.shadowGlow];
         break;
       case LBButtonVariant.secondary:
         bgColor = isDisabled
-            ? AppColors.surfaceVariant
-            : AppColors.secondarySurface;
-        textColor = isDisabled ? AppColors.textTertiary : AppColors.secondary;
+            ? context.appColor(AppColors.surfaceVariant)
+            : context.appColor(AppColors.secondarySurface);
+        textColor = isDisabled
+            ? context.appColor(AppColors.textTertiary)
+            : context.appColor(AppColors.secondary);
         break;
       case LBButtonVariant.outline:
         bgColor = Colors.transparent;
-        textColor = isDisabled ? AppColors.textTertiary : AppColors.primary;
+        textColor = isDisabled
+            ? context.appColor(AppColors.textTertiary)
+            : context.appColor(AppColors.primary);
         border = Border.all(
-          color: isDisabled ? AppColors.border : AppColors.primary,
+          color: isDisabled
+              ? context.appColor(AppColors.border)
+              : context.appColor(AppColors.primary),
           width: 1.5,
         );
         break;
       case LBButtonVariant.text:
         bgColor = Colors.transparent;
-        textColor = isDisabled ? AppColors.textTertiary : AppColors.textPrimary;
+        textColor = isDisabled
+            ? context.appColor(AppColors.textTertiary)
+            : context.appColor(AppColors.textPrimary);
         break;
     }
 
-    Widget content = Row(
-      mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (widget.icon != null) ...[widget.icon!, const SizedBox(width: 8)],
-        Text(widget.text, style: textTheme.copyWith(color: textColor)),
-      ],
-    );
+    Widget content = widget.isLoading
+        ? SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(textColor),
+            ),
+          )
+        : Row(
+            mainAxisSize: widget.isFullWidth
+                ? MainAxisSize.max
+                : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.icon != null) ...[
+                widget.icon!,
+                const SizedBox(width: 8),
+              ],
+              Text(widget.text, style: textTheme.copyWith(color: textColor)),
+            ],
+          );
 
     return GestureDetector(
       onTapDown: _onTapDown,

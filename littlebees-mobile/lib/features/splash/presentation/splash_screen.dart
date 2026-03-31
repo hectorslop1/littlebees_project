@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -116,25 +116,39 @@ class _SplashScreenState extends State<SplashScreen>
 
               const SizedBox(height: 60),
 
-              // Loading indicator
-              SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primary.withAlpha(150),
+              // Progress indicator
+              Column(
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            minHeight: 3,
+                            backgroundColor: context.appColor(
+                              AppColors.surfaceVariant,
+                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary.withAlpha(180),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Preparando tu experiencia...',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: context.appColor(AppColors.textTertiary),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
                   )
-                  .animate(onPlay: (controller) => controller.repeat())
+                  .animate()
                   .fadeIn(duration: 600.ms, delay: 800.ms)
-                  .scale(
-                    begin: const Offset(0.8, 0.8),
-                    end: const Offset(1.0, 1.0),
-                    duration: 600.ms,
-                    delay: 800.ms,
-                  ),
+                  .slideY(begin: 0.2, end: 0, duration: 600.ms, delay: 800.ms),
             ],
           ),
         ),

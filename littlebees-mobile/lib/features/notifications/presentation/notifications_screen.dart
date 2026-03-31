@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/lb_loading_state.dart';
 import '../../../routing/route_names.dart';
 import '../../../shared/models/notification_model.dart';
 import '../application/notifications_provider.dart';
@@ -76,7 +77,7 @@ class NotificationsScreen extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const LBLoadingState(layout: LBLoadingLayout.list),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -119,18 +120,17 @@ class NotificationsScreen extends ConsumerWidget {
 }
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({
-    required this.notification,
-    required this.onTap,
-  });
+  const _NotificationCard({required this.notification, required this.onTap});
 
   final AppNotification notification;
   final Future<void> Function() onTap;
 
   @override
   Widget build(BuildContext context) {
-    final createdAt = DateFormat('dd MMM yyyy, HH:mm', 'es_MX')
-        .format(notification.createdAt.toLocal());
+    final createdAt = DateFormat(
+      'dd MMM yyyy, HH:mm',
+      'es_MX',
+    ).format(notification.createdAt.toLocal());
 
     return Material(
       color: Colors.transparent,
@@ -141,13 +141,13 @@ class _NotificationCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: notification.read
-                ? Colors.white
-                : AppColors.primary.withValues(alpha: 0.08),
+                ? context.appColor(AppColors.surface)
+                : context.appColor(AppColors.primary).withAlpha(20),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: notification.read
-                  ? Colors.grey.withValues(alpha: 0.18)
-                  : AppColors.primary.withValues(alpha: 0.35),
+                  ? context.appColor(AppColors.border)
+                  : context.appColor(AppColors.primary).withAlpha(90),
             ),
           ),
           child: Row(
@@ -158,7 +158,9 @@ class _NotificationCard extends StatelessWidget {
                 height: 10,
                 margin: const EdgeInsets.only(top: 6),
                 decoration: BoxDecoration(
-                  color: notification.read ? Colors.transparent : AppColors.primary,
+                  color: notification.read
+                      ? Colors.transparent
+                      : AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -179,7 +181,7 @@ class _NotificationCard extends StatelessWidget {
                       notification.body,
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: context.appColor(AppColors.textSecondary),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -188,7 +190,7 @@ class _NotificationCard extends StatelessWidget {
                         Icon(
                           LucideIcons.clock3,
                           size: 14,
-                          color: AppColors.textSecondary,
+                          color: context.appColor(AppColors.textSecondary),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -196,7 +198,7 @@ class _NotificationCard extends StatelessWidget {
                             createdAt,
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.appColor(AppColors.textSecondary),
                             ),
                           ),
                         ),

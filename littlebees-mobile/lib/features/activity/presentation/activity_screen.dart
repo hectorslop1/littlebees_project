@@ -9,6 +9,7 @@ import '../application/activity_controller.dart';
 import 'widgets/photo_grid.dart';
 import '../../../../core/i18n/app_translations.dart';
 import '../../../../design_system/widgets/lb_empty_state.dart';
+import '../../../../design_system/widgets/lb_loading_state.dart';
 import '../../../../design_system/widgets/lb_error_state.dart';
 import '../../../../design_system/widgets/lb_avatar.dart';
 import '../../../../core/utils/resolve_image_url.dart';
@@ -262,7 +263,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         );
                       },
                       loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                          const LBLoadingState(layout: LBLoadingLayout.cards),
                       error: (error, _) => LBErrorState(
                         title: tr.tr('errorLoadingPhotos'),
                         message: tr.tr('errorLoadingPhotosMsg'),
@@ -318,7 +319,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         );
                       },
                       loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                          const LBLoadingState(layout: LBLoadingLayout.list),
                       error: (error, _) => LBErrorState(
                         title: 'No fue posible cargar la bitácora',
                         message:
