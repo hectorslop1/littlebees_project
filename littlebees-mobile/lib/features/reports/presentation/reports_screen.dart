@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../application/reports_provider.dart';
@@ -44,45 +45,15 @@ class ReportsScreen extends ConsumerWidget {
                 await ref.read(reportsSummaryProvider.future);
               },
               child: ListView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFF7ECCE),
-                          Color(0xFFFFFFFF),
-                          Color(0xFFEFF4FA),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Reportes operativos',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Consulta el pulso del día: asistencia, actividad registrada y panorama de pagos.',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            height: 1.45,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const CompactHeroCard(
+                    eyebrow: 'Resumen operativo',
+                    title: 'Reportes operativos',
+                    subtitle:
+                        'Consulta el pulso del dia: asistencia, actividad registrada y panorama de pagos.',
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(

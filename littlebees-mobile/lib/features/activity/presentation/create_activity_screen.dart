@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/services/file_upload_service.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../child_profile/application/child_profile_provider.dart';
 import '../../groups/application/groups_provider.dart';
@@ -260,11 +261,90 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     final groupsAsync = ref.watch(groupsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Registrar Actividad'),
         elevation: 0,
         backgroundColor: Colors.transparent,
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.textPrimary,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(16),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Listo para guardar',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _selectedActivityType == null
+                          ? 'Completa grupo, alumno y tipo.'
+                          : 'Se guardara en la bitacora del nino.',
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(190),
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isSubmitting ? null : _submitActivity,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(LucideIcons.checkCircle2, size: 18),
+                  label: Text(
+                    _isSubmitting ? 'Guardando...' : 'Guardar',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: SafeArea(
         child: Stack(
@@ -301,107 +381,40 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                 }
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 130),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFF8EBC8), Color(0xFFE7F0FB)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(10),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      CompactHeroCard(
+                        eyebrow: 'Bitacora del aula',
+                        eyebrowIcon: LucideIcons.sparkles,
+                        title: 'Comparte el dia en tiempo real',
+                        subtitle:
+                            'Cada registro alimenta la experiencia del padre en Inicio. Manten la bitacora viva con momentos claros y utiles.',
+                        child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(190),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    LucideIcons.sparkles,
-                                    size: 14,
-                                    color: AppColors.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Bitácora del aula',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ],
+                            Expanded(
+                              child: CompactMetricTile(
+                                icon: LucideIcons.layoutGrid,
+                                label: 'Grupos',
+                                value: '${groups.length}',
+                                accent: AppColors.primary,
                               ),
                             ),
-                            const SizedBox(height: 18),
-                            Text(
-                              'Comparte el día en tiempo real',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: CompactMetricTile(
+                                icon: LucideIcons.image,
+                                label: 'Fotos',
+                                value: '${_selectedImages.length}',
+                                accent: AppColors.secondary,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Cada registro alimenta la experiencia del padre en Inicio. Mantén la bitácora viva con momentos claros y útiles.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.45,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _ActivityHeroMetric(
-                                    icon: LucideIcons.layoutGrid,
-                                    label: 'Grupos',
-                                    value: '${groups.length}',
-                                    tint: AppColors.primarySurface,
-                                    iconColor: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _ActivityHeroMetric(
-                                    icon: LucideIcons.image,
-                                    label: 'Fotos',
-                                    value: '${_selectedImages.length}',
-                                    tint: AppColors.secondarySurface,
-                                    iconColor: AppColors.secondary,
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _ActivitySectionCard(
+                      const SizedBox(height: 16),
+                      CompactSectionCard(
                         title: 'Grupo y niño',
                         subtitle:
                             'Elige primero el salón y después al alumno para registrar correctamente la actividad.',
@@ -414,7 +427,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                 labelText: 'Grupo',
                                 hintText: 'Selecciona un grupo',
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -433,7 +446,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                               },
                             ),
                             if (_selectedGroupId != null) ...[
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                               Consumer(
                                 builder: (context, ref, _) {
                                   final groupDetailAsync = ref.watch(
@@ -465,9 +478,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                               16,
                                             ),
                                             border: Border.all(
-                                              color: AppColors.border,
-                                            ),
+                                            color: AppColors.border,
                                           ),
+                                        ),
                                           child: Text(
                                             'No hay niños asignados a este grupo todavía.',
                                             style: TextStyle(
@@ -511,7 +524,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                               hintText: 'Selecciona un niño',
                                               border: OutlineInputBorder(
                                                 borderRadius:
-                                                    BorderRadius.circular(16),
+                                                    BorderRadius.circular(14),
                                               ),
                                               filled: true,
                                               fillColor: Colors.white,
@@ -537,14 +550,14 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                               });
                                             },
                                           ),
-                                          const SizedBox(height: 14),
+                                          const SizedBox(height: 12),
                                           Container(
                                             width: double.infinity,
-                                            padding: const EdgeInsets.all(16),
+                                            padding: const EdgeInsets.all(14),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFF9FBFD),
                                               borderRadius:
-                                                  BorderRadius.circular(18),
+                                                  BorderRadius.circular(16),
                                               border: Border.all(
                                                 color: AppColors.border,
                                               ),
@@ -585,7 +598,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                                       Text(
                                                         selectedChildName,
                                                         style: TextStyle(
-                                                          fontSize: 16,
+                                                          fontSize: 15,
                                                           fontWeight:
                                                               FontWeight.w700,
                                                           color: AppColors
@@ -632,8 +645,8 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _ActivitySectionCard(
+                      const SizedBox(height: 16),
+                      CompactSectionCard(
                         title: 'Tipo de actividad',
                         subtitle: _activityHelperText(_selectedActivityType),
                         icon: LucideIcons.sparkles,
@@ -644,9 +657,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                mainAxisSpacing: 10,
-                                crossAxisSpacing: 10,
-                                childAspectRatio: 1.55,
+                                mainAxisSpacing: 8,
+                                crossAxisSpacing: 8,
+                                childAspectRatio: 2.3,
                               ),
                           itemBuilder: (context, index) {
                             final type = _activityTypes[index];
@@ -654,87 +667,42 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                             final isSelected = _selectedActivityType == id;
                             final accent = _activityAccent(id);
 
-                            return GestureDetector(
+                            return CompactChoiceTile(
+                              icon: type['icon'] as IconData,
+                              label: type['label'] as String,
+                              selected: isSelected,
+                              accent: accent,
                               onTap: () {
                                 setState(() {
                                   _selectedActivityType = id;
                                 });
                               },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? accent.withAlpha(28)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? accent
-                                        : AppColors.border,
-                                    width: isSelected ? 1.5 : 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? accent
-                                            : accent.withAlpha(26),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        type['icon'] as IconData,
-                                        size: 18,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : accent,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      type['label'] as String,
-                                      style: TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
                             );
                           },
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _ActivitySectionCard(
+                      const SizedBox(height: 16),
+                      CompactSectionCard(
                         title: 'Notas para familias',
                         subtitle:
                             'Escribe un resumen breve, claro y útil de lo que pasó.',
                         icon: LucideIcons.fileText,
                         child: TextField(
                           controller: _notesController,
-                          maxLines: 5,
+                          maxLines: 4,
                           decoration: InputDecoration(
                             hintText:
                                 'Ej. Santiago se durmió media hora y despertó de muy buen ánimo.',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             filled: true,
                             fillColor: Colors.white,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _ActivitySectionCard(
+                      const SizedBox(height: 16),
+                      CompactSectionCard(
                         title: 'Fotos del momento',
                         subtitle:
                             'Adjunta evidencia visual para enriquecer la bitácora del día.',
@@ -753,10 +721,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                       foregroundColor: AppColors.primary,
                                       elevation: 0,
                                       padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
+                                        vertical: 14,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
                                   ),
@@ -771,10 +739,10 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                       foregroundColor: AppColors.textPrimary,
                                       side: BorderSide(color: AppColors.border),
                                       padding: const EdgeInsets.symmetric(
-                                        vertical: 16,
+                                        vertical: 14,
                                       ),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
                                   ),
@@ -782,9 +750,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                               ],
                             ),
                             if (_selectedImages.isNotEmpty) ...[
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                               SizedBox(
-                                height: 108,
+                                height: 92,
                                 child: ListView.builder(
                                   scrollDirection: Axis.horizontal,
                                   itemCount: _selectedImages.length,
@@ -795,12 +763,12 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                         children: [
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(
-                                              16,
+                                              14,
                                             ),
                                             child: Image.file(
                                               File(_selectedImages[index].path),
-                                              width: 108,
-                                              height: 108,
+                                              width: 92,
+                                              height: 92,
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -832,82 +800,6 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                                 ),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.textPrimary,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(16),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Listo para guardar',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'El registro se guardará en la bitácora del niño y podrá reflejarse en la experiencia del padre.',
-                              style: TextStyle(
-                                color: Colors.white.withAlpha(200),
-                                height: 1.45,
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : _submitActivity,
-                                icon: _isSubmitting
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(LucideIcons.checkCircle2),
-                                label: Text(
-                                  _isSubmitting
-                                      ? 'Guardando...'
-                                      : 'Guardar actividad',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 18,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -974,142 +866,6 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ActivityHeroMetric extends StatelessWidget {
-  const _ActivityHeroMetric({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.tint,
-    required this.iconColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color tint;
-  final Color iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(180),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: tint,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivitySectionCard extends StatelessWidget {
-  const _ActivitySectionCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.child,
-  });
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: AppColors.primary, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          child,
-        ],
       ),
     );
   }

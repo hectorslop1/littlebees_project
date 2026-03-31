@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../design_system/theme/app_colors.dart';
+import '../../../../design_system/widgets/compact_layout.dart';
 import '../application/activity_controller.dart';
 import 'widgets/photo_grid.dart';
 import '../../../../core/i18n/app_translations.dart';
@@ -74,87 +75,33 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: context.isDark
-                        ? const [Color(0xFF1E1A11), Color(0xFF1C1F24)]
-                        : const [Color(0xFFF8EBC8), Color(0xFFE8F0FB)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+              child: CompactHeroCard(
+                eyebrow: isTeacher ? 'Jornada del aula' : 'Actividad compartida',
+                title: isTeacher
+                    ? 'Todo lo que registras hoy, en un solo lugar'
+                    : 'Momentos y registros del dia',
+                subtitle: isTeacher
+                    ? 'Usa Jornada para revisar registros y Galeria para compartir evidencia visual con las familias.'
+                    : 'Consulta primero los registros mas recientes y despues las fotos del dia.',
+                child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(
-                          context.isDark ? 25 : 180,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        isTeacher ? 'Jornada del aula' : 'Actividad compartida',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: context.appColor(AppColors.primary),
-                        ),
+                    Expanded(
+                      child: CompactMetricTile(
+                        icon: LucideIcons.clipboardList,
+                        label: 'Registros',
+                        value: '$logsCount',
+                        accent: AppColors.primary,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      isTeacher
-                          ? 'Todo lo que registras hoy, en un solo lugar'
-                          : 'Momentos y registros del día',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        height: 1.05,
-                        color: context.appColor(AppColors.textPrimary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: CompactMetricTile(
+                        icon: LucideIcons.image,
+                        label: 'Fotos',
+                        value: '$photosCount',
+                        accent: AppColors.info,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isTeacher
-                          ? 'Usa Jornada para revisar registros y Galería para compartir evidencia visual con las familias.'
-                          : 'Consulta primero los registros más recientes y después las fotos del día.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.45,
-                        color: context.appColor(AppColors.textSecondary),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ActivityStatPill(
-                            icon: LucideIcons.clipboardList,
-                            label: 'Registros',
-                            value: '$logsCount',
-                            accent: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _ActivityStatPill(
-                            icon: LucideIcons.image,
-                            label: 'Fotos',
-                            value: '$photosCount',
-                            accent: AppColors.info,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -162,15 +109,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
+                horizontal: 18.0,
                 vertical: 2.0,
               ),
               child: Container(
                 decoration: BoxDecoration(
                   color: context.appColor(AppColors.surfaceVariant),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(3),
                 child: Row(
                   children: [
                     Expanded(
@@ -178,12 +125,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onTap: () => setState(() => _showGallery = false),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 7),
                           decoration: BoxDecoration(
                             color: !_showGallery
                                 ? context.appColor(AppColors.surface)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: !_showGallery
                                 ? [
                                     BoxShadow(
@@ -215,12 +162,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onTap: () => setState(() => _showGallery = true),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(vertical: 7),
                           decoration: BoxDecoration(
                             color: _showGallery
                                 ? context.appColor(AppColors.surface)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: _showGallery
                                 ? [
                                     BoxShadow(
@@ -297,10 +244,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             ref.invalidate(activityFeedProvider);
                           },
                           child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                            padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
                             itemCount: items.length,
                             separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                             itemBuilder: (context, index) {
                               final item = items[index];
                               final log = item.log;
@@ -310,15 +257,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                               final photoUrls = _extractPhotoUrls(metadata);
 
                               return Container(
-                                padding: const EdgeInsets.all(18),
+                                padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(18),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withAlpha(8),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 8),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 6),
                                     ),
                                   ],
                                 ),
@@ -346,7 +293,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                               Text(
                                                 item.childName,
                                                 style: TextStyle(
-                                                  fontSize: 16,
+                                                  fontSize: 15,
                                                   fontWeight: FontWeight.w700,
                                                   color: AppColors.textPrimary,
                                                 ),
@@ -365,8 +312,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                         ),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 6,
+                                            horizontal: 9,
+                                            vertical: 5,
                                           ),
                                           decoration: BoxDecoration(
                                             color: AppColors.primary.withAlpha(
@@ -381,7 +328,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                               activityType ?? log.type.value,
                                             ),
                                             style: const TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 11,
                                               fontWeight: FontWeight.w700,
                                               color: AppColors.primary,
                                             ),
@@ -389,11 +336,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 10),
                                     Text(
                                       log.title,
                                       style: TextStyle(
-                                        fontSize: 17,
+                                        fontSize: 15.5,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.textPrimary,
                                       ),
@@ -406,14 +353,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                         child: Text(
                                           log.description!,
                                           style: TextStyle(
-                                            height: 1.45,
+                                            fontSize: 13,
+                                            height: 1.35,
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
                                       ),
                                     if (photoUrls.isNotEmpty)
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 12),
+                                        padding: const EdgeInsets.only(top: 10),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -423,7 +371,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                               decoration: BoxDecoration(
                                                 color: AppColors.primarySurface,
                                                 borderRadius:
-                                                    BorderRadius.circular(16),
+                                                    BorderRadius.circular(14),
                                               ),
                                               child: Row(
                                                 children: [
@@ -447,9 +395,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                                 ],
                                               ),
                                             ),
-                                            const SizedBox(height: 10),
+                                            const SizedBox(height: 8),
                                             SizedBox(
-                                              height: 88,
+                                              height: 74,
                                               child: ListView.separated(
                                                 scrollDirection:
                                                     Axis.horizontal,
@@ -485,11 +433,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                                     child: ClipRRect(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            14,
+                                                            12,
                                                           ),
                                                       child: Image.network(
                                                         resolvedUrl,
-                                                        width: 104,
+                                                        width: 82,
                                                         fit: BoxFit.cover,
                                                         errorBuilder:
                                                             (
@@ -497,7 +445,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                                               error,
                                                               stackTrace,
                                                             ) => Container(
-                                                              width: 104,
+                                                              width: 82,
                                                               color: AppColors
                                                                   .primarySurface,
                                                               alignment:
@@ -582,63 +530,4 @@ List<String> _extractPhotoUrls(Map<String, dynamic> metadata) {
   }
 
   return urls;
-}
-
-class _ActivityStatPill extends StatelessWidget {
-  const _ActivityStatPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.accent,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(context.isDark ? 18 : 185),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: accent.withAlpha(24),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: accent, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: context.appColor(AppColors.textPrimary),
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: context.appColor(AppColors.textSecondary),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }

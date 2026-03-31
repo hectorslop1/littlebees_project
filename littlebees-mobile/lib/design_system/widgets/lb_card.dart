@@ -13,7 +13,7 @@ class LBCard extends StatefulWidget {
   const LBCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.padding = const EdgeInsets.all(AppSpacing.md),
     this.onTap,
   });
 
@@ -71,7 +71,7 @@ class _LBCardState extends State<LBCard> with SingleTickerProviderStateMixin {
         color: Theme.of(context).brightness == Brightness.dark
             ? const Color(0xFF1E1E1E)
             : AppColors.surface,
-        borderRadius: AppRadii.borderRadiusXl,
+        borderRadius: AppRadii.borderRadiusLg,
         boxShadow: Theme.of(context).brightness == Brightness.dark
             ? null
             : [AppShadows.shadowSm],

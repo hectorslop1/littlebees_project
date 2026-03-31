@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../../design_system/widgets/lb_card.dart';
 import '../../../routing/route_names.dart';
 import '../../../shared/enums/enums.dart';
@@ -57,26 +58,34 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: _HeroHeader(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: CompactHeroCard(
+                eyebrow: 'Centro de avisos',
                 title: canReview
-                    ? 'Pendientes que requieren revisión'
+                    ? 'Pendientes que requieren revision'
                     : authState.isTeacher
                     ? 'Avisos y justificantes de tus alumnos'
                     : 'Solicitudes y estado de tus justificantes',
                 subtitle: canReview
-                    ? 'Aprueba, rechaza y mantén informadas a familias y maestras.'
+                    ? 'Aprueba, rechaza y manten informadas a familias y maestras.'
                     : authState.isTeacher
-                    ? 'Aquí verás faltas, citas y avisos que impactan la operación del aula.'
+                    ? 'Aqui veras faltas, citas y avisos que impactan la operacion del aula.'
                     : 'Da seguimiento al estatus de cada justificante sin perder contexto.',
-                userName: user?.firstName ?? 'Familia',
+                trailing: Text(
+                  user?.firstName ?? 'Familia',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
             SizedBox(
               height: 52,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
                 children: [
                   _FilterChip(
                     label: 'Todos',
@@ -130,7 +139,7 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
                       await ref.read(excusesListProvider(filters).future);
                     },
                     child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                       itemCount: excuses.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
@@ -155,89 +164,6 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _HeroHeader extends StatelessWidget {
-  const _HeroHeader({
-    required this.title,
-    required this.subtitle,
-    required this.userName,
-  });
-
-  final String title;
-  final String subtitle;
-  final String userName;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF7ECCE), Color(0xFFFFFFFF), Color(0xFFEFF5F7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 24,
-            offset: Offset(0, 14),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(200),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              'Centro de avisos',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Hola, $userName',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 28,
-              height: 1.05,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.45,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }

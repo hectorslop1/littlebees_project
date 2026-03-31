@@ -58,9 +58,9 @@ class AppThemeDark {
       cardTheme: CardThemeData(
         color: darkSurface,
         elevation: 0,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusXl),
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusLg),
       ),
 
       // Bottom nav
@@ -71,7 +71,7 @@ class AppThemeDark {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: darkSurface,
-        indicatorColor: darkPrimary.withOpacity(0.2),
+        indicatorColor: darkPrimary.withValues(alpha: 0.2),
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -97,6 +97,10 @@ class AppThemeDark {
         fillColor: darkSurfaceVariant,
         hintStyle: const TextStyle(color: darkTextTertiary),
         labelStyle: const TextStyle(color: darkTextSecondary),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppRadii.borderRadiusMd,
           borderSide: BorderSide.none,
@@ -162,7 +166,7 @@ class AppThemeDark {
         backgroundColor: darkSurfaceVariant,
         labelStyle: const TextStyle(color: darkTextPrimary),
         secondaryLabelStyle: const TextStyle(color: darkTextSecondary),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusMd),
         side: BorderSide.none,
       ),
@@ -194,13 +198,17 @@ class AppThemeDark {
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: darkSurface,
         surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: AppRadii.xl),
+        ),
+        showDragHandle: true,
       ),
 
       // Dialog
       dialogTheme: DialogThemeData(
         backgroundColor: darkSurface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusXl),
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusLg),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           color: darkTextPrimary,
           fontSize: 20,
@@ -222,7 +230,7 @@ class AppThemeDark {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return darkPrimary.withOpacity(0.3);
+            return darkPrimary.withValues(alpha: 0.3);
           }
           return darkSurfaceVariant;
         }),

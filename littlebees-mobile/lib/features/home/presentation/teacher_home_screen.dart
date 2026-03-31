@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../auth/application/auth_provider.dart';
 import '../application/home_providers.dart';
 import '../../groups/application/groups_provider.dart';
@@ -43,7 +44,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                 ref.invalidate(teacherDashboardProvider);
               },
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 children: [
                   _TeacherTopBar(
                     name: authState.user?.firstName ?? 'Maestra',
@@ -51,124 +52,58 @@ class TeacherHomeScreen extends ConsumerWidget {
                     onNotificationsTap: () => context.push('/notifications'),
                     onMessagesTap: () => context.push('/messages'),
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFF8EBC8), Color(0xFFE8F0FB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(10),
-                          blurRadius: 24,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 16),
+                  CompactHeroCard(
+                    eyebrow: 'Panel del aula',
+                    eyebrowIcon: LucideIcons.sparkles,
+                    title: 'Tu salon, organizado y al dia',
+                    subtitle: groups.isEmpty
+                        ? 'Cuando tengas grupos asignados, aqui veras un resumen rapido de tu jornada.'
+                        : 'Revisa tus grupos, registra actividades y manten a las familias informadas en tiempo real.',
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(190),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                LucideIcons.sparkles,
-                                size: 14,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Panel del aula',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Tu salón, organizado y al día',
-                          style: TextStyle(
-                            fontSize: 28,
-                            height: 1.05,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          groups.isEmpty
-                              ? 'Cuando tengas grupos asignados, aquí verás un resumen rápido de tu jornada.'
-                              : 'Revisa tus grupos, registra actividades y mantén a las familias informadas en tiempo real.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.45,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
                         Row(
                           children: [
                             Expanded(
-                              child: _MetricCard(
+                              child: CompactMetricTile(
                                 icon: LucideIcons.layoutGrid,
                                 value: '${groups.length}',
                                 label: 'Grupos',
-                                tint: AppColors.primarySurface,
-                                iconColor: AppColors.primary,
+                                accent: AppColors.primary,
                                 onTap: () => context.push('/groups'),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: _MetricCard(
+                              child: CompactMetricTile(
                                 icon: LucideIcons.baby,
                                 value: '$totalStudents',
                                 label: tr.tr('students'),
-                                tint: AppColors.secondarySurface,
-                                iconColor: AppColors.secondary,
+                                accent: AppColors.secondary,
                                 onTap: () => context.push('/groups'),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Row(
                           children: [
                             Expanded(
-                              child: _MetricCard(
+                              child: CompactMetricTile(
                                 icon: LucideIcons.userCheck,
                                 value: '$presentCount',
                                 label: 'Presentes',
-                                tint: AppColors.success.withValues(alpha: 0.15),
-                                iconColor: AppColors.success,
+                                accent: AppColors.success,
                                 onTap: () => context.push('/activity'),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: _MetricCard(
+                              child: CompactMetricTile(
                                 icon: LucideIcons.fileCheck2,
                                 value: '$pendingExcuses',
                                 label: 'Justificantes',
-                                tint: AppColors.warning.withValues(alpha: 0.18),
-                                iconColor: AppColors.warning,
+                                accent: AppColors.warning,
                                 onTap: () => context.push('/excuses'),
                               ),
                             ),
@@ -177,7 +112,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -329,7 +264,7 @@ class _TeacherTopBar extends StatelessWidget {
               Text(
                 'Hola, $name',
                 style: const TextStyle(
-                  fontSize: 30,
+                  fontSize: 28,
                   height: 1,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -378,14 +313,14 @@ class _TeacherRoundButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: highlighted ? AppColors.primary : Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       elevation: highlighted ? 4 : 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         child: SizedBox(
-          width: 52,
-          height: 52,
+          width: 48,
+          height: 48,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -435,73 +370,6 @@ class _TeacherRoundButton extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.tint,
-    required this.iconColor,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color tint;
-  final Color iconColor;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withAlpha(190),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: tint,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, size: 18, color: iconColor),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _TeacherActionCard extends StatelessWidget {
   const _TeacherActionCard({
     required this.icon,
@@ -521,19 +389,19 @@ class _TeacherActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(8),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -544,19 +412,19 @@ class _TeacherActionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: accent.withAlpha(24),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: accent, size: 20),
+                    child: Icon(icon, color: accent, size: 18),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
@@ -565,7 +433,7 @@ class _TeacherActionCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       height: 1.35,
                       color: AppColors.textSecondary,
                     ),
@@ -595,38 +463,38 @@ class _TeacherGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(8),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   LucideIcons.users,
                   color: AppColors.primary,
-                  size: 22,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,7 +502,7 @@ class _TeacherGroupCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
@@ -644,7 +512,7 @@ class _TeacherGroupCard extends StatelessWidget {
                       subtitle,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 13,
+                        fontSize: 12,
                       ),
                     ),
                   ],
