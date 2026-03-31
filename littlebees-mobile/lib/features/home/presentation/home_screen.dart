@@ -146,12 +146,12 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                             onMessagesTap: () =>
                                 context.pushNamed(RouteNames.messages),
                           ).animate().fadeIn(duration: 320.ms),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           ChildHeader(childNode: dailyStory.child)
                               .animate()
                               .fadeIn(delay: 40.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
                           StatusCard(
                             status: dailyStory.status,
                           )
@@ -159,12 +159,12 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                               .fadeIn(delay: 120.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           if (dailyStory.aiSummary != null) ...[
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 10),
                             AiSummaryCard(
                               summary: dailyStory.aiSummary!,
                             ).animate().fadeIn(delay: 160.ms, duration: 320.ms),
                           ],
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 14),
                           CompactSectionCard(
                             title: tr.tr('todaySummary'),
                             subtitle: dailyStory.events.isEmpty
@@ -191,7 +191,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                             ),
                             child: const SizedBox.shrink(),
                           ).animate().fadeIn(delay: 200.ms, duration: 320.ms),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           if (dailyStory.events.isEmpty)
                             const _EmptyTimelineState(),
                         ],
@@ -207,7 +207,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                         ),
                       ),
                     ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 12)),
                 ],
               ),
             );

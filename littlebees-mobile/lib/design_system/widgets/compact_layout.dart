@@ -13,7 +13,7 @@ class CompactHeroCard extends StatelessWidget {
     this.eyebrowIcon,
     this.trailing,
     this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(14),
   });
 
   final String eyebrow;
@@ -52,27 +52,27 @@ class CompactHeroCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Text(
             title,
             style: TextStyle(
-              fontSize: 24,
-              height: 1.05,
+              fontSize: 21,
+              height: 1.08,
               fontWeight: FontWeight.w800,
               color: context.appColor(AppColors.textPrimary),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 12.5,
-              height: 1.4,
+              fontSize: 12,
+              height: 1.35,
               color: context.appColor(AppColors.textSecondary),
             ),
           ),
           if (child != null) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             child!,
           ],
         ],
@@ -102,7 +102,7 @@ class CompactMetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(context.isDark ? 18 : 188),
         borderRadius: AppRadii.borderRadiusLg,
@@ -110,15 +110,15 @@ class CompactMetricTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: tint ?? accent.withAlpha(22),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 16, color: accent),
+            child: Icon(icon, size: 15, color: accent),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +126,7 @@ class CompactMetricTile extends StatelessWidget {
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: context.appColor(AppColors.textPrimary),
                   ),
@@ -135,7 +135,7 @@ class CompactMetricTile extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     color: context.appColor(AppColors.textSecondary),
                   ),
                 ),
@@ -181,7 +181,7 @@ class CompactSectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: context.appColor(AppColors.surface),
         borderRadius: AppRadii.borderRadiusXl,
@@ -193,15 +193,15 @@ class CompactSectionCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 18),
+                child: Icon(icon, color: AppColors.primary, size: 16),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +209,7 @@ class CompactSectionCard extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: context.appColor(AppColors.textPrimary),
                       ),
@@ -218,7 +218,7 @@ class CompactSectionCard extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         height: 1.35,
                         color: context.appColor(AppColors.textSecondary),
                       ),
@@ -232,7 +232,7 @@ class CompactSectionCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           child,
         ],
       ),

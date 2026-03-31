@@ -90,14 +90,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
             SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildHero(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     _buildLoginCard(context),
                   ],
                 ),
@@ -111,19 +111,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildHero() {
     return Container(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 22),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFF8EBC8), Color(0xFFE8F0FB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(10),
-                blurRadius: 28,
-                offset: const Offset(0, 14),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -132,27 +132,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Center(
                 child: Image.asset(
                   'assets/images/Logo.png',
-                  width: 210,
+                  width: 172,
                   fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Tu escuela, en tiempo real',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  height: 1.05,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
+                'Tu escuela, en tiempo real',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  height: 1.08,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
                 'Accede con tu cuenta para entrar a LittleBees.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   height: 1.45,
                   color: AppColors.textSecondary,
                 ),
@@ -167,15 +167,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildLoginCard(BuildContext context) {
     return Container(
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(8),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -196,7 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   context,
                 ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
               LBInput(
                 controller: _emailController,
                 label: 'Correo electrónico',
@@ -213,7 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               LBInput(
                 controller: _passwordController,
                 label: 'Contraseña',

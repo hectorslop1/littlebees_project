@@ -42,8 +42,8 @@ class GroupDetailScreen extends ConsumerWidget {
                 // Group Info Header
                 SliverToBoxAdapter(
                   child: Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -53,27 +53,27 @@ class GroupDetailScreen extends ConsumerWidget {
                           AppColors.primary.withOpacity(0.8),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             LucideIcons.users,
-                            size: 40,
+                            size: 32,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           group.displayName,
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -90,7 +90,7 @@ class GroupDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -99,7 +99,7 @@ class GroupDetailScreen extends ConsumerWidget {
                               label:
                                   '${group.ageRangeStart}-${group.ageRangeEnd} meses',
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             _InfoChip(
                               icon: LucideIcons.users,
                               label:
@@ -109,7 +109,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         ),
                         if (group.teacherNames != null &&
                             group.teacherNames!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -191,7 +191,7 @@ class GroupDetailScreen extends ConsumerWidget {
                 // Students Section Header
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(14, 18, 14, 8),
                     child: Row(
                       children: [
                         Icon(
@@ -203,7 +203,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         const Text(
                           'Alumnos del grupo',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

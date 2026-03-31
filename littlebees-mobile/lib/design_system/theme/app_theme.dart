@@ -35,7 +35,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: AppTypography.textTheme.headlineLarge,
@@ -46,8 +46,8 @@ class AppTheme {
         hintStyle: const TextStyle(color: AppColors.textTertiary),
         labelStyle: const TextStyle(color: AppColors.textSecondary),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
+          horizontal: 12,
+          vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: AppRadii.borderRadiusMd,
@@ -66,7 +66,7 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: AppRadii.xl),
+          borderRadius: BorderRadius.vertical(top: AppRadii.lg),
         ),
         showDragHandle: true,
       ),

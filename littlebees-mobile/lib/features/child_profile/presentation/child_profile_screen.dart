@@ -60,14 +60,14 @@ class ChildProfileScreen extends ConsumerWidget {
               await ref.read(childProfileProvider(childId).future);
             },
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
               children: [
                 _ProfileHero(child: child),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 _OverviewGrid(child: child),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 _MedicalSection(child: child),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 _AuthorizedPickupsSection(child: child),
               ],
             ),
@@ -93,19 +93,19 @@ class _ProfileHero extends StatelessWidget {
     final palette = _paletteForGender(child.gender);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [palette.surface, Colors.white, palette.surface.withAlpha(110)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -146,23 +146,23 @@ class _ProfileHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           LBAvatar(
             imageUrl: child.photoUrl,
             placeholder: child.firstName.isNotEmpty ? child.firstName[0] : 'N',
             size: LBAvatarSize.large,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             child.fullName,
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 8,

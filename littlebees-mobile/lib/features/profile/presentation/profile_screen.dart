@@ -220,17 +220,21 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 8),
             ListTile(
+              visualDensity: VisualDensity.compact,
               leading: const Icon(LucideIcons.camera),
               title: const Text('Tomar foto'),
               onTap: () => Navigator.of(sheetContext).pop(_AvatarSource.camera),
             ),
             ListTile(
+              visualDensity: VisualDensity.compact,
               leading: const Icon(LucideIcons.image),
               title: const Text('Elegir de galería'),
               onTap: () =>
                   Navigator.of(sheetContext).pop(_AvatarSource.gallery),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

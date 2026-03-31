@@ -268,17 +268,17 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
         backgroundColor: Colors.transparent,
       ),
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.textPrimary,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(16),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -293,7 +293,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                       'Listo para guardar',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -304,13 +304,13 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                           : 'Se guardara en la bitacora del nino.',
                       style: TextStyle(
                         color: Colors.white.withAlpha(190),
-                        fontSize: 11.5,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _isSubmitting ? null : _submitActivity,
@@ -335,9 +335,9 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),

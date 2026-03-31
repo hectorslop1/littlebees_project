@@ -61,19 +61,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.primary.withAlpha(15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.only(bottom: 10.0),
                 child: TableCalendar(
                   firstDay: DateTime.utc(2020, 10, 16),
                   lastDay: DateTime.utc(2030, 3, 14),
@@ -133,11 +133,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 8.0,
+                horizontal: 16.0,
+                vertical: 6.0,
               ),
               child: Row(
                 children: [
@@ -174,7 +174,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               size: 48,
               color: AppColors.error,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text('Error loading agenda: $error'),
           ],
         ),

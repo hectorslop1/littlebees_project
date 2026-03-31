@@ -75,7 +75,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
               child: CompactHeroCard(
                 eyebrow: isTeacher ? 'Jornada del aula' : 'Actividad compartida',
                 title: isTeacher
@@ -109,7 +109,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 18.0,
+                horizontal: 16.0,
                 vertical: 2.0,
               ),
               child: Container(
@@ -244,10 +244,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             ref.invalidate(activityFeedProvider);
                           },
                           child: ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
                             itemCount: items.length,
                             separatorBuilder: (context, index) =>
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final item = items[index];
                               final log = item.log;

@@ -49,9 +49,9 @@ class NotificationsScreen extends ConsumerWidget {
                 await ref.read(notificationsProvider.future);
               },
               child: ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 18),
                 itemCount: notifications.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final notification = notifications[index];
                   return _NotificationCard(
@@ -69,7 +69,7 @@ class NotificationsScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -126,14 +126,14 @@ class _NotificationCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: notification.read
                 ? Colors.white
                 : AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: notification.read
                   ? Colors.grey.withValues(alpha: 0.18)
@@ -160,7 +160,7 @@ class _NotificationCard extends StatelessWidget {
                     Text(
                       notification.title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -168,11 +168,11 @@ class _NotificationCard extends StatelessWidget {
                     Text(
                       notification.body,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Icon(

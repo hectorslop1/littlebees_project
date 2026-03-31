@@ -64,39 +64,39 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final filteredPayments = _applyFilter(payments);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
       children: [
         _buildBalanceCard(context, summary)
             .animate()
             .fadeIn(duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _buildStatusGrid(summary)
             .animate()
             .fadeIn(delay: 80.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         _buildNoticeCard(canPayFromThisRole)
             .animate()
             .fadeIn(delay: 140.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Text(
           'Movimientos',
           style: Theme.of(context).textTheme.headlineMedium,
         ).animate().fadeIn(delay: 180.ms),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         _buildFilterChips()
             .animate()
             .fadeIn(delay: 220.ms, duration: 320.ms)
             .slideX(begin: 0.04, duration: 320.ms),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         if (filteredPayments.isEmpty)
           _buildEmptyState()
         else
           ...filteredPayments.asMap().entries.map(
             (entry) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 10),
               child: _buildPaymentCard(context, entry.value, canPayFromThisRole)
                   .animate()
                   .fadeIn(delay: (260 + (entry.key * 40)).ms, duration: 260.ms)
@@ -111,19 +111,19 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final dueLabel = summary.nextDueLabel;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFB8892D), Color(0xFFD9B161), Color(0xFF8FAE8B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
             color: Color(0x221F2C1F),
-            blurRadius: 22,
-            offset: Offset(0, 10),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
@@ -179,18 +179,18 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             _formatCurrency(summary.pendingBalance),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 34,
+              fontSize: 30,
               height: 1,
               fontWeight: FontWeight.w800,
               letterSpacing: -1.2,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             summary.pendingBalance > 0
                 ? 'Saldo pendiente total'
@@ -201,12 +201,12 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white.withAlpha(20),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
@@ -223,12 +223,12 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'Consulta tu historial y revisa los cargos activos de cada hijo en tiempo real desde la nube.',
             style: TextStyle(
               color: Colors.white.withAlpha(220),
-              fontSize: 12,
+              fontSize: 11.5,
               height: 1.35,
             ),
           ),
@@ -726,10 +726,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+            left: 14,
+            right: 14,
+            top: 12,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 12,
           ),
           child: StatefulBuilder(
             builder: (context, setModalState) {
@@ -794,15 +794,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               return Material(
                 color: Colors.transparent,
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x22000000),
-                        blurRadius: 28,
-                        offset: Offset(0, 14),
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
                       ),
                     ],
                   ),
@@ -822,11 +822,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 14),
                         const Text(
                           'Tarjeta demo',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -835,7 +835,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           'Este pago se registrara en la base de datos real de IONOS y marcara el cargo como pagado.',
                           style: TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 13,
+                            fontSize: 12,
                             height: 1.5,
                           ),
                         ),

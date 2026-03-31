@@ -129,7 +129,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
+                  top: Radius.circular(18),
                 ),
                 child: BottomNavigationBar(
                   currentIndex: currentIndex,
@@ -147,12 +147,15 @@ class _MainShellState extends ConsumerState<MainShell> {
                       : AppColors.textTertiary,
                   selectedLabelStyle: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                   unselectedLabelStyle: const TextStyle(
                     fontWeight: FontWeight.w500,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
+                  selectedFontSize: 11,
+                  unselectedFontSize: 11,
+                  iconSize: 20,
                   elevation: 0,
                   items: navigationItems.map((item) {
                     final isMessagesItem = item.route == '/messages';

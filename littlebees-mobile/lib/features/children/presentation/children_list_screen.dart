@@ -38,17 +38,17 @@ class ChildrenListScreen extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () => ref.refresh(myChildrenProvider.future),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
                 children: [
                   _ChildrenHero(
                     childrenCount: children.length,
                     activeProfiles: activeProfiles,
                     activeGroups: activeGroups,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   ...children.asMap().entries.map(
                     (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.only(bottom: 10),
                       child: _ChildSpotlightCard(
                         child: entry.value,
                         onTap: () => context.push('/children/${entry.value.id}/profile'),
@@ -86,19 +86,19 @@ class _ChildrenHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFFAF4E5), Color(0xFFFFFFFF), Color(0xFFF0F5EF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
             color: Color(0x14000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -131,26 +131,26 @@ class _ChildrenHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           const Text(
             'Todo sobre tus hijos en un solo lugar',
             style: TextStyle(
-              fontSize: 28,
-              height: 1.05,
+              fontSize: 22,
+              height: 1.08,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           const Text(
             'Consulta perfiles, grupos e informacion clave con una vista clara y elegante.',
             style: TextStyle(
               color: AppColors.textSecondary,
               height: 1.5,
-              fontSize: 14,
+              fontSize: 13,
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -203,20 +203,20 @@ class _HeroMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 18),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
@@ -255,7 +255,7 @@ class _ChildSpotlightCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
             colors: [
               Colors.white,

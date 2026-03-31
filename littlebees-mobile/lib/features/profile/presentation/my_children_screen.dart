@@ -34,16 +34,16 @@ class MyChildrenScreen extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () => ref.refresh(myChildrenProvider.future),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 20),
                 children: [
                   _MyChildrenHero(
                     role: user?.role,
                     children: children,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   ...children.asMap().entries.map(
                     (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: _DetailedChildCard(
                         child: entry.value,
                         onTap: () => context.push('/children/${entry.value.id}/profile'),
@@ -145,7 +145,7 @@ class _DetailedChildCard extends StatelessWidget {
       padding: EdgeInsets.zero,
         child: Container(
           decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
               Colors.white,
@@ -156,7 +156,7 @@ class _DetailedChildCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             children: [
               Row(
@@ -176,7 +176,7 @@ class _DetailedChildCard extends StatelessWidget {
                         Text(
                           '${child.firstName} ${child.lastName}',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -185,7 +185,7 @@ class _DetailedChildCard extends StatelessWidget {
                           child.groupName ?? 'Sin grupo asignado',
                           style: const TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -198,7 +198,7 @@ class _DetailedChildCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
@@ -247,13 +247,13 @@ class _ChildInfoPill extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(220),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: accent.withAlpha(60)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: accent),
-          const SizedBox(width: 10),
+          Icon(icon, size: 16, color: accent),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

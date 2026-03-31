@@ -327,14 +327,14 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Selector de tipo de actividad
             Text(
               'Tipo de actividad',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -384,7 +384,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Foto (para entrada/salida)
             if (_needsPhoto()) ...[
@@ -395,7 +395,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               PhotoCaptureWidget(
                 photo: _capturedPhoto,
                 isLoading: _isUploadingPhoto,
@@ -408,7 +408,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                     'Toca para tomar foto ${_selectedType == ActivityType.checkIn ? "de entrada" : "de salida"}',
               ),
               if (_isUploadingPhoto) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 LinearProgressIndicator(value: _uploadProgress),
                 const SizedBox(height: 4),
                 Text(
@@ -419,7 +419,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // Estado de ánimo (solo para entrada)
@@ -431,7 +431,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 children: [
@@ -442,7 +442,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   _buildMoodChip('🤩', 'Emocionado', 'excited'),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // Comida consumida
@@ -454,7 +454,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               TextField(
                 controller: _foodEatenController,
                 decoration: InputDecoration(
@@ -464,7 +464,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // Duración de siesta
@@ -476,7 +476,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               TextField(
                 controller: _napDurationController,
                 keyboardType: TextInputType.number,
@@ -487,7 +487,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // Descripción de actividad
@@ -517,7 +517,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
               'Notas adicionales (opcional)',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextField(
               controller: _notesController,
               maxLines: 3,
@@ -528,7 +528,7 @@ class _QuickRegisterScreenState extends ConsumerState<QuickRegisterScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
 
             // Botón de registro
             SizedBox(

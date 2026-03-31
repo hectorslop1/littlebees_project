@@ -23,18 +23,18 @@ class LBEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(48),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-                  width: 120,
-                  height: 120,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(60),
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: Icon(icon, size: 56, color: AppColors.textTertiary),
+                  child: Icon(icon, size: 42, color: AppColors.textTertiary),
                 )
                 .animate()
                 .fadeIn(duration: 500.ms)
@@ -44,7 +44,7 @@ class LBEmptyState extends StatelessWidget {
                   curve: Curves.easeOutBack,
                 ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             Text(
                   title,
@@ -58,13 +58,13 @@ class LBEmptyState extends StatelessWidget {
                 .fadeIn(duration: 500.ms, delay: 100.ms)
                 .slideY(begin: 0.2, end: 0, duration: 500.ms),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             Text(
                   message,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: AppColors.textSecondary,
-                    height: 1.5,
+                    height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 )
@@ -73,7 +73,7 @@ class LBEmptyState extends StatelessWidget {
                 .slideY(begin: 0.2, end: 0, duration: 500.ms),
 
             if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               LBButton(
                     text: actionText!,
                     onPressed: onAction,

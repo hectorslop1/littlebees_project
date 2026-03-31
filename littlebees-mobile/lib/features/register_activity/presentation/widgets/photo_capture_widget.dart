@@ -33,7 +33,7 @@ class PhotoCaptureWidget extends StatelessWidget {
       onTap: isLoading ? null : onCapture,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        height: 200,
+        height: 152,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
@@ -51,15 +51,15 @@ class PhotoCaptureWidget extends StatelessWidget {
                   children: [
                     Icon(
                       LucideIcons.camera,
-                      size: 64,
+                      size: 44,
                       color: AppColors.primary.withOpacity(0.5),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     Text(
                       label,
                       style: TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -77,7 +77,7 @@ class PhotoCaptureWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Image.file(
             photo!,
-            height: 200,
+            height: 152,
             width: double.infinity,
             fit: BoxFit.cover,
           ),

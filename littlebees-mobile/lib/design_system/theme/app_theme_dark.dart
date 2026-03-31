@@ -40,13 +40,13 @@ class AppThemeDark {
       appBarTheme: AppBarTheme(
         backgroundColor: darkSurface,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: darkTextPrimary),
         actionsIconTheme: const IconThemeData(color: darkTextPrimary),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           color: darkTextPrimary,
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -98,8 +98,8 @@ class AppThemeDark {
         hintStyle: const TextStyle(color: darkTextTertiary),
         labelStyle: const TextStyle(color: darkTextSecondary),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
+          horizontal: 12,
+          vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: AppRadii.borderRadiusMd,
@@ -199,7 +199,7 @@ class AppThemeDark {
         backgroundColor: darkSurface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: AppRadii.xl),
+          borderRadius: BorderRadius.vertical(top: AppRadii.lg),
         ),
         showDragHandle: true,
       ),
@@ -211,7 +211,7 @@ class AppThemeDark {
         shape: RoundedRectangleBorder(borderRadius: AppRadii.borderRadiusLg),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           color: darkTextPrimary,
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),

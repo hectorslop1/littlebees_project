@@ -231,7 +231,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
@@ -241,7 +241,7 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
           ),
           if (state.error != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -268,15 +268,15 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: context.appColor(AppColors.surface),
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: context.appColor(AppColors.border),
                             ),
                             boxShadow: const [
                               BoxShadow(
                                 color: Color(0x12000000),
-                                blurRadius: 18,
-                                offset: Offset(0, 10),
+                                blurRadius: 14,
+                                offset: Offset(0, 6),
                               ),
                             ],
                           ),
@@ -288,20 +288,20 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                             onSubmitted: (_) => _send(),
                             style: TextStyle(
                               color: context.appColor(AppColors.textPrimary),
-                              fontSize: 16,
+                              fontSize: 15,
                               height: 1.35,
                             ),
                             decoration: InputDecoration(
                               hintText: promptHint,
                               hintStyle: TextStyle(
                                 color: context.appColor(AppColors.textSecondary),
-                                fontSize: 16,
+                                fontSize: 15,
                                 height: 1.35,
                               ),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 15,
+                                horizontal: 16,
+                                vertical: 13,
                               ),
                             ),
                           ),
@@ -352,22 +352,22 @@ class _AiSessionsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
       children: [
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFF8EBC8), Color(0xFFE7F0FB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             children: [
-              const BeeaAvatar(size: 60),
-              const SizedBox(width: 14),
+              const BeeaAvatar(size: 48),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,17 +623,17 @@ class _AiEmptyState extends ConsumerWidget {
     };
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFFF8EBC8), Color(0xFFE7F0FB)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,7 +644,7 @@ class _AiEmptyState extends ConsumerWidget {
                 alignment: Alignment.center,
                 child: const BeeaAvatar(size: 56),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,11 +652,11 @@ class _AiEmptyState extends ConsumerWidget {
                     const Text(
                       'Hola, soy Beea',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       'Estoy aquí para ayudarte con respuestas claras, útiles y basadas en información real de LittleBees. $displayName, $welcome',
                       style: const TextStyle(
@@ -670,40 +670,40 @@ class _AiEmptyState extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Padding(
-          padding: const EdgeInsets.only(bottom: 18),
+          padding: const EdgeInsets.only(bottom: 14),
           child: Text(
             'Elige una sugerencia para empezar o pregúntame algo directamente.',
             style: TextStyle(
               color: context.appColor(AppColors.textSecondary),
-              fontSize: 14,
+              fontSize: 13,
               height: 1.5,
             ),
           ),
         ),
         ...suggestions.map(
           (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 10),
             child: InkWell(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               onTap: () => onSuggestionTap(item),
               child: Ink(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: context.appColor(AppColors.surface),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: context.appColor(AppColors.border)),
                 ),
                 child: Row(
                   children: [
                     const BeeaAvatar(size: 40),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         item,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           height: 1.35,
                         ),

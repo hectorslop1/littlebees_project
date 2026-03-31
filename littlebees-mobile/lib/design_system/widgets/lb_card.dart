@@ -72,6 +72,11 @@ class _LBCardState extends State<LBCard> with SingleTickerProviderStateMixin {
             ? const Color(0xFF1E1E1E)
             : AppColors.surface,
         borderRadius: AppRadii.borderRadiusLg,
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withAlpha(10)
+              : AppColors.border.withAlpha(75),
+        ),
         boxShadow: Theme.of(context).brightness == Brightness.dark
             ? null
             : [AppShadows.shadowSm],

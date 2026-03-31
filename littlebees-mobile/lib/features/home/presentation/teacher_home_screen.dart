@@ -44,7 +44,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                 ref.invalidate(teacherDashboardProvider);
               },
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 20),
                 children: [
                   _TeacherTopBar(
                     name: authState.user?.firstName ?? 'Maestra',
@@ -52,7 +52,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                     onNotificationsTap: () => context.push('/notifications'),
                     onMessagesTap: () => context.push('/messages'),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   CompactHeroCard(
                     eyebrow: 'Panel del aula',
                     eyebrowIcon: LucideIcons.sparkles,
@@ -112,7 +112,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -140,7 +140,7 @@ class TeacherHomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _TeacherActionCard(
                     icon: LucideIcons.clipboardCheck,
                     title: 'Asistencia',
@@ -149,14 +149,14 @@ class TeacherHomeScreen extends ConsumerWidget {
                     accent: AppColors.success,
                     onTap: () => context.push('/attendance'),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         tr.tr('myGroups'),
                         style: const TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
@@ -167,13 +167,13 @@ class TeacherHomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   if (groups.isEmpty)
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         children: [
@@ -264,18 +264,18 @@ class _TeacherTopBar extends StatelessWidget {
               Text(
                 'Hola, $name',
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   height: 1,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 'Gestiona grupos, mensajes y actividad del día.',
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -313,14 +313,14 @@ class _TeacherRoundButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: highlighted ? AppColors.primary : Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       elevation: highlighted ? 4 : 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          width: 48,
-          height: 48,
+          width: 44,
+          height: 44,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -339,12 +339,12 @@ class _TeacherRoundButton extends StatelessWidget {
                   top: -4,
                   child: Container(
                     constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
+                      minWidth: 18,
+                      minHeight: 18,
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 3,
+                      horizontal: 5,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.error,
@@ -356,7 +356,7 @@ class _TeacherRoundButton extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -389,19 +389,19 @@ class _TeacherActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(8),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -412,28 +412,28 @@ class _TeacherActionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: accent.withAlpha(24),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icon, color: accent, size: 18),
+                    child: Icon(icon, color: accent, size: 16),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 11,
                       height: 1.35,
                       color: AppColors.textSecondary,
                     ),
@@ -463,38 +463,38 @@ class _TeacherGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(8),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   LucideIcons.users,
                   color: AppColors.primary,
-                  size: 18,
+                  size: 16,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,17 +502,17 @@ class _TeacherGroupCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 12,
+                        fontSize: 11.5,
                       ),
                     ),
                   ],

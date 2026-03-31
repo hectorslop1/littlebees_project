@@ -134,14 +134,14 @@ class _TeacherAttendanceScreenState
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 30),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                   children: [
                     _AttendanceSummaryCard(
                       totalChildren: children.length,
                       presentCount: presentCount,
                       absentCount: absentCount,
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
                     if (groups.isNotEmpty) ...[
                       const Text(
                         'Filtrar por grupo',
@@ -151,7 +151,7 @@ class _TeacherAttendanceScreenState
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       SizedBox(
                         height: 38,
                         child: ListView.separated(
@@ -184,14 +184,14 @@ class _TeacherAttendanceScreenState
                           },
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 12),
                     ],
                     if (filteredChildren.isEmpty)
                       const _EmptyAttendanceState()
                     else
                       ...filteredChildren.map(
                         (child) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: _AttendanceChildCard(
                             child: child,
                             record: attendanceByChild[child.id],
@@ -257,19 +257,19 @@ class _AttendanceSummaryCard extends StatelessWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFF8EBC8), Color(0xFFEAF2FB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(8),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -291,26 +291,26 @@ class _AttendanceSummaryCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           const Text(
             'Confirma llegadas y ausencias del salón',
             style: TextStyle(
-              fontSize: 24,
-              height: 1.05,
+              fontSize: 20,
+              height: 1.08,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           const Text(
             'Cada registro se guarda en la base de datos y actualiza la tarjeta del padre.',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12.5,
               height: 1.4,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -363,10 +363,10 @@ class _SummaryMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(210),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,11 +386,11 @@ class _SummaryMetric extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
@@ -471,15 +471,15 @@ class _AttendanceChildCard extends StatelessWidget {
     final canMarkAbsent = !isUpdating && !hasConfirmedArrival && !isAbsent;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(7),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -521,12 +521,12 @@ class _AttendanceChildCard extends StatelessWidget {
               _AttendanceStatusBadge(record: record),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
               children: [
@@ -548,7 +548,7 @@ class _AttendanceChildCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
@@ -563,9 +563,9 @@ class _AttendanceChildCard extends StatelessWidget {
                           ? AppColors.warning.withValues(alpha: 0.35)
                           : AppColors.border,
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -593,10 +593,10 @@ class _AttendanceChildCard extends StatelessWidget {
                     disabledBackgroundColor: hasConfirmedArrival
                         ? AppColors.success.withValues(alpha: 0.65)
                         : AppColors.border,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -694,16 +694,16 @@ class _InfoBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 16, color: AppColors.textSecondary),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             label,
             style: const TextStyle(
@@ -735,10 +735,10 @@ class _EmptyAttendanceState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: const Column(
         children: [

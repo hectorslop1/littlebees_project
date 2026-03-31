@@ -54,7 +54,7 @@ class ConversationsScreen extends ConsumerWidget {
                     .refresh();
               },
               child: ListView.builder(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
                 itemCount: conversations.length,
                 itemBuilder: (context, index) {
                   final conversation = conversations[index];
@@ -97,15 +97,15 @@ class ConversationsScreen extends ConsumerWidget {
           key: ValueKey(conversation.id),
           direction: DismissDirection.endToStart,
           background: Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(16),
             ),
           ),
           secondaryBackground: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: BoxDecoration(
               color: AppColors.error,
               borderRadius: BorderRadius.circular(16),
@@ -146,15 +146,15 @@ class ConversationsScreen extends ConsumerWidget {
               );
             },
             child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x08000000),
-                    blurRadius: 8,
+                    blurRadius: 6,
                     offset: Offset(0, 2),
                   ),
                 ],
@@ -167,7 +167,7 @@ class ConversationsScreen extends ConsumerWidget {
                     showStatusDot: true,
                     statusColor: AppColors.success,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,7 +197,7 @@ class ConversationsScreen extends ConsumerWidget {
                                       : FontWeight.normal,
                                     ),
                               ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             IconButton(
                               onPressed: () => _showConversationActions(
                                 context,
@@ -207,6 +207,11 @@ class ConversationsScreen extends ConsumerWidget {
                               icon: const Icon(LucideIcons.moreVertical),
                               tooltip: 'Opciones del chat',
                               visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 28,
+                                minHeight: 28,
+                              ),
                             ),
                           ],
                         ),

@@ -149,17 +149,17 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
             : RefreshIndicator(
                 onRefresh: _load,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFFF8EBC8), Color(0xFFE7F0FB)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,25 +182,25 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           const Text(
                             'Alta de familias y vínculos',
                             style: TextStyle(
-                              fontSize: 28,
+                              fontSize: 22,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           const Text(
                             'Registra padres o tutores que podrán iniciar sesión y asígnales hijos desde un solo flujo.',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12.5,
                               height: 1.45,
                               color: AppColors.textSecondary,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -225,7 +225,7 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         const Expanded(
@@ -244,7 +244,7 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     if (_parents.isEmpty)
                       const LBCard(
                         child: Padding(
@@ -271,7 +271,7 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
                                       ? parent.fullName.characters.first
                                       : 'P',
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -280,7 +280,7 @@ class _FamiliesScreenState extends ConsumerState<FamiliesScreen> {
                                       Text(
                                         parent.fullName,
                                         style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
@@ -333,28 +333,28 @@ class _FamilyMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(210),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               color: tint,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, color: AppColors.textPrimary, size: 18),
+            child: Icon(icon, color: AppColors.textPrimary, size: 16),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 2),
           Text(label, style: const TextStyle(color: AppColors.textSecondary)),
@@ -455,12 +455,12 @@ class _CreateParentSheetState extends State<_CreateParentSheet> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(24),
-            blurRadius: 32,
-            offset: const Offset(0, -10),
+            blurRadius: 20,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
@@ -468,10 +468,10 @@ class _CreateParentSheetState extends State<_CreateParentSheet> {
         top: false,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            20,
-            18,
-            20,
-            24 + MediaQuery.of(context).viewInsets.bottom,
+            16,
+            14,
+            16,
+            18 + MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Form(
             key: _formKey,
@@ -488,12 +488,12 @@ class _CreateParentSheetState extends State<_CreateParentSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 const Text(
                   'Registrar familia',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 const Text(
                   'Crea el acceso del padre o tutor y asígnale hijos desde este mismo flujo.',
                   style: TextStyle(
@@ -501,7 +501,7 @@ class _CreateParentSheetState extends State<_CreateParentSheet> {
                     height: 1.45,
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 16),
                 _InputField(controller: _firstNameController, label: 'Nombre'),
                 const SizedBox(height: 12),
                 _InputField(

@@ -30,7 +30,7 @@ class DirectorHomeScreen extends ConsumerWidget {
               backgroundColor: Colors.transparent,
               elevation: 0,
               floating: true,
-              expandedHeight: 120,
+              expandedHeight: 104,
               actions: [
                 IconButton(
                   icon: const Icon(
@@ -66,14 +66,14 @@ class DirectorHomeScreen extends ConsumerWidget {
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
+                  padding: const EdgeInsets.fromLTRB(18, 54, 18, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${tr.tr('hello')}, ${authState.user?.firstName ?? ''}',
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
@@ -105,11 +105,11 @@ class DirectorHomeScreen extends ConsumerWidget {
             // Dashboard Stats Cards
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
                 child: Text(
                   'Resumen de hoy',
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -118,7 +118,7 @@ class DirectorHomeScreen extends ConsumerWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     Expanded(
@@ -151,11 +151,11 @@ class DirectorHomeScreen extends ConsumerWidget {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     Expanded(
@@ -193,7 +193,7 @@ class DirectorHomeScreen extends ConsumerWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: notificationsUnreadAsync.when(
                   data: (count) => count > 0
                       ? Container(
@@ -244,11 +244,11 @@ class DirectorHomeScreen extends ConsumerWidget {
             // Quick Actions
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                 child: Text(
                   'Acciones rápidas',
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -257,7 +257,7 @@ class DirectorHomeScreen extends ConsumerWidget {
 
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
                     _QuickActionTile(
@@ -291,14 +291,14 @@ class DirectorHomeScreen extends ConsumerWidget {
             // Groups Overview
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Grupos',
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -316,7 +316,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                 if (groups.isEmpty) {
                   return SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(18),
                       child: Center(
                         child: Column(
                           children: [
@@ -341,7 +341,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                 }
 
                 return SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final group = groups[index];
@@ -356,7 +356,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withValues(
                                     alpha: 0.1,
@@ -369,7 +369,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                                   size: 24,
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,7 +377,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                                     Text(
                                       group.displayName,
                                       style: const TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -389,7 +389,7 @@ class DirectorHomeScreen extends ConsumerWidget {
                                         fontSize: 13,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
@@ -482,14 +482,14 @@ class _DashboardStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
@@ -498,17 +498,17 @@ class _DashboardStatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(7),
             ),
-            child: Icon(icon, size: 20, color: color),
+            child: Icon(icon, size: 18, color: color),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 2),
           Text(

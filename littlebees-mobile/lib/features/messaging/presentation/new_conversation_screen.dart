@@ -238,14 +238,15 @@ class NewConversationScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
               child: Text(
                 'Selecciona al niño relacionado',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
             ),
             for (var index = 0; index < contact.childIds.length; index++)
               ListTile(
+                visualDensity: VisualDensity.compact,
                 leading: const Icon(LucideIcons.baby),
                 title: Text(contact.childNames[index]),
                 subtitle: index < contact.groupNames.length
@@ -253,7 +254,7 @@ class NewConversationScreen extends ConsumerWidget {
                     : null,
                 onTap: () => Navigator.of(context).pop(contact.childIds[index]),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
         ),
       ),
