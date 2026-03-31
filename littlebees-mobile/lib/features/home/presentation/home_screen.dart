@@ -179,7 +179,9 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                        child: DailyActivityStack(events: dailyStory.events),
+                        child: ExpandableActivitySection(
+                          events: dailyStory.events,
+                        ),
                       ),
                     ),
                   const SliverToBoxAdapter(child: SizedBox(height: 28)),
