@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
                 childrenCount: children.length,
               ),
               const SizedBox(height: 14),
-              _ProfileOverview(user: user, childrenCount: children.length),
+              _ProfileOverview(user: user),
               if (isParent || isTeacher) ...[
                 const SizedBox(height: 14),
                 _ChildrenSummaryCard(user: user, children: children),
@@ -297,7 +297,7 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
-          '$childrenCount perfiles',
+          _childrenBadgeLabel(user?.role, childrenCount),
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
@@ -306,6 +306,7 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Stack(
             clipBehavior: Clip.none,
@@ -354,14 +355,52 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user?.email ?? '',
-                  style: TextStyle(
-                    color: context.appColor(AppColors.textSecondary),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(210),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.border.withAlpha(110),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.mail,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          user?.email ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: context.appColor(AppColors.textPrimary),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                if ((user?.phone ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    user!.phone!,
+                    style: TextStyle(
+                      color: context.appColor(AppColors.textSecondary),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -374,54 +413,25 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
 enum _AvatarSource { camera, gallery }
 
 class _ProfileOverview extends StatelessWidget {
-  const _ProfileOverview({required this.user, required this.childrenCount});
+  const _ProfileOverview({required this.user});
 
   final UserInfo? user;
-  final int childrenCount;
 
   @override
   Widget build(BuildContext context) {
-    final linkedLabel = user?.role == UserRole.parent ? 'Familia' : 'Perfiles';
-    final linkedValue = user?.role == UserRole.parent
-        ? '$childrenCount vinculados'
-        : '$childrenCount visibles';
-    final items = [
-      (
-        'Rol',
-        _roleLabel(user?.role),
-        LucideIcons.badgeCheck,
-        AppColors.primary,
-      ),
-      (linkedLabel, linkedValue, LucideIcons.users, AppColors.secondary),
-      (
+    final phone = (user?.phone ?? '').trim();
+    if (phone.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _OverviewCard(
+      item: (
         'Contacto',
-        user?.phone ?? 'Sin teléfono',
+        phone,
         LucideIcons.phone,
         AppColors.info,
       ),
-    ];
-
-    return Column(
-      children: [
-        Row(
-          children: items
-              .take(2)
-              .map(
-                (item) => Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: item == items[1] ? 0 : 12),
-                    child: _OverviewCard(item: item),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: _OverviewCard(item: items[2], compact: true),
-        ),
-      ],
+      compact: true,
     );
   }
 }
@@ -674,7 +684,7 @@ class _AnimatedThemeSwitcher extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
-        width: 88,
+        width: 78,
         height: 42,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
@@ -723,43 +733,19 @@ class _AnimatedThemeSwitcher extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
-              left: 12,
-              top: 0,
-              bottom: 0,
-              child: IgnorePointer(
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 220),
-                  opacity: isDarkMode ? 0 : 1,
-                  child: const Icon(
-                    LucideIcons.sun,
-                    size: 15,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 12,
-              top: 0,
-              bottom: 0,
-              child: IgnorePointer(
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 220),
-                  opacity: isDarkMode ? 1 : 0,
-                  child: const Icon(
-                    LucideIcons.moon,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
+}
+
+String _childrenBadgeLabel(UserRole? role, int childrenCount) {
+  if (role == UserRole.parent) {
+    return '$childrenCount ${childrenCount == 1 ? 'hijo' : 'hijos'}';
+  }
+
+  return '$childrenCount ${childrenCount == 1 ? 'perfil' : 'perfiles'}';
 }
 
 class _PreferenceRow extends StatelessWidget {
