@@ -26,6 +26,7 @@ class ExpandableActivitySection extends StatefulWidget {
 
 class _ExpandableActivitySectionState extends State<ExpandableActivitySection> {
   late bool _isExpanded;
+  final GlobalKey _timelineContentKey = GlobalKey();
 
   @override
   void initState() {
@@ -79,6 +80,7 @@ class _ExpandableActivitySectionState extends State<ExpandableActivitySection> {
                     curve: Curves.easeInOut,
                     opacity: _isExpanded ? 1 : 0,
                     child: Padding(
+                      key: _timelineContentKey,
                       padding: const EdgeInsets.only(top: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,6 +160,30 @@ class _ExpandableActivitySectionState extends State<ExpandableActivitySection> {
     setState(() {
       _isExpanded = !_isExpanded;
     });
+
+    if (_isExpanded) {
+      final scrollPosition = Scrollable.maybeOf(context)?.position;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(const Duration(milliseconds: 140), () {
+          if (!mounted || scrollPosition == null) {
+            return;
+          }
+
+          final renderObject =
+              _timelineContentKey.currentContext?.findRenderObject();
+          if (renderObject == null) {
+            return;
+          }
+
+          scrollPosition.ensureVisible(
+            renderObject,
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOut,
+            alignment: 0.9,
+          );
+        });
+      });
+    }
   }
 
   void _openDetail(BuildContext context, TimelineEvent event) {
