@@ -8,6 +8,8 @@ import '../../../design_system/widgets/lb_card.dart';
 import '../application/excuses_provider.dart';
 import '../../../shared/enums/enums.dart';
 import '../../../features/auth/application/auth_provider.dart';
+import '../../home/application/home_providers.dart';
+import '../../notifications/application/notifications_provider.dart';
 
 class ExcuseDetailScreen extends ConsumerWidget {
   final String excuseId;
@@ -431,7 +433,12 @@ class ExcuseDetailScreen extends ConsumerWidget {
                   
                   // Refresh the detail
                   ref.invalidate(excuseDetailProvider(excuseId));
-                  ref.invalidate(excusesListProvider(ExcusesFilters()));
+                  ref.invalidate(excusesListProvider);
+                  ref.invalidate(teacherDashboardProvider);
+                  ref.invalidate(directorDashboardProvider);
+                  ref.invalidate(todayRoleAttendanceProvider);
+                  ref.invalidate(notificationsProvider);
+                  ref.invalidate(notificationUnreadCountProvider);
                   
                   // Go back after a short delay
                   Future.delayed(const Duration(seconds: 1), () {

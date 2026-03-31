@@ -116,6 +116,8 @@ class Excuse {
         return 'Asunto familiar';
       case ExcuseType.travel:
         return 'Viaje';
+      case ExcuseType.lateArrival:
+        return 'Retardo';
       case ExcuseType.other:
         return 'Otro';
     }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../routing/route_names.dart';
 import '../../../shared/models/notification_model.dart';
 import '../application/notifications_provider.dart';
 
@@ -59,6 +61,14 @@ class NotificationsScreen extends ConsumerWidget {
                     onTap: () async {
                       if (!notification.read) {
                         await markAsRead(notification.id);
+                      }
+
+                      final excuseId = notification.data?['excuseId'];
+                      if (excuseId is String && context.mounted) {
+                        context.pushNamed(
+                          RouteNames.excuseDetail,
+                          pathParameters: {'excuseId': excuseId},
+                        );
                       }
                     },
                   );

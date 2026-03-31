@@ -293,13 +293,16 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withAlpha(220),
+          color: context.appColor(AppColors.surface).withAlpha(
+            context.isDark ? 255 : 220,
+          ),
           borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: context.appColor(AppColors.border)),
         ),
         child: Text(
           _childrenBadgeLabel(user?.role, childrenCount),
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: context.appColor(AppColors.textPrimary),
             fontWeight: FontWeight.w700,
             fontSize: 11,
           ),
@@ -361,18 +364,20 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
                     vertical: 9,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(210),
+                    color: context.appColor(AppColors.surface).withAlpha(
+                      context.isDark ? 255 : 210,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppColors.border.withAlpha(110),
+                      color: context.appColor(AppColors.border).withAlpha(140),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         LucideIcons.mail,
                         size: 15,
-                        color: AppColors.textSecondary,
+                        color: context.appColor(AppColors.textSecondary),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -689,8 +694,8 @@ class _AnimatedThemeSwitcher extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: isDarkMode
-              ? const Color(0xFF1E2633)
-              : const Color(0xFFF3E3A6),
+              ? context.appColor(AppColors.primarySurface)
+              : context.appColor(AppColors.primaryLight),
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
@@ -712,11 +717,11 @@ class _AnimatedThemeSwitcher extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appColor(AppColors.surface),
                   shape: BoxShape.circle,
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
-                      color: Color(0x1A000000),
+                      color: Colors.black.withAlpha(context.isDark ? 28 : 18),
                       blurRadius: 10,
                       offset: Offset(0, 4),
                     ),
@@ -727,7 +732,9 @@ class _AnimatedThemeSwitcher extends StatelessWidget {
                   child: Icon(
                     isDarkMode ? LucideIcons.moon : LucideIcons.sun,
                     key: ValueKey(isDarkMode),
-                    color: isDarkMode ? const Color(0xFF4D5B86) : AppColors.primary,
+                    color: isDarkMode
+                        ? context.appColor(AppColors.primary)
+                        : context.appColor(AppColors.primary),
                     size: 18,
                   ),
                 ),
@@ -834,10 +841,14 @@ class _ActionRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.appColor(AppColors.surfaceVariant),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 18),
+                child: Icon(
+                  icon,
+                  color: context.appColor(AppColors.primary),
+                  size: 18,
+                ),
               ),
           const SizedBox(width: 14),
           Expanded(
@@ -846,9 +857,10 @@ class _ActionRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
+                    color: context.appColor(AppColors.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -863,7 +875,10 @@ class _ActionRow extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(LucideIcons.chevronRight, color: AppColors.textTertiary),
+          Icon(
+            LucideIcons.chevronRight,
+            color: context.appColor(AppColors.textTertiary),
+          ),
         ],
       ),
     );

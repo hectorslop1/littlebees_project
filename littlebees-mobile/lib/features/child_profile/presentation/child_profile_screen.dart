@@ -20,7 +20,7 @@ class ChildProfileScreen extends ConsumerWidget {
     final childAsync = ref.watch(childProfileProvider(childId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: childAsync.when(
           data: (child) => Text(child.fullName),
@@ -91,19 +91,28 @@ class _ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = _paletteForGender(child.gender);
+    final surfaceTint = context.isDark
+        ? context.appColor(AppColors.surfaceVariant)
+        : palette.surface;
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [palette.surface, Colors.white, palette.surface.withAlpha(110)],
+          colors: [
+            surfaceTint,
+            context.appColor(AppColors.surface),
+            context.isDark
+                ? context.appColor(AppColors.surface)
+                : palette.surface.withAlpha(110),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
+            color: Colors.black.withAlpha(context.isDark ? 28 : 20),
             blurRadius: 18,
             offset: Offset(0, 8),
           ),
@@ -116,13 +125,17 @@ class _ProfileHero extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: palette.chip,
+                  color: context.isDark
+                      ? context.appColor(AppColors.primarySurface)
+                      : palette.chip,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
+                child: Text(
                   'Perfil editable',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: context.isDark
+                        ? context.appColor(AppColors.primary)
+                        : AppColors.textPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -132,13 +145,15 @@ class _ProfileHero extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(220),
+                  color: context.appColor(AppColors.surface).withAlpha(
+                    context.isDark ? 255 : 220,
+                  ),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   child.status == 'active' ? 'Activo' : child.status,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: context.appColor(AppColors.textPrimary),
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -155,10 +170,10 @@ class _ProfileHero extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             child.fullName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
             textAlign: TextAlign.center,
           ),
@@ -209,9 +224,15 @@ class _HeroChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withAlpha(45)),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(45),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -220,8 +241,8 @@ class _HeroChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: context.appColor(AppColors.textPrimary),
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
@@ -292,10 +313,10 @@ class _OverviewGrid extends StatelessWidget {
                   Expanded(
                     child: Text(
                       item.$1,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: context.appColor(AppColors.textSecondary),
                       ),
                     ),
                   ),
@@ -306,10 +327,10 @@ class _OverviewGrid extends StatelessWidget {
                 item.$2,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
               const Spacer(),
@@ -341,9 +362,13 @@ class _MedicalSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(LucideIcons.activity, color: AppColors.primary, size: 18),
+              Icon(
+                LucideIcons.activity,
+                color: context.appColor(AppColors.primary),
+                size: 18,
+              ),
               SizedBox(width: 10),
               Text(
                 'Información médica y notas',
@@ -478,7 +503,7 @@ class _PickupTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.appColor(AppColors.surfaceVariant),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -495,27 +520,27 @@ class _PickupTile extends StatelessWidget {
               children: [
                 Text(
                   pickup.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${pickup.relationship} • ${pickup.phone}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                   ),
                 ),
                 if (pickup.email?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 4),
                   Text(
                     pickup.email!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textSecondary,
+                      color: context.appColor(AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -527,15 +552,15 @@ class _PickupTile extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primarySurface,
+                      color: context.appColor(AppColors.primarySurface),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
+                    child: Text(
                       'ID cargada',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: context.appColor(AppColors.primary),
                       ),
                     ),
                   ),
@@ -567,8 +592,15 @@ class _MedicalListTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: accent.withAlpha(16),
+        color: context.isDark
+            ? context.appColor(AppColors.surfaceVariant)
+            : accent.withAlpha(16),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(40),
+        ),
       ),
       child: Row(
         children: [
@@ -580,19 +612,19 @@ class _MedicalListTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                   ),
                 ),
               ],
@@ -622,8 +654,15 @@ class _ChipSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: accent.withAlpha(12),
+        color: context.isDark
+            ? context.appColor(AppColors.surfaceVariant)
+            : accent.withAlpha(12),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(28),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,9 +673,9 @@ class _ChipSection extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
             ],
@@ -653,16 +692,20 @@ class _ChipSection extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(220),
+                      color: context.appColor(AppColors.surface).withAlpha(
+                        context.isDark ? 255 : 220,
+                      ),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: AppColors.divider),
+                      border: Border.all(
+                        color: context.appColor(AppColors.divider),
+                      ),
                     ),
                     child: Text(
                       item,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.appColor(AppColors.textPrimary),
                       ),
                     ),
                   ),
@@ -692,27 +735,31 @@ class _SectionEmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.appColor(AppColors.surfaceVariant),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 30, color: AppColors.textTertiary),
+          Icon(
+            icon,
+            size: 30,
+            color: context.appColor(AppColors.textTertiary),
+          ),
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
               height: 1.5,
             ),
             textAlign: TextAlign.center,

@@ -60,7 +60,7 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
       );
 
       if (mounted) {
-        ref.invalidate(excusesListProvider(ExcusesFilters()));
+        ref.invalidate(excusesListProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Justificante creado exitosamente'),
@@ -337,6 +337,8 @@ class _CreateExcuseScreenState extends ConsumerState<CreateExcuseScreen> {
         return 'Asunto familiar';
       case ExcuseType.travel:
         return 'Viaje';
+      case ExcuseType.lateArrival:
+        return 'Retardo';
       case ExcuseType.other:
         return 'Otro';
     }

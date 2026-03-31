@@ -96,7 +96,7 @@ class _EditChildProfileScreenState
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: const Text('Editar perfil'),
         actions: [
@@ -457,7 +457,7 @@ class _EditChildProfileScreenState
     final selected = await showModalBottomSheet<ChildDoctorSuggestion>(
       context: context,
       useSafeArea: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => _DoctorSuggestionSheet(suggestions: suggestions),
     );
 
@@ -474,7 +474,7 @@ class _EditChildProfileScreenState
     final selected = await showModalBottomSheet<ChildPickupSuggestion>(
       context: context,
       useSafeArea: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => _PickupSuggestionSheet(suggestions: suggestions),
     );
 
@@ -564,7 +564,7 @@ class _EditChildProfileScreenState
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       builder: (context) => ContactEditorSheet(
         existing: existing,
         imageService: _imageService,
@@ -721,15 +721,15 @@ class _PhotoCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 42,
-            backgroundColor: AppColors.primarySurface,
+            backgroundColor: context.appColor(AppColors.primarySurface),
             backgroundImage: previewImage as ImageProvider<Object>?,
             child: previewImage == null
                 ? Text(
                     profile.firstName.isNotEmpty ? profile.firstName[0] : 'N',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: context.appColor(AppColors.primary),
                     ),
                   )
                 : null,
@@ -740,9 +740,12 @@ class _PhotoCard extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'La nueva foto se guardará en la nube y se reflejará en todo el sistema.',
-            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
+              height: 1.5,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -790,20 +793,20 @@ class _EditableContactTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.appColor(AppColors.surfaceVariant),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: AppColors.primarySurface,
+            backgroundColor: context.appColor(AppColors.primarySurface),
             backgroundImage: previewImage as ImageProvider<Object>?,
             child: previewImage == null
                 ? Text(
                     contact.name.isNotEmpty ? contact.name[0] : 'R',
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: context.appColor(AppColors.primary),
                       fontWeight: FontWeight.w700,
                     ),
                   )
@@ -824,8 +827,8 @@ class _EditableContactTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${contact.relationship} • ${contact.phone}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: context.appColor(AppColors.textSecondary),
                     fontSize: 12,
                   ),
                 ),
@@ -846,7 +849,11 @@ class _EditableContactTile extends StatelessWidget {
           ),
           IconButton(
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 18),
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 18,
+              color: context.appColor(AppColors.textSecondary),
+            ),
           ),
           IconButton(
             onPressed: onDelete,

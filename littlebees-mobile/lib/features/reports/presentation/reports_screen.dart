@@ -16,7 +16,7 @@ class ReportsScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(reportsSummaryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: Text(tr.tr('reports')),
         elevation: 0,

@@ -18,7 +18,7 @@ class ChildrenListScreen extends ConsumerWidget {
     final childrenAsync = ref.watch(myChildrenProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(title: Text(tr.tr('my_children')), elevation: 0),
       body: SafeArea(
         child: childrenAsync.when(
@@ -85,18 +85,31 @@ class _ChildrenHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heroColors = context.isDark
+        ? [
+            context.appColor(AppColors.primarySurface),
+            context.appColor(AppColors.surface),
+            context.appColor(AppColors.secondarySurface),
+          ]
+        : [
+            const Color(0xFFFAF4E5),
+            const Color(0xFFFFFFFF),
+            const Color(0xFFF0F5EF),
+          ];
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFAF4E5), Color(0xFFFFFFFF), Color(0xFFF0F5EF)],
+        gradient: LinearGradient(
+          colors: heroColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        border: Border.all(color: context.appColor(AppColors.border)),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
+            color: Colors.black.withAlpha(context.isDark ? 28 : 20),
             blurRadius: 18,
             offset: Offset(0, 8),
           ),
@@ -110,18 +123,22 @@ class _ChildrenHero extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
+                  color: context.appColor(AppColors.primarySurface),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.sparkles, size: 14, color: AppColors.primary),
+                    Icon(
+                      LucideIcons.sparkles,
+                      size: 14,
+                      color: context.appColor(AppColors.primary),
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Seguimiento familiar',
                       style: TextStyle(
-                        color: AppColors.primary,
+                        color: context.appColor(AppColors.primary),
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
@@ -132,20 +149,20 @@ class _ChildrenHero extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Todo sobre tus hijos en un solo lugar',
             style: TextStyle(
               fontSize: 22,
               height: 1.08,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Consulta perfiles, grupos e informacion clave con una vista clara y elegante.',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.appColor(AppColors.textSecondary),
               height: 1.5,
               fontSize: 13,
             ),
@@ -205,8 +222,11 @@ class _HeroMetric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.appColor(AppColors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,19 +235,19 @@ class _HeroMetric extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: context.appColor(AppColors.textPrimary),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: context.appColor(AppColors.textSecondary),
             ),
           ),
         ],
@@ -249,6 +269,9 @@ class _ChildSpotlightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ageLabel = _formatExactAge(child.dateOfBirth);
     final palette = _paletteForGender(child.gender);
+    final cardSurface = context.isDark
+        ? context.appColor(AppColors.surfaceVariant)
+        : palette.surface;
 
     return LBCard(
       onTap: onTap,
@@ -258,8 +281,8 @@ class _ChildSpotlightCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           gradient: LinearGradient(
             colors: [
-              Colors.white,
-              palette.surface,
+              context.appColor(AppColors.surface),
+              cardSurface,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -293,8 +316,8 @@ class _ChildSpotlightCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           child.groupName ?? 'Sin grupo asignado',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: context.appColor(AppColors.textSecondary),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -302,9 +325,9 @@ class _ChildSpotlightCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     LucideIcons.chevronRight,
-                    color: AppColors.textTertiary,
+                    color: context.appColor(AppColors.textTertiary),
                   ),
                 ],
               ),
@@ -356,9 +379,15 @@ class _ChildInfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withAlpha(60)),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(60),
+        ),
       ),
       child: Row(
         children: [
@@ -370,18 +399,18 @@ class _ChildInfoPill extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                     fontWeight: FontWeight.w700,
                   ),
                 ),

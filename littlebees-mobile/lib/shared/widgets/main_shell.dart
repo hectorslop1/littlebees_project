@@ -84,7 +84,6 @@ class _MainShellState extends ConsumerState<MainShell> {
       '/profile',
       '/payments',
       '/children',
-      '/excuses',
     };
     final showIncomingCallScreen =
         incomingCall != null && activeCallId != incomingCall.callId;

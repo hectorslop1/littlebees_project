@@ -115,7 +115,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
     final unreadMessages = ref.watch(unreadMessagesCountProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       body: SafeArea(
         child: dailyStoryAsync.when(
           data: (dailyStory) {
@@ -177,15 +177,19 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.surfaceVariant,
+                                color: context.appColor(
+                                  AppColors.surfaceVariant,
+                                ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 '${dailyStory.events.length} ${dailyStory.events.length == 1 ? 'evento' : 'eventos'}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  color: context.appColor(
+                                    AppColors.textPrimary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -249,8 +253,8 @@ class _HomeTopBar extends StatelessWidget {
             children: [
               Text(
                 _greetingForTime(),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.appColor(AppColors.textSecondary),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -258,18 +262,18 @@ class _HomeTopBar extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 userName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   height: 1,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 tenantName,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.appColor(AppColors.textSecondary),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -307,10 +311,14 @@ class _RoundActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: highlighted ? AppColors.primary : Colors.white,
+      color: highlighted
+          ? context.appColor(AppColors.primary)
+          : context.appColor(AppColors.surface),
       borderRadius: BorderRadius.circular(20),
       elevation: highlighted ? 4 : 0,
-      shadowColor: highlighted ? AppColors.primary.withAlpha(70) : null,
+      shadowColor: highlighted
+          ? context.appColor(AppColors.primary).withAlpha(70)
+          : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -324,8 +332,8 @@ class _RoundActionButton extends StatelessWidget {
                 child: Icon(
                   icon,
                   color: highlighted
-                      ? AppColors.textOnPrimary
-                      : AppColors.textPrimary,
+                      ? context.appColor(AppColors.textOnPrimary)
+                      : context.appColor(AppColors.textPrimary),
                   size: 20,
                 ),
               ),

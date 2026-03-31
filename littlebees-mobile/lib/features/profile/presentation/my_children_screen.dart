@@ -22,7 +22,7 @@ class MyChildrenScreen extends ConsumerWidget {
     final title = _screenTitle(user?.role);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(title: Text(title), elevation: 0),
       body: SafeArea(
         child: childrenAsync.when(
@@ -76,6 +76,18 @@ class _MyChildrenHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heroSurface = context.isDark
+        ? [
+            context.appColor(AppColors.primarySurface),
+            context.appColor(AppColors.surface),
+            context.appColor(AppColors.secondarySurface),
+          ]
+        : [
+            const Color(0xFFFAF4E5),
+            const Color(0xFFFFFFFF),
+            const Color(0xFFF0F5EF),
+          ];
+
     final activeGroups = children
         .map((child) => child.groupName)
         .whereType<String>()
@@ -84,41 +96,88 @@ class _MyChildrenHero extends StatelessWidget {
     final activeProfiles =
         children.where((child) => child.status == 'active').length;
 
-    return CompactHeroCard(
-      eyebrow: role == UserRole.parent ? 'Vista familiar' : 'Vista escolar',
-      title: role == UserRole.parent
-          ? 'Tus hijos, siempre a la mano'
-          : 'Perfiles asignados con contexto completo',
-      subtitle: role == UserRole.parent
-          ? 'Revisa grupo, edad y estado de cada hijo con una vista clara y cuidada.'
-          : 'Consulta los perfiles vinculados y entra al detalle de cada alumno en segundos.',
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: heroSurface,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: context.appColor(AppColors.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: CompactMetricTile(
-              label: role == UserRole.parent ? 'Hijos' : 'Alumnos',
-              value: '${children.length}',
-              icon: LucideIcons.baby,
-              accent: AppColors.primary,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.appColor(AppColors.primarySurface),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              role == UserRole.parent ? 'Vista familiar' : 'Vista escolar',
+              style: TextStyle(
+                color: context.appColor(AppColors.primary),
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: CompactMetricTile(
-              label: 'Activos',
-              value: '$activeProfiles',
-              icon: LucideIcons.badgeCheck,
-              accent: AppColors.info,
+          const SizedBox(height: 12),
+          Text(
+            role == UserRole.parent
+                ? 'Tus hijos, siempre a la mano'
+                : 'Perfiles asignados con contexto completo',
+            style: TextStyle(
+              color: context.appColor(AppColors.textPrimary),
+              fontSize: 22,
+              height: 1.08,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: CompactMetricTile(
-              label: 'Grupos',
-              value: '$activeGroups',
-              icon: LucideIcons.users,
-              accent: AppColors.secondary,
+          const SizedBox(height: 6),
+          Text(
+            role == UserRole.parent
+                ? 'Revisa grupo, edad y estado de cada hijo con una vista clara y cuidada.'
+                : 'Consulta los perfiles vinculados y entra al detalle de cada alumno en segundos.',
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
+              height: 1.5,
+              fontSize: 13,
             ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: CompactMetricTile(
+                  label: role == UserRole.parent ? 'Hijos' : 'Alumnos',
+                  value: '${children.length}',
+                  icon: LucideIcons.baby,
+                  accent: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: CompactMetricTile(
+                  label: 'Activos',
+                  value: '$activeProfiles',
+                  icon: LucideIcons.badgeCheck,
+                  accent: AppColors.info,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: CompactMetricTile(
+                  label: 'Grupos',
+                  value: '$activeGroups',
+                  icon: LucideIcons.users,
+                  accent: AppColors.secondary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -139,17 +198,20 @@ class _DetailedChildCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ageLabel = _formatExactAge(child.dateOfBirth);
     final palette = _paletteForGender(child.gender);
+    final cardSurface = context.isDark
+        ? context.appColor(AppColors.surfaceVariant)
+        : palette.surface;
 
     return LBCard(
       onTap: onTap,
       padding: EdgeInsets.zero,
-        child: Container(
-          decoration: BoxDecoration(
+      child: Container(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              Colors.white,
-              palette.surface,
+              context.appColor(AppColors.surface),
+              cardSurface,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -183,8 +245,8 @@ class _DetailedChildCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           child.groupName ?? 'Sin grupo asignado',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          style: TextStyle(
+                            color: context.appColor(AppColors.textSecondary),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -192,9 +254,9 @@ class _DetailedChildCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     LucideIcons.chevronRight,
-                    color: AppColors.textTertiary,
+                    color: context.appColor(AppColors.textTertiary),
                   ),
                 ],
               ),
@@ -246,9 +308,15 @@ class _ChildInfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withAlpha(60)),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(60),
+        ),
       ),
       child: Row(
         children: [
@@ -260,18 +328,18 @@ class _ChildInfoPill extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textPrimary,
+                    color: context.appColor(AppColors.textPrimary),
                     fontWeight: FontWeight.w700,
                   ),
                 ),

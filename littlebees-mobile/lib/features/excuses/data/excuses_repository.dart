@@ -75,16 +75,27 @@ class ExcusesRepository {
     }
   }
 
+  List<Excuse> _parseExcusesResponse(dynamic response) {
+    final items = response is List
+        ? response
+        : response is Map<String, dynamic>
+        ? response['data'] as List? ?? const []
+        : const [];
+
+    return items
+        .whereType<Map<String, dynamic>>()
+        .map(Excuse.fromJson)
+        .toList();
+  }
+
   /// Obtener justificantes de un niño específico
   Future<List<Excuse>> getExcusesByChild(String childId) async {
     try {
-      final response = await _api.get<List<dynamic>>(
+      final response = await _api.get<dynamic>(
         Endpoints.excusesByChild(childId),
       );
 
-      return response
-          .map((json) => Excuse.fromJson(json as Map<String, dynamic>))
-          .toList();
+      return _parseExcusesResponse(response);
     } catch (e) {
       throw Exception('Error al obtener justificantes del niño: $e');
     }
@@ -103,7 +114,7 @@ class ExcusesRepository {
     }
   }
 
-  /// Actualizar estado de un justificante (aprobar/rechazar) - solo maestras
+  /// Actualizar estado de un justificante (aprobar/rechazar) - solo dirección/admin
   Future<Excuse> updateExcuseStatus({
     required String id,
     required ExcuseStatus status,

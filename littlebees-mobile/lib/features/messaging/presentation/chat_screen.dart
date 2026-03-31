@@ -482,6 +482,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final tr = ref.watch(translationsProvider);
 
     return Scaffold(
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft, size: 28),
@@ -544,7 +545,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 ?.copyWith(
                                   color: isConnected
                                       ? AppColors.success
-                                      : AppColors.textTertiary,
+                                      : context.appColor(
+                                          AppColors.textTertiary,
+                                        ),
                                 ),
                           ),
                           loading: () => const SizedBox.shrink(),
@@ -557,7 +560,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
         titleSpacing: 0,
         elevation: 0,
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColor(AppColors.surface),
         actions: [
           if (!_showCallHistory)
             IconButton(
@@ -614,7 +617,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ? LucideIcons.messageSquare
                           : LucideIcons.phoneCall,
                       size: 18,
-                      color: AppColors.textSecondary,
+                      color: context.appColor(AppColors.textSecondary),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -855,7 +858,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return Text(
           msg.content,
           style: TextStyle(
-            color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+            color: isMe
+                ? context.appColor(AppColors.textOnPrimary)
+                : context.appColor(AppColors.textPrimary),
             fontSize: 15,
             height: 1.4,
           ),
@@ -904,10 +909,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   maxWidth: MediaQuery.of(context).size.width * 0.78,
                 ),
                 decoration: BoxDecoration(
-                  color: isMe ? AppColors.primarySurface : AppColors.surface,
+                  color: isMe
+                      ? context.appColor(AppColors.primarySurface)
+                      : context.appColor(AppColors.surface),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: isMe ? AppColors.primaryLight : AppColors.divider,
+                    color: isMe
+                        ? context.appColor(AppColors.primaryLight)
+                        : context.appColor(AppColors.divider),
                   ),
                 ),
                 child: Row(
@@ -934,24 +943,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: context.appColor(AppColors.textPrimary),
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             subtitle,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: context.appColor(AppColors.textSecondary),
                               fontSize: 13,
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             _formatTime(message.createdAt),
-                            style: const TextStyle(
-                              color: AppColors.textTertiary,
+                            style: TextStyle(
+                              color: context.appColor(AppColors.textTertiary),
                               fontSize: 11,
                             ),
                           ),
@@ -979,9 +988,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
-            color: AppColors.primarySurface,
+            color: context.appColor(AppColors.primarySurface),
             border: Border(
-              bottom: BorderSide(color: AppColors.border, width: 1),
+              bottom: BorderSide(
+                color: context.appColor(AppColors.border),
+                width: 1,
+              ),
             ),
           ),
           child: Row(
@@ -996,7 +1008,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 'Historial de llamadas',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.appColor(AppColors.textPrimary),
                 ),
               ),
             ],
@@ -1028,11 +1040,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appColor(AppColors.surface),
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: const [
+                            border: Border.all(
+                              color: context.appColor(AppColors.border),
+                            ),
+                            boxShadow: [
                               BoxShadow(
-                                color: Color(0x08000000),
+                                color: Colors.black.withAlpha(
+                                  context.isDark ? 24 : 8,
+                                ),
                                 blurRadius: 8,
                                 offset: Offset(0, 2),
                               ),
@@ -1044,8 +1061,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: wasAnswered
-                                      ? AppColors.primarySurface
-                                      : AppColors.surfaceVariant,
+                                      ? context.appColor(
+                                          AppColors.primarySurface,
+                                        )
+                                      : context.appColor(
+                                          AppColors.surfaceVariant,
+                                        ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -1055,7 +1076,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   size: 20,
                                   color: wasAnswered
                                       ? AppColors.primary
-                                      : AppColors.textSecondary,
+                                      : context.appColor(
+                                          AppColors.textSecondary,
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -1157,11 +1180,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ? MediaQuery.of(context).padding.bottom
             : 12,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: context.appColor(AppColors.surface),
         boxShadow: [
           BoxShadow(
-            color: Color(0x05000000),
+            color: Colors.black.withAlpha(context.isDark ? 24 : 5),
             blurRadius: 10,
             offset: Offset(0, -5),
           ),
@@ -1176,9 +1199,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.primarySurface,
+                color: context.appColor(AppColors.primarySurface),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.primaryLight),
+                border: Border.all(
+                  color: context.appColor(AppColors.primaryLight),
+                ),
               ),
               child: Row(
                 children: [
@@ -1188,11 +1213,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     size: 18,
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Grabando nota de voz...',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: context.appColor(AppColors.textPrimary),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1238,13 +1263,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     hintText: _isRecordingVoiceNote
                         ? 'La nota de voz se enviará al detener la grabación'
                         : 'Escribe un mensaje...',
-                    hintStyle: const TextStyle(color: AppColors.textTertiary),
+                    hintStyle: TextStyle(
+                      color: context.appColor(AppColors.textTertiary),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: AppColors.surfaceVariant,
+                    fillColor: context.appColor(AppColors.surfaceVariant),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 10,
@@ -1321,7 +1348,9 @@ class _ChatBubble extends StatelessWidget {
         maxWidth: MediaQuery.of(context).size.width * 0.75,
       ),
       decoration: BoxDecoration(
-        color: isMe ? AppColors.primary : AppColors.surface,
+        color: isMe
+            ? context.appColor(AppColors.primary)
+            : context.appColor(AppColors.surface),
         borderRadius: BorderRadius.circular(16).copyWith(
           bottomRight: isMe
               ? const Radius.circular(4)
@@ -1330,9 +1359,9 @@ class _ChatBubble extends StatelessWidget {
               ? const Radius.circular(4)
               : const Radius.circular(16),
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0A000000),
+            color: Colors.black.withAlpha(context.isDark ? 26 : 10),
             blurRadius: 8,
             offset: Offset(0, 4),
           ),
@@ -1351,8 +1380,8 @@ class _ChatBubble extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   color: isMe
-                      ? AppColors.textOnPrimary.withAlpha(180)
-                      : AppColors.textTertiary,
+                      ? context.appColor(AppColors.textOnPrimary).withAlpha(180)
+                      : context.appColor(AppColors.textTertiary),
                 ),
               ),
               if (isMe) ...[
@@ -1362,7 +1391,7 @@ class _ChatBubble extends StatelessWidget {
                   size: 14,
                   color: isRead
                       ? AppColors.success.withAlpha(200)
-                      : AppColors.textOnPrimary.withAlpha(200),
+                      : context.appColor(AppColors.textOnPrimary).withAlpha(200),
                 ),
               ],
             ],
@@ -1391,7 +1420,9 @@ class _ImageAttachmentMessage extends StatelessWidget {
       return Text(
         caption ?? 'Imagen no disponible',
         style: TextStyle(
-          color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+          color: isMe
+              ? context.appColor(AppColors.textOnPrimary)
+              : context.appColor(AppColors.textPrimary),
           fontSize: 15,
           height: 1.4,
         ),
@@ -1434,7 +1465,9 @@ class _ImageAttachmentMessage extends StatelessWidget {
           Text(
             caption!,
             style: TextStyle(
-              color: isMe ? AppColors.textOnPrimary : AppColors.textPrimary,
+              color: isMe
+                  ? context.appColor(AppColors.textOnPrimary)
+                  : context.appColor(AppColors.textPrimary),
               fontSize: 15,
               height: 1.4,
             ),
@@ -1473,7 +1506,9 @@ class _FileAttachmentMessage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isMe ? Colors.white.withAlpha(18) : AppColors.surfaceVariant,
+          color: isMe
+              ? context.appColor(AppColors.surface).withAlpha(36)
+              : context.appColor(AppColors.surfaceVariant),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -1481,7 +1516,9 @@ class _FileAttachmentMessage extends StatelessWidget {
           children: [
             Icon(
               LucideIcons.fileText,
-              color: isMe ? AppColors.textOnPrimary : AppColors.primary,
+              color: isMe
+                  ? context.appColor(AppColors.textOnPrimary)
+                  : context.appColor(AppColors.primary),
               size: 22,
             ),
             const SizedBox(width: 10),
@@ -1493,8 +1530,8 @@ class _FileAttachmentMessage extends StatelessWidget {
                     title,
                     style: TextStyle(
                       color: isMe
-                          ? AppColors.textOnPrimary
-                          : AppColors.textPrimary,
+                          ? context.appColor(AppColors.textOnPrimary)
+                          : context.appColor(AppColors.textPrimary),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1505,8 +1542,8 @@ class _FileAttachmentMessage extends StatelessWidget {
                         : 'Toca para abrir',
                     style: TextStyle(
                       color: isMe
-                          ? AppColors.textOnPrimary.withAlpha(180)
-                          : AppColors.textSecondary,
+                          ? context.appColor(AppColors.textOnPrimary).withAlpha(180)
+                          : context.appColor(AppColors.textSecondary),
                       fontSize: 12,
                     ),
                   ),
@@ -1617,15 +1654,15 @@ class _AudioAttachmentMessageState extends State<_AudioAttachmentMessage> {
         ? 0.0
         : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0, 1);
     final foreground = widget.isMe
-        ? AppColors.textOnPrimary
-        : AppColors.textPrimary;
+        ? context.appColor(AppColors.textOnPrimary)
+        : context.appColor(AppColors.textPrimary);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: widget.isMe
-            ? Colors.white.withAlpha(18)
-            : AppColors.surfaceVariant,
+            ? context.appColor(AppColors.surface).withAlpha(36)
+            : context.appColor(AppColors.surfaceVariant),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

@@ -26,7 +26,7 @@ class ChildHeader extends ConsumerWidget {
     return PopupMenuButton<String>(
       offset: const Offset(0, 72),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      color: AppColors.surface,
+      color: context.appColor(AppColors.surface),
       elevation: 10,
       onSelected: (childId) {
         if (childId != currentChildId) {
@@ -75,14 +75,22 @@ class ChildHeader extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [palette.surface, Colors.white, palette.surface.withAlpha(110)],
+            colors: [
+              context.isDark
+                  ? context.appColor(AppColors.surfaceVariant)
+                  : palette.surface,
+              context.appColor(AppColors.surface),
+              context.isDark
+                  ? context.appColor(AppColors.surface)
+                  : palette.surface.withAlpha(110),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(22),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Color(0x12000000),
+              color: Colors.black.withAlpha(context.isDark ? 30 : 18),
               blurRadius: 16,
               offset: Offset(0, 6),
             ),
@@ -183,9 +191,15 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withAlpha(40)),
+        border: Border.all(
+          color: context.isDark
+              ? context.appColor(AppColors.border)
+              : accent.withAlpha(40),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -194,8 +208,8 @@ class _InfoPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: context.appColor(AppColors.textPrimary),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),

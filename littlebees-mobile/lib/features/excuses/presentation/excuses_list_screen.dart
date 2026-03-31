@@ -33,7 +33,7 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
     final canReview = authState.isDirector || authState.isAdmin;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: const Text('Justificantes'),
         actions: [
@@ -45,15 +45,6 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
             ),
         ],
       ),
-      floatingActionButton: canCreate
-          ? FloatingActionButton.extended(
-              onPressed: () => context.pushNamed(RouteNames.excuseCreate),
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              icon: const Icon(LucideIcons.filePlus2),
-              label: const Text('Crear'),
-            )
-          : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -73,19 +64,18 @@ class _ExcusesListScreenState extends ConsumerState<ExcusesListScreen> {
                     : 'Da seguimiento al estatus de cada justificante sin perder contexto.',
                 trailing: Text(
                   user?.firstName ?? 'Familia',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
+                    color: context.appColor(AppColors.textSecondary),
                   ),
                 ),
               ),
             ),
-            SizedBox(
-              height: 52,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
                 children: [
                   _FilterChip(
                     label: 'Todos',
@@ -187,7 +177,8 @@ class _FilterChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(999),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(999),
@@ -409,6 +400,8 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final normalizedMessage = _friendlyMessage(message);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -428,7 +421,7 @@ class _ErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message,
+              normalizedMessage,
               style: const TextStyle(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -441,5 +434,14 @@ class _ErrorState extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _friendlyMessage(String rawMessage) {
+    final normalized = rawMessage.toLowerCase();
+    if (normalized.contains('404') && normalized.contains('/excuses')) {
+      return 'El servidor al que está conectada la app todavía no tiene desplegado el módulo de justificantes. La pantalla ya existe en móvil, pero la ruta `/api/v1/excuses` sigue respondiendo 404.';
+    }
+
+    return rawMessage;
   }
 }

@@ -54,15 +54,18 @@ class StatusCard extends ConsumerWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [theme.surface, Colors.white],
+          colors: [
+            theme.surfaceFor(context),
+            context.appColor(AppColors.surface),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: theme.border),
-        boxShadow: const [
+        border: Border.all(color: theme.borderFor(context)),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x14000000),
+            color: Colors.black.withAlpha(context.isDark ? 28 : 20),
             blurRadius: 14,
             offset: Offset(0, 6),
           ),
@@ -98,10 +101,10 @@ class StatusCard extends ConsumerWidget {
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         height: 1.35,
-                        color: AppColors.textSecondary,
+                        color: context.appColor(AppColors.textSecondary),
                       ),
                     ),
                   ],
@@ -112,7 +115,8 @@ class StatusCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
+              Flexible(
+                flex: 2,
                 child: _StatusDetail(
                   label: 'Hora',
                   value: timeLabel,
@@ -120,11 +124,13 @@ class StatusCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(
+              Flexible(
+                flex: 3,
                 child: _StatusDetail(
-                  label: 'Registrado por',
+                  label: null,
                   value: responsibleLabel,
                   icon: LucideIcons.user,
+                  emphasizeValue: true,
                 ),
               ),
             ],
@@ -137,28 +143,36 @@ class StatusCard extends ConsumerWidget {
 
 class _StatusDetail extends StatelessWidget {
   const _StatusDetail({
-    required this.label,
+    this.label,
     required this.value,
     required this.icon,
+    this.emphasizeValue = false,
   });
 
-  final String label;
+  final String? label;
   final String value;
   final IconData icon;
+  final bool emphasizeValue;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(220),
+        color: context.appColor(AppColors.surface).withAlpha(
+          context.isDark ? 255 : 220,
+        ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.appColor(AppColors.divider)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
+          Icon(
+            icon,
+            size: 16,
+            color: context.appColor(AppColors.textSecondary),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: RichText(
@@ -166,20 +180,21 @@ class _StatusDetail extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
                 children: [
-                  TextSpan(
-                    text: '$label: ',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                  if (label != null)
+                    TextSpan(
+                      text: '$label: ',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: context.appColor(AppColors.textSecondary),
+                      ),
                     ),
-                  ),
                   TextSpan(
                     text: value,
-                    style: const TextStyle(
-                      fontSize: 11.5,
+                    style: TextStyle(
+                      fontSize: emphasizeValue ? 12.5 : 11.5,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: context.appColor(AppColors.textPrimary),
                     ),
                   ),
                 ],
@@ -206,6 +221,12 @@ class _StatusTheme {
   final Color border;
   final IconData icon;
   final String Function(dynamic tr) label;
+
+  Color surfaceFor(BuildContext context) =>
+      context.isDark ? context.appColor(AppColors.surfaceVariant) : surface;
+
+  Color borderFor(BuildContext context) =>
+      context.isDark ? context.appColor(AppColors.border) : border;
 }
 
 _StatusTheme _statusTheme(ChildPresenceStatus status) {

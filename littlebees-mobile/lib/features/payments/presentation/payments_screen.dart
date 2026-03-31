@@ -31,13 +31,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final canPayFromThisRole = authState.isParent;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: const Text('Pagos'),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColor(AppColors.surface),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: AppColors.textPrimary),
+          icon: Icon(
+            LucideIcons.arrowLeft,
+            color: context.appColor(AppColors.textPrimary),
+          ),
           onPressed: () => context.pop(),
         ),
       ),
@@ -312,16 +315,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.appColor(AppColors.surface),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: context.appColor(AppColors.divider)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             LucideIcons.shieldCheck,
-            color: AppColors.secondary,
+            color: context.appColor(AppColors.secondary),
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -330,10 +333,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               canPayFromThisRole
                   ? 'Los cargos y pagos mostrados aquí provienen del backend real. Puedes liquidar tus cargos pendientes y revisar el historial de tus hijos.'
                   : 'Los cargos y pagos mostrados aquí provienen del backend real. Desde este rol solo puedes consultar el estado financiero; el pago corresponde a las familias.',
-              style: const TextStyle(
+              style: TextStyle(
                 height: 1.35,
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: context.appColor(AppColors.textSecondary),
               ),
             ),
           ),
@@ -360,14 +363,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               },
               labelStyle: TextStyle(
                 color: selected
-                    ? AppColors.textOnPrimary
-                    : AppColors.textPrimary,
+                    ? context.appColor(AppColors.textOnPrimary)
+                    : context.appColor(AppColors.textPrimary),
                 fontWeight: FontWeight.w600,
               ),
-              backgroundColor: AppColors.surface,
+              backgroundColor: context.appColor(AppColors.surface),
               selectedColor: AppColors.primary,
               side: BorderSide(
-                color: selected ? AppColors.primary : AppColors.divider,
+                color: selected
+                    ? context.appColor(AppColors.primary)
+                    : context.appColor(AppColors.divider),
               ),
               showCheckmark: false,
             ),
@@ -422,8 +427,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       payment.childName ?? 'Alumno',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: context.appColor(AppColors.textSecondary),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -516,19 +521,23 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.appColor(AppColors.surfaceVariant),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(
+            icon,
+            size: 14,
+            color: context.appColor(AppColors.textSecondary),
+          ),
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: context.appColor(AppColors.textSecondary),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -558,8 +567,12 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   Widget _buildEmptyState() {
     return LBCard(
       child: Column(
-        children: const [
-          Icon(LucideIcons.receipt, size: 36, color: AppColors.textTertiary),
+        children: [
+          Icon(
+            LucideIcons.receipt,
+            size: 36,
+            color: context.appColor(AppColors.textTertiary),
+          ),
           SizedBox(height: 12),
           Text(
             'No hay movimientos para este filtro',
@@ -569,7 +582,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           Text(
             'Prueba con otro estado para revisar tu historial.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+            style: TextStyle(
+              color: context.appColor(AppColors.textSecondary),
+              height: 1.5,
+            ),
           ),
         ],
       ),
@@ -796,11 +812,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.appColor(AppColors.surface),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x22000000),
+                        color: Colors.black.withAlpha(context.isDark ? 32 : 34),
                         blurRadius: 20,
                         offset: Offset(0, 8),
                       ),
@@ -817,7 +833,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             width: 56,
                             height: 5,
                             decoration: BoxDecoration(
-                              color: AppColors.divider,
+                              color: context.appColor(AppColors.divider),
                               borderRadius: BorderRadius.circular(999),
                             ),
                           ),
@@ -834,7 +850,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                         Text(
                           'Este pago se registrara en la base de datos real de IONOS y marcara el cargo como pagado.',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: context.appColor(AppColors.textSecondary),
                             fontSize: 12,
                             height: 1.5,
                           ),
@@ -1029,14 +1045,14 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         labelText: label,
         hintText: hint,
         filled: true,
-        fillColor: AppColors.surfaceVariant,
+        fillColor: context.appColor(AppColors.surfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.divider),
+          borderSide: BorderSide(color: context.appColor(AppColors.divider)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),

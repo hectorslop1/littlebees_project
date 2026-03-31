@@ -44,14 +44,16 @@ class LBAvatar extends StatelessWidget {
     final initial = placeholder.isNotEmpty
         ? placeholder.substring(0, 1).toUpperCase()
         : '';
+    final borderColor = context.appColor(AppColors.primaryLight);
+    final surfaceColor = context.appColor(AppColors.primarySurface);
 
     Widget avatarContent = Container(
       width: avatarSize,
       height: avatarSize,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primaryLight, width: 2),
-        color: AppColors.primarySurface,
+        border: Border.all(color: borderColor, width: 2),
+        color: surfaceColor,
       ),
       alignment: Alignment.center,
       child: ClipOval(
@@ -83,7 +85,10 @@ class LBAvatar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: statusColor ?? AppColors.success,
-                border: Border.all(color: AppColors.surface, width: 2),
+                border: Border.all(
+                  color: context.appColor(AppColors.surface),
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -127,16 +132,18 @@ class _AvatarPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = context.appColor(AppColors.primarySurface);
+
     return Container(
       width: size,
       height: size,
-      color: AppColors.primarySurface,
+      color: surfaceColor,
       alignment: Alignment.center,
       child: initial.isNotEmpty
           ? Text(
               initial,
               style: AppTypography.textTheme.labelLarge?.copyWith(
-                color: AppColors.primary,
+                color: context.appColor(AppColors.primary),
                 fontSize: size * 0.4,
               ),
             )

@@ -22,6 +22,7 @@ class ConversationsScreen extends ConsumerWidget {
     final currentUserId = ref.watch(currentUserProvider)?.id;
 
     return Scaffold(
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: Text(tr.tr('messages')),
         actions: [
@@ -149,11 +150,12 @@ class ConversationsScreen extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColor(AppColors.surface),
                 borderRadius: BorderRadius.circular(14),
-                boxShadow: const [
+                border: Border.all(color: context.appColor(AppColors.border)),
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x08000000),
+                    color: Colors.black.withAlpha(context.isDark ? 26 : 8),
                     blurRadius: 6,
                     offset: Offset(0, 2),
                   ),
@@ -190,8 +192,8 @@ class ConversationsScreen extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: unreadCount > 0
-                                          ? AppColors.primary
-                                          : AppColors.textSecondary,
+                                          ? context.appColor(AppColors.primary)
+                                          : context.appColor(AppColors.textSecondary),
                                       fontWeight: unreadCount > 0
                                           ? FontWeight.bold
                                       : FontWeight.normal,
@@ -225,8 +227,8 @@ class ConversationsScreen extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(
                                       color: unreadCount > 0
-                                          ? AppColors.textPrimary
-                                          : AppColors.textSecondary,
+                                          ? context.appColor(AppColors.textPrimary)
+                                          : context.appColor(AppColors.textSecondary),
                                       fontWeight: unreadCount > 0
                                           ? FontWeight.w600
                                           : FontWeight.normal,

@@ -278,7 +278,9 @@ class _LatestActivityCard extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.surfaceVariant,
+                                      color: context.appColor(
+                                        AppColors.surfaceVariant,
+                                      ),
                                       borderRadius: AppRadii.borderRadiusFull,
                                     ),
                                     child: AnimatedRotation(
@@ -376,7 +378,7 @@ class _TimelineHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primarySurface,
+              color: context.appColor(AppColors.primarySurface),
               borderRadius: AppRadii.borderRadiusFull,
             ),
             child: Text(
@@ -541,7 +543,7 @@ class _TimelineRail extends StatelessWidget {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appColor(AppColors.surface),
                 shape: BoxShape.circle,
                 border: Border.all(color: color, width: 3),
                 boxShadow: [
@@ -625,7 +627,9 @@ class _ActivityPlaceholder extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(190),
+            color: context.appColor(AppColors.surface).withAlpha(
+              context.isDark ? 230 : 190,
+            ),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 20),
@@ -683,7 +687,7 @@ class _MetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: context.appColor(AppColors.surfaceVariant),
         borderRadius: AppRadii.borderRadiusFull,
       ),
       child: Row(

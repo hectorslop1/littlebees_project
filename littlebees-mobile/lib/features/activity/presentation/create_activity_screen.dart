@@ -261,7 +261,7 @@ class _CreateActivityScreenState extends ConsumerState<CreateActivityScreen> {
     final groupsAsync = ref.watch(groupsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: const Text('Registrar Actividad'),
         elevation: 0,

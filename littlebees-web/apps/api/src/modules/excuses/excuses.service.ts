@@ -345,7 +345,7 @@ export class ExcusesService {
     const childName = `${child.firstName} ${child.lastName}`.trim();
     const dateLabel = dto.date;
 
-    const teacherId = child.group?.teacherId as string?;
+    const teacherId = child.group?.teacherId as string | undefined;
     const directors = await this.prisma.userTenant.findMany({
       where: {
         tenantId,
@@ -395,7 +395,7 @@ export class ExcusesService {
     status: string,
   ) {
     const childName = `${excuse.child.firstName} ${excuse.child.lastName}`.trim();
-    const teacherId = excuse.child.group?.teacherId as string?;
+    const teacherId = excuse.child.group?.teacherId as string | undefined;
 
     await this.notificationsService.create(tenantId, {
       userId: excuse.submittedBy,

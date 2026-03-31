@@ -31,10 +31,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final tr = ref.watch(translationsProvider);
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.appColor(AppColors.background),
       appBar: AppBar(
         title: Text(tr.tr('agenda')),
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appColor(AppColors.surface),
         elevation: 0,
         actions: [
           IconButton(
@@ -59,7 +59,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appColor(AppColors.surface),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -99,13 +99,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
                     ),
-                    leftChevronIcon: const Icon(
+                    leftChevronIcon: Icon(
                       LucideIcons.chevronLeft,
-                      color: AppColors.textSecondary,
+                      color: context.appColor(AppColors.textSecondary),
                     ),
-                    rightChevronIcon: const Icon(
+                    rightChevronIcon: Icon(
                       LucideIcons.chevronRight,
-                      color: AppColors.textSecondary,
+                      color: context.appColor(AppColors.textSecondary),
                     ),
                   ),
                   calendarStyle: CalendarStyle(
@@ -255,7 +255,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     Icon(
                       LucideIcons.calendar,
                       size: 64,
-                      color: AppColors.textSecondary.withOpacity(0.3),
+                      color: context.appColor(
+                        AppColors.textSecondary,
+                      ).withAlpha(76),
                     ),
                     const SizedBox(height: 16),
                     Text(

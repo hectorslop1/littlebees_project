@@ -33,6 +33,7 @@ class AiAssistantState {
     List<AiChatSession>? sessions,
     List<AiChatMessage>? messages,
     String? activeSessionId,
+    bool clearActiveSessionId = false,
     bool? isLoading,
     bool? isSending,
     String? error,
@@ -41,7 +42,9 @@ class AiAssistantState {
     return AiAssistantState(
       sessions: sessions ?? this.sessions,
       messages: messages ?? this.messages,
-      activeSessionId: activeSessionId ?? this.activeSessionId,
+      activeSessionId: clearActiveSessionId
+          ? null
+          : (activeSessionId ?? this.activeSessionId),
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
       error: clearError ? null : (error ?? this.error),
@@ -237,7 +240,7 @@ class AiAssistantNotifier extends StateNotifier<AiAssistantState> {
 
   void clearActiveSession() {
     state = state.copyWith(
-      activeSessionId: null,
+      clearActiveSessionId: true,
       messages: const [],
       clearError: true,
     );

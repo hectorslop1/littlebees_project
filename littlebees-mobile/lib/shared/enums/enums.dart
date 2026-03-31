@@ -6,6 +6,7 @@ enum ExcuseType {
   medical('medical'),
   family('family'),
   travel('travel'),
+  lateArrival('late_arrival'),
   other('other');
 
   const ExcuseType(this.value);
