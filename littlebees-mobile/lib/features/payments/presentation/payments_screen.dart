@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../design_system/theme/app_colors.dart';
+import '../../../../design_system/widgets/compact_layout.dart';
 import '../../../../design_system/widgets/lb_card.dart';
 import '../../../../shared/enums/enums.dart';
 import '../../../../shared/models/payment_model.dart';
@@ -63,23 +64,23 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final filteredPayments = _applyFilter(payments);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       children: [
         _buildBalanceCard(context, summary)
             .animate()
             .fadeIn(duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildStatusGrid(summary)
             .animate()
             .fadeIn(delay: 80.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
         _buildNoticeCard(canPayFromThisRole)
             .animate()
             .fadeIn(delay: 140.ms, duration: 320.ms)
             .slideY(begin: 0.06, duration: 320.ms),
-        const SizedBox(height: 24),
+        const SizedBox(height: 18),
         Text(
           'Movimientos',
           style: Theme.of(context).textTheme.headlineMedium,
@@ -89,7 +90,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             .animate()
             .fadeIn(delay: 220.ms, duration: 320.ms)
             .slideX(begin: 0.04, duration: 320.ms),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         if (filteredPayments.isEmpty)
           _buildEmptyState()
         else
@@ -110,19 +111,19 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     final dueLabel = summary.nextDueLabel;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFFB8892D), Color(0xFFD9B161), Color(0xFF8FAE8B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
             color: Color(0x221F2C1F),
-            blurRadius: 30,
-            offset: Offset(0, 14),
+            blurRadius: 22,
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -178,34 +179,34 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 16),
           Text(
             _formatCurrency(summary.pendingBalance),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 42,
+              fontSize: 34,
               height: 1,
               fontWeight: FontWeight.w800,
               letterSpacing: -1.2,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Text(
             summary.pendingBalance > 0
                 ? 'Saldo pendiente total'
                 : 'No tienes saldo pendiente',
             style: TextStyle(
               color: Colors.white.withAlpha(220),
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withAlpha(20),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
               children: [
@@ -222,13 +223,13 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           Text(
             'Consulta tu historial y revisa los cargos activos de cada hijo en tiempo real desde la nube.',
             style: TextStyle(
               color: Colors.white.withAlpha(220),
-              fontSize: 13,
-              height: 1.5,
+              fontSize: 12,
+              height: 1.35,
             ),
           ),
         ],
@@ -259,48 +260,46 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildMetricTile(
-                title: 'Pendientes',
+              child: CompactMetricTile(
+                label: 'Pendientes',
                 value: _formatCurrency(summary.pendingBalance),
-                subtitle: '${summary.pendingCount} cargos',
                 accent: AppColors.warning,
                 icon: LucideIcons.clock3,
+                tint: AppColors.warning.withAlpha(18),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildMetricTile(
-                title: 'Pagado',
+              child: CompactMetricTile(
+                label: 'Pagado',
                 value: _formatCurrency(summary.paidTotal),
-                subtitle: '${summary.paidCount} movimientos',
                 accent: AppColors.success,
                 icon: LucideIcons.badgeCheck,
+                tint: AppColors.success.withAlpha(18),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
-              child: _buildMetricTile(
-                title: 'Vencidos',
+              child: CompactMetricTile(
+                label: 'Vencidos',
                 value: '${summary.overdueCount}',
-                subtitle: summary.overdueAmount > 0
-                    ? _formatCurrency(summary.overdueAmount)
-                    : 'Sin atrasos',
                 accent: AppColors.error,
                 icon: LucideIcons.alertTriangle,
+                tint: AppColors.error.withAlpha(18),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildMetricTile(
-                title: 'Hijos con cargos',
+              child: CompactMetricTile(
+                label: 'Hijos con cargos',
                 value: '${summary.childrenWithPayments}',
-                subtitle: 'Estado consolidado',
                 accent: AppColors.info,
                 icon: LucideIcons.baby,
+                tint: AppColors.info.withAlpha(18),
               ),
             ),
           ],
@@ -309,75 +308,12 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     );
   }
 
-  Widget _buildMetricTile({
-    required String title,
-    required String value,
-    required String subtitle,
-    required Color accent,
-    required IconData icon,
-  }) {
-    return LBCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: accent.withAlpha(24),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: accent, size: 18),
-              ),
-              const Spacer(),
-              Container(
-                height: 10,
-                width: 10,
-                decoration: BoxDecoration(
-                  color: accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.6,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildNoticeCard(bool canPayFromThisRole) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.divider),
       ),
       child: Row(
@@ -388,15 +324,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             color: AppColors.secondary,
             size: 20,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               canPayFromThisRole
                   ? 'Los cargos y pagos mostrados aquí provienen del backend real. Puedes liquidar tus cargos pendientes y revisar el historial de tus hijos.'
                   : 'Los cargos y pagos mostrados aquí provienen del backend real. Desde este rol solo puedes consultar el estado financiero; el pago corresponde a las familias.',
               style: const TextStyle(
-                height: 1.5,
-                fontSize: 13,
+                height: 1.35,
+                fontSize: 12,
                 color: AppColors.textSecondary,
               ),
             ),
@@ -460,18 +396,18 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: visualStatus.tint,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   visualStatus.icon,
                   color: visualStatus.color,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,16 +415,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     Text(
                       payment.concept,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       payment.childName ?? 'Alumno',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -502,18 +438,18 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   Text(
                     _formatCurrency(payment.amount),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.4,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   _buildStatusBadge(visualStatus),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -538,7 +474,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           if (canPayFromThisRole &&
               (payment.status == PaymentStatus.pending ||
                   _isOverdue(payment))) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -563,9 +499,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.textOnPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -578,10 +514,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
 
   Widget _buildMetaPill({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -591,7 +527,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -603,7 +539,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
 
   Widget _buildStatusBadge(_VisualPaymentStatus status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: status.tint,
         borderRadius: BorderRadius.circular(999),
@@ -612,7 +548,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         status.label,
         style: TextStyle(
           color: status.color,
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.w700,
         ),
       ),

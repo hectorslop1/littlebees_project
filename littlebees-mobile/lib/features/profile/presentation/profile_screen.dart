@@ -7,6 +7,7 @@ import '../../../core/services/image_service.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/widgets/lb_avatar.dart';
 import '../../../design_system/widgets/lb_card.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../../core/i18n/app_translations.dart';
 import '../../../core/i18n/locale_provider.dart';
 import '../../../routing/route_names.dart';
@@ -44,20 +45,20 @@ class ProfileScreen extends ConsumerWidget {
       body: SafeArea(
         child: childrenAsync.when(
           data: (children) => ListView(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
             children: [
               _ProfileHero(
                 user: user,
                 tenant: tenant,
                 childrenCount: children.length,
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               _ProfileOverview(user: user, childrenCount: children.length),
               if (isParent || isTeacher) ...[
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 _ChildrenSummaryCard(user: user, children: children),
               ],
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               _SettingsSection(
                 tr: tr,
                 isDarkMode: isDarkMode,
@@ -69,7 +70,7 @@ class ProfileScreen extends ConsumerWidget {
                   ref.read(localeProvider.notifier).state = Locale(value);
                 },
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               LBCard(
                 child: Column(
                   children: [
@@ -128,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
               Center(
                 child: TextButton.icon(
                   onPressed: () async {
@@ -281,80 +282,27 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
         ? 'U'
         : '${user.firstName.isNotEmpty ? user.firstName[0] : 'U'}${user.lastName.isNotEmpty ? user.lastName[0] : ''}';
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: context.isDark
-              ? const [Color(0xFF1C1912), Color(0xFF1E1E1E), Color(0xFF182019)]
-              : const [Color(0xFFF7F0DE), Color(0xFFFFFFFF), Color(0xFFF0F5EF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return CompactHeroCard(
+      eyebrow: _roleLabel(user?.role),
+      title: user?.fullName ?? 'Usuario',
+      subtitle: tenant?.name ?? 'Institucion',
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(220),
+          borderRadius: BorderRadius.circular(999),
         ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 28,
-            offset: Offset(0, 14),
+        child: Text(
+          '$childrenCount perfiles',
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
           ),
-        ],
+        ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  _roleLabel(user?.role),
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(220),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      LucideIcons.baby,
-                      size: 14,
-                      color: AppColors.secondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$childrenCount perfiles',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -374,8 +322,8 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
                     customBorder: const CircleBorder(),
                     onTap: _isUploadingAvatar ? null : _changeAvatar,
                     child: SizedBox(
-                      width: 34,
-                      height: 34,
+                      width: 32,
+                      height: 32,
                       child: _isUploadingAvatar
                           ? const Padding(
                               padding: EdgeInsets.all(8),
@@ -388,7 +336,7 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
                             )
                           : const Icon(
                               LucideIcons.camera,
-                              size: 16,
+                              size: 14,
                               color: Colors.white,
                             ),
                     ),
@@ -397,34 +345,21 @@ class _ProfileHeroState extends ConsumerState<_ProfileHero> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            user?.fullName ?? 'Usuario',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: context.appColor(AppColors.textPrimary),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user?.email ?? '',
+                  style: TextStyle(
+                    color: context.appColor(AppColors.textSecondary),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            user?.email ?? '',
-            style: TextStyle(
-              color: context.appColor(AppColors.textSecondary),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            tenant?.name ?? 'Institución',
-            style: TextStyle(
-              color: context.appColor(AppColors.textSecondary),
-              fontSize: 13,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

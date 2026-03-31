@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/i18n/app_translations.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/widgets/compact_layout.dart';
 import '../../../routing/route_names.dart';
 import '../../auth/application/auth_provider.dart';
 import '../../messaging/application/conversations_provider.dart';
@@ -132,7 +133,7 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                 slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -145,12 +146,12 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                             onMessagesTap: () =>
                                 context.pushNamed(RouteNames.messages),
                           ).animate().fadeIn(duration: 320.ms),
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 16),
                           ChildHeader(childNode: dailyStory.child)
                               .animate()
                               .fadeIn(delay: 40.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 14),
                           StatusCard(
                             status: dailyStory.status,
                           )
@@ -158,17 +159,39 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                               .fadeIn(delay: 120.ms, duration: 320.ms)
                               .slideY(begin: 0.08, duration: 320.ms),
                           if (dailyStory.aiSummary != null) ...[
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 14),
                             AiSummaryCard(
                               summary: dailyStory.aiSummary!,
                             ).animate().fadeIn(delay: 160.ms, duration: 320.ms),
                           ],
-                          const SizedBox(height: 26),
-                          _TodaySectionHeader(
+                          const SizedBox(height: 18),
+                          CompactSectionCard(
                             title: tr.tr('todaySummary'),
-                            eventsCount: dailyStory.events.length,
+                            subtitle: dailyStory.events.isEmpty
+                                ? 'Sin eventos por mostrar hoy.'
+                                : '${dailyStory.events.length} eventos en orden cronologico.',
+                            icon: LucideIcons.sparkles,
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '${dailyStory.events.length} ${dailyStory.events.length == 1 ? 'evento' : 'eventos'}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            child: const SizedBox.shrink(),
                           ).animate().fadeIn(delay: 200.ms, duration: 320.ms),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
                           if (dailyStory.events.isEmpty)
                             const _EmptyTimelineState(),
                         ],
@@ -178,13 +201,13 @@ class _ParentHomeContentState extends ConsumerState<_ParentHomeContent>
                   if (dailyStory.events.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         child: ExpandableActivitySection(
                           events: dailyStory.events,
                         ),
                       ),
                     ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 28)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 20)),
                 ],
               ),
             );
@@ -232,17 +255,17 @@ class _HomeTopBar extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 userName,
                 style: const TextStyle(
-                  fontSize: 30,
+                  fontSize: 28,
                   height: 1,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 tenantName,
                 style: const TextStyle(
@@ -292,8 +315,8 @@ class _RoundActionButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: SizedBox(
-          width: 52,
-          height: 52,
+          width: 48,
+          height: 48,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -346,47 +369,6 @@ class _UnreadBadge extends StatelessWidget {
           height: 1,
         ),
       ),
-    );
-  }
-}
-
-class _TodaySectionHeader extends StatelessWidget {
-  const _TodaySectionHeader({required this.title, required this.eventsCount});
-
-  final String title;
-  final int eventsCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.divider),
-          ),
-          child: Text(
-            '$eventsCount eventos',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

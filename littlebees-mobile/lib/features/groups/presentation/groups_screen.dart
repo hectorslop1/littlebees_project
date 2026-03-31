@@ -46,9 +46,9 @@ class GroupsScreen extends ConsumerWidget {
             return RefreshIndicator(
               onRefresh: () => ref.refresh(groupsProvider.future),
               child: ListView.separated(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(16),
                 itemCount: groups.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 16),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final group = groups[index];
                   return LBCard(
@@ -63,16 +63,16 @@ class GroupsScreen extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 LucideIcons.users,
                                 color: AppColors.primary,
-                                size: 24,
+                                size: 20,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,7 +82,7 @@ class GroupsScreen extends ConsumerWidget {
                                     Text(
                                       group.friendlyName!,
                                       style: const TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -98,7 +98,7 @@ class GroupsScreen extends ConsumerWidget {
                                     Text(
                                       group.name,
                                       style: const TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -120,9 +120,9 @@ class GroupsScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         const Divider(height: 1),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
                             _buildStatItem(

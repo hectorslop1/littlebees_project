@@ -256,219 +256,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   metadata['activityType'] as String?;
                               final photoUrls = _extractPhotoUrls(metadata);
 
-                              return Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(8),
-                                      blurRadius: 14,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
+                              return _CompactActivityFeedCard(
+                                childName: item.childName,
+                                childPhotoUrl: item.childPhotoUrl,
+                                timeLabel: log.time ?? '',
+                                badgeLabel: _activityBadgeLabel(
+                                  activityType ?? log.type.value,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        LBAvatar(
-                                          imageUrl: item.childPhotoUrl,
-                                          placeholder: item.childName.isNotEmpty
-                                              ? item.childName
-                                                    .trim()
-                                                    .split(' ')
-                                                    .first[0]
-                                              : '?',
-                                          size: LBAvatarSize.large,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                item.childName,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors.textPrimary,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                log.time ?? '',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 9,
-                                            vertical: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary.withAlpha(
-                                              24,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              999,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            _activityBadgeLabel(
-                                              activityType ?? log.type.value,
-                                            ),
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primary,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      log.title,
-                                      style: TextStyle(
-                                        fontSize: 15.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    if ((log.description ?? '')
-                                        .trim()
-                                        .isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          log.description!,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            height: 1.35,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ),
-                                    if (photoUrls.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 10),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primarySurface,
-                                                borderRadius:
-                                                    BorderRadius.circular(14),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  const Icon(
-                                                    LucideIcons.image,
-                                                    size: 16,
-                                                    color: AppColors.primary,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      '${photoUrls.length} foto(s) adjuntas',
-                                                      style: const TextStyle(
-                                                        color:
-                                                            AppColors.primary,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            SizedBox(
-                                              height: 74,
-                                              child: ListView.separated(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                itemCount: photoUrls.length,
-                                                separatorBuilder:
-                                                    (context, index) =>
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                itemBuilder: (context, index) {
-                                                  final resolvedUrl =
-                                                      resolveImageUrl(
-                                                        photoUrls[index],
-                                                      );
-                                                  if (resolvedUrl == null) {
-                                                    return const SizedBox();
-                                                  }
-
-                                                  return GestureDetector(
-                                                    onTap: () {
-                                                      Navigator.of(
-                                                        context,
-                                                      ).push(
-                                                        MaterialPageRoute<void>(
-                                                          builder: (_) =>
-                                                              FullScreenImageViewer(
-                                                                imageUrl:
-                                                                    resolvedUrl,
-                                                              ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            12,
-                                                          ),
-                                                      child: Image.network(
-                                                        resolvedUrl,
-                                                        width: 82,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder:
-                                                            (
-                                                              context,
-                                                              error,
-                                                              stackTrace,
-                                                            ) => Container(
-                                                              width: 82,
-                                                              color: AppColors
-                                                                  .primarySurface,
-                                                              alignment:
-                                                                  Alignment
-                                                                      .center,
-                                                              child: const Icon(
-                                                                LucideIcons
-                                                                    .imageOff,
-                                                                color: AppColors
-                                                                    .textSecondary,
-                                                              ),
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                title: log.title,
+                                description: log.description,
+                                photoUrls: photoUrls,
                               );
                             },
                           ),
@@ -530,4 +327,174 @@ List<String> _extractPhotoUrls(Map<String, dynamic> metadata) {
   }
 
   return urls;
+}
+
+class _CompactActivityFeedCard extends StatelessWidget {
+  const _CompactActivityFeedCard({
+    required this.childName,
+    required this.childPhotoUrl,
+    required this.timeLabel,
+    required this.badgeLabel,
+    required this.title,
+    required this.description,
+    required this.photoUrls,
+  });
+
+  final String childName;
+  final String? childPhotoUrl;
+  final String timeLabel;
+  final String badgeLabel;
+  final String title;
+  final String? description;
+  final List<String> photoUrls;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedUrl = photoUrls.isEmpty ? null : resolveImageUrl(photoUrls.first);
+    final summary = (description ?? '').trim().isEmpty ? title : description!.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LBAvatar(
+            imageUrl: childPhotoUrl,
+            placeholder: childName.isNotEmpty ? childName.trim().split(' ').first[0] : '?',
+            size: LBAvatarSize.normal,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        childName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      timeLabel,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withAlpha(20),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        badgeLabel,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    if (photoUrls.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySurface,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '${photoUrls.length} foto${photoUrls.length == 1 ? '' : 's'}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  summary,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.3,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (resolvedUrl != null) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => FullScreenImageViewer(imageUrl: resolvedUrl),
+                  ),
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  resolvedUrl,
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 64,
+                    height: 64,
+                    color: AppColors.primarySurface,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      LucideIcons.imageOff,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

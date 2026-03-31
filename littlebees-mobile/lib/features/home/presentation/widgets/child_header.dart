@@ -72,19 +72,19 @@ class ChildHeader extends ConsumerWidget {
           )
           .toList(),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [palette.surface, Colors.white, palette.surface.withAlpha(110)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: const [
             BoxShadow(
               color: Color(0x12000000),
-              blurRadius: 24,
-              offset: Offset(0, 10),
+              blurRadius: 16,
+              offset: Offset(0, 6),
             ),
           ],
         ),
@@ -116,7 +116,7 @@ class ChildHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             Row(
               children: [
                 LBAvatar(
@@ -126,7 +126,7 @@ class ChildHeader extends ConsumerWidget {
                       : 'N',
                   size: LBAvatarSize.large,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,9 +136,10 @@ class ChildHeader extends ConsumerWidget {
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           height: 1.05,
+                          fontSize: 18,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -180,7 +181,7 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(220),
         borderRadius: BorderRadius.circular(999),
