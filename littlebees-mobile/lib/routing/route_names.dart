@@ -22,4 +22,5 @@ class RouteNames {
   static const String groupDetail = 'groupDetail';
   static const String families = 'families';
   static const String aiAssistant = 'aiAssistant';
+  static const String aiAssistantVoice = 'aiAssistantVoice';
 }

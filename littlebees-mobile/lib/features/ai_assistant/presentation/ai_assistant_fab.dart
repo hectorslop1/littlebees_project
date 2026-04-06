@@ -88,6 +88,20 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _openVoiceMode() async {
+    var sessionId = ref.read(aiAssistantProvider).activeSessionId;
+    if (sessionId == null) {
+      await ref.read(aiAssistantProvider.notifier).startSession();
+      sessionId = ref.read(aiAssistantProvider).activeSessionId;
+    }
+
+    if (!mounted || sessionId == null) return;
+    await context.pushNamed(
+      RouteNames.aiAssistantVoice,
+      pathParameters: {'sessionId': sessionId},
+    );
+  }
+
   List<AiChatMessage> _filterMessages(List<AiChatMessage> messages) {
     final query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return messages;
@@ -162,6 +176,11 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
               },
               icon: Icon(_isSearchMode ? LucideIcons.x : LucideIcons.search),
             ),
+          IconButton(
+            tooltip: 'Modo voz',
+            onPressed: _openVoiceMode,
+            icon: const Icon(LucideIcons.mic),
+          ),
           if (!hasActiveSession)
             IconButton(
               tooltip: 'Nueva conversación',
@@ -207,7 +226,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                 ? _AiSessionsList(
                     sessions: state.sessions,
                     onNewConversation: () async {
-                      await ref.read(aiAssistantProvider.notifier).startSession();
+                      await ref
+                          .read(aiAssistantProvider.notifier)
+                          .startSession();
                     },
                     onOpenSession: (sessionId) async {
                       await ref
@@ -294,7 +315,9 @@ class _AiAssistantScreenState extends ConsumerState<AiAssistantScreen> {
                             decoration: InputDecoration(
                               hintText: promptHint,
                               hintStyle: TextStyle(
-                                color: context.appColor(AppColors.textSecondary),
+                                color: context.appColor(
+                                  AppColors.textSecondary,
+                                ),
                                 fontSize: 15,
                                 height: 1.35,
                               ),
@@ -418,10 +441,7 @@ class _AiSessionsList extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Nueva conversación',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                 ),
                 Icon(LucideIcons.chevronRight),
@@ -453,10 +473,7 @@ class _AiSessionsList extends StatelessWidget {
                 const Text(
                   'Todavía no tienes conversaciones con Beea',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Text(

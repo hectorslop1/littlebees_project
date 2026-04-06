@@ -33,6 +33,7 @@ import '../features/profile/presentation/my_children_screen.dart';
 import '../features/messaging/presentation/new_conversation_screen.dart';
 import '../features/families/presentation/families_screen.dart';
 import '../features/ai_assistant/presentation/ai_assistant_fab.dart';
+import '../features/ai_assistant/presentation/ai_voice_session_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthChangeNotifier(ref);
@@ -76,10 +77,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       ShellRoute(
-        builder: (context, state, child) => MainShell(
-          currentLocation: state.matchedLocation,
-          child: child,
-        ),
+        builder: (context, state, child) =>
+            MainShell(currentLocation: state.matchedLocation, child: child),
         routes: [
           GoRoute(
             path: '/home',
@@ -245,6 +244,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/assistant',
             name: RouteNames.aiAssistant,
             builder: (context, state) => const AiAssistantScreen(),
+            routes: [
+              GoRoute(
+                path: 'voice/:sessionId',
+                name: RouteNames.aiAssistantVoice,
+                builder: (context, state) => AiVoiceSessionScreen(
+                  sessionId: state.pathParameters['sessionId']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/families',

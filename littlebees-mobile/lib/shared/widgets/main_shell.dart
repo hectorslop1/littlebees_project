@@ -8,6 +8,7 @@ import '../../design_system/widgets/lb_avatar.dart';
 import '../../core/i18n/app_translations.dart';
 import '../../features/auth/application/auth_provider.dart';
 import '../../features/ai_assistant/presentation/ai_assistant_fab.dart';
+import '../../features/ai_assistant/presentation/ai_voice_session_screen.dart';
 import '../../features/messaging/application/call_provider.dart';
 import '../../features/messaging/application/conversations_provider.dart';
 import '../../features/messaging/presentation/call_screen.dart';
@@ -71,7 +72,9 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     // Obtener items de navegación según el rol
     final navigationItems = RoleNavigation.getNavigationItems(userRole);
-    final location = GoRouter.of(context).routeInformationProvider.value.uri.path;
+    final location = GoRouter.of(
+      context,
+    ).routeInformationProvider.value.uri.path;
     final currentIndex = RoleNavigation.calculateSelectedIndex(
       location,
       navigationItems,
@@ -88,16 +91,21 @@ class _MainShellState extends ConsumerState<MainShell> {
     final showIncomingCallScreen =
         incomingCall != null && activeCallId != incomingCall.callId;
     final child = widget.child;
+    final isAssistantRoute = location.startsWith('/assistant');
     final isExcludedChildScreen =
         child is ConversationsScreen ||
         child is ChatScreen ||
         child is CallScreen ||
         child is NewConversationScreen ||
-        child is AiAssistantScreen;
+        child is AiAssistantScreen ||
+        child is AiVoiceSessionScreen;
+    final hideBottomNavigation =
+        isExcludedChildScreen || showIncomingCallScreen || isAssistantRoute;
     final showAiFab =
         aiFabRoutes.contains(location) &&
         !showIncomingCallScreen &&
-        !isExcludedChildScreen;
+        !isExcludedChildScreen &&
+        !isAssistantRoute;
 
     return Scaffold(
       body: Stack(
@@ -114,7 +122,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         ],
       ),
       floatingActionButton: showAiFab ? const AiAssistantFab() : null,
-      bottomNavigationBar: showIncomingCallScreen
+      bottomNavigationBar: hideBottomNavigation
           ? null
           : Container(
               decoration: const BoxDecoration(

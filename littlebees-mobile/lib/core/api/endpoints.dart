@@ -70,6 +70,8 @@ class Endpoints {
   static const String aiSessions = '/ai/sessions';
   static String aiSession(String id) => '/ai/sessions/$id';
   static String aiChat(String id) => '/ai/sessions/$id/chat';
+  static String aiVoiceCall(String id) => '/ai/sessions/$id/voice/call';
+  static String aiVoiceFinalize(String id) => '/ai/sessions/$id/voice/finalize';
 
   // Users
   static const String users = '/users';

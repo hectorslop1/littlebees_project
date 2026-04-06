@@ -9,6 +9,9 @@ import {
   ChatMessageDto,
   SessionResponseDto,
   ChatResponseDto,
+  CreateVoiceCallDto,
+  FinalizeVoiceSessionDto,
+  VoiceCallResponseDto,
 } from './dto/ai-chat.dto';
 
 @ApiTags('ai')
@@ -92,6 +95,50 @@ export class AiController {
       tenantId,
       userId,
       userRole,
+    );
+  }
+
+  @Post('sessions/:id/voice/call')
+  @ApiOperation({ summary: 'Crear llamada de voz en tiempo real para Beea' })
+  @ApiResponse({
+    status: 201,
+    description: 'SDP answer de OpenAI Realtime',
+    type: VoiceCallResponseDto,
+  })
+  createVoiceCall(
+    @Param('id') sessionId: string,
+    @Body() createVoiceCallDto: CreateVoiceCallDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    return this.aiService.createVoiceCall(
+      sessionId,
+      createVoiceCallDto,
+      tenantId,
+      userId,
+      userRole,
+    );
+  }
+
+  @Post('sessions/:id/voice/finalize')
+  @ApiOperation({ summary: 'Persistir transcripción final de voz en la sesión de Beea' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sesión actualizada con mensajes de voz persistidos',
+    type: SessionResponseDto,
+  })
+  finalizeVoiceSession(
+    @Param('id') sessionId: string,
+    @Body() finalizeVoiceSessionDto: FinalizeVoiceSessionDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.aiService.finalizeVoiceSession(
+      sessionId,
+      finalizeVoiceSessionDto,
+      tenantId,
+      userId,
     );
   }
 }
