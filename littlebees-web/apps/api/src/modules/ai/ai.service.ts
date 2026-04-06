@@ -334,42 +334,45 @@ export class AiService {
       session.messages,
     );
 
+    const formData = new FormData();
+    formData.set('sdp', voiceCallDto.sdp);
+    formData.set(
+      'session',
+      JSON.stringify({
+        type: 'realtime',
+        model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-mini',
+        instructions,
+        output_modalities: ['audio'],
+        max_output_tokens: 180,
+        audio: {
+          input: {
+            transcription: {
+              model:
+                process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL ||
+                'gpt-4o-mini-transcribe',
+            },
+            turn_detection: {
+              type: 'server_vad',
+              create_response: true,
+              interrupt_response: true,
+              silence_duration_ms: 650,
+              prefix_padding_ms: 300,
+              idle_timeout_ms: 12000,
+            },
+          },
+          output: {
+            voice: preset.voice,
+          },
+        },
+      }),
+    );
+
     const response = await fetch('https://api.openai.com/v1/realtime/calls', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${openAiApiKey}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        sdp: voiceCallDto.sdp,
-        session: {
-          type: 'realtime',
-          model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-mini',
-          instructions,
-          output_modalities: ['audio'],
-          max_output_tokens: 180,
-          audio: {
-            input: {
-              transcription: {
-                model:
-                  process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL ||
-                  'gpt-4o-mini-transcribe',
-              },
-              turn_detection: {
-                type: 'server_vad',
-                create_response: true,
-                interrupt_response: true,
-                silence_duration_ms: 650,
-                prefix_padding_ms: 300,
-                idle_timeout_ms: 12000,
-              },
-            },
-            output: {
-              voice: preset.voice,
-            },
-          },
-        },
-      }),
+      body: formData,
     });
 
     const sdpAnswer = await response.text();
