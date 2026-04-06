@@ -60,10 +60,7 @@ class AiAssistantNotifier extends StateNotifier<AiAssistantState> {
 
   final AiAssistantRepository _repository;
 
-  String _friendlyError(
-    Object error, {
-    required String fallback,
-  }) {
+  String _friendlyError(Object error, {required String fallback}) {
     final raw = error.toString();
     if (raw.contains('invalid_api_key') || raw.contains('Invalid API Key')) {
       return 'Beea no esta disponible en este momento porque la configuracion de IA del servidor necesita actualizarse.';
@@ -91,10 +88,7 @@ class AiAssistantNotifier extends StateNotifier<AiAssistantState> {
         state = const AiAssistantState(isLoading: false);
         return;
       }
-      state = AiAssistantState(
-        sessions: sessions,
-        isLoading: false,
-      );
+      state = AiAssistantState(sessions: sessions, isLoading: false);
     } catch (error) {
       state = AiAssistantState(
         isLoading: false,
@@ -120,6 +114,32 @@ class AiAssistantNotifier extends StateNotifier<AiAssistantState> {
       state = state.copyWith(
         isLoading: false,
         error: 'No fue posible abrir la conversación',
+      );
+    }
+  }
+
+  Future<void> reloadSession(String sessionId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final session = await _repository.getSession(sessionId);
+      final sessions = [...state.sessions];
+      final idx = sessions.indexWhere((item) => item.id == session.id);
+      if (idx >= 0) {
+        sessions[idx] = session;
+      } else {
+        sessions.insert(0, session);
+      }
+
+      state = state.copyWith(
+        sessions: sessions,
+        activeSessionId: sessionId,
+        messages: session.messages,
+        isLoading: false,
+      );
+    } catch (_) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'No fue posible actualizar la conversación',
       );
     }
   }

@@ -7,6 +7,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import Groq from 'groq-sdk';
 import { ContextBuilderService } from './services/context-builder.service';
 import { AiFunctionsService } from './services/ai-functions.service';
+import {
+  CreateVoiceCallDto,
+  FinalizeVoiceSessionDto,
+} from './dto/ai-chat.dto';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -17,6 +21,18 @@ interface ChildReference {
   id: string;
   firstName: string;
   lastName: string;
+}
+
+interface VoicePresetConfig {
+  id: string;
+  label: string;
+  voice: string;
+  guidance: string;
+}
+
+interface VoiceTranscriptTurn {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 @Injectable()
@@ -293,6 +309,128 @@ export class AiService {
     }
   }
 
+  async createVoiceCall(
+    sessionId: string,
+    voiceCallDto: CreateVoiceCallDto,
+    tenantId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    const openAiApiKey = process.env.OPENAI_API_KEY;
+    if (!openAiApiKey) {
+      throw new ServiceUnavailableException(
+        'Beea voz no esta disponible porque falta configurar OPENAI_API_KEY en el servidor.',
+      );
+    }
+
+    const session = await this.getSession(sessionId, tenantId, userId);
+    const context = await this.contextBuilder.buildContext(userId, userRole, tenantId);
+    const contextFormatted = this.contextBuilder.formatContextForAI(context);
+    const preset = this.resolveVoicePreset(voiceCallDto.voicePresetId);
+    const instructions = this.buildVoiceSessionInstructions(
+      userRole,
+      contextFormatted,
+      preset,
+      session.messages,
+    );
+
+    const response = await fetch('https://api.openai.com/v1/realtime/calls', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${openAiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sdp: voiceCallDto.sdp,
+        session: {
+          type: 'realtime',
+          model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-mini',
+          instructions,
+          output_modalities: ['audio'],
+          max_output_tokens: 180,
+          audio: {
+            input: {
+              transcription: {
+                model:
+                  process.env.OPENAI_REALTIME_TRANSCRIPTION_MODEL ||
+                  'gpt-4o-mini-transcribe',
+              },
+              turn_detection: {
+                type: 'server_vad',
+                create_response: true,
+                interrupt_response: true,
+                silence_duration_ms: 650,
+                prefix_padding_ms: 300,
+                idle_timeout_ms: 12000,
+              },
+            },
+            output: {
+              voice: preset.voice,
+            },
+          },
+        },
+      }),
+    });
+
+    const sdpAnswer = await response.text();
+    if (!response.ok) {
+      throw new BadRequestException(
+        sdpAnswer || 'No fue posible iniciar la sesion de voz con OpenAI Realtime.',
+      );
+    }
+
+    return {
+      sdp: sdpAnswer,
+      voicePresetId: preset.id,
+      voice: preset.voice,
+    };
+  }
+
+  async finalizeVoiceSession(
+    sessionId: string,
+    finalizeVoiceSessionDto: FinalizeVoiceSessionDto,
+    tenantId: string,
+    userId: string,
+  ) {
+    const session = await this.getSession(sessionId, tenantId, userId);
+    const preset = this.resolveVoicePreset(finalizeVoiceSessionDto.voicePresetId);
+    const mergedTurns = this.mergeVoiceTranscriptTurns(finalizeVoiceSessionDto.turns);
+
+    if (mergedTurns.length === 0) {
+      return session;
+    }
+
+    for (const turn of mergedTurns) {
+      await this.prisma.aiChatMessage.create({
+        data: {
+          sessionId,
+          role: turn.role,
+          content: turn.content,
+          metadata: {
+            source: 'voice_realtime',
+            voicePresetId: preset.id,
+            voice: preset.voice,
+            durationMs: finalizeVoiceSessionDto.durationMs ?? null,
+          } as any,
+        },
+      });
+    }
+
+    await this.prisma.aiChatSession.update({
+      where: { id: sessionId },
+      data: {
+        updatedAt: new Date(),
+        title:
+          session.title && session.title.trim().length > 0
+            ? session.title
+            : mergedTurns.find((turn) => turn.role === 'user')?.content.slice(0, 60) ||
+              'Nueva conversación',
+      },
+    });
+
+    return this.getSession(sessionId, tenantId, userId);
+  }
+
   private buildSystemMessage(userRole: string, contextData?: string): string {
     const baseContext = `Eres el asistente inteligente de LittleBees, una app escolar para familias, maestras y dirección.
 
@@ -354,6 +492,101 @@ Restricciones:
     }
     
     return fullContext;
+  }
+
+  private buildVoiceSessionInstructions(
+    userRole: string,
+    contextData: string,
+    preset: VoicePresetConfig,
+    messages: Array<{ role: string; content: string }>,
+  ): string {
+    const baseInstructions = this.buildSystemMessage(userRole, contextData);
+    const recentConversation = messages
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .slice(-8)
+      .map((message) => {
+        const speaker = message.role === 'user' ? 'Usuario' : 'Beea';
+        return `${speaker}: ${message.content}`;
+      })
+      .join('\n');
+
+    return `${baseInstructions}
+
+Modo de voz Beea:
+- Habla siempre en espanol mexicano natural.
+- Responde en un tono cercano, sereno y facil de seguir.
+- Mantén las respuestas cortas: maximo 1 o 2 frases por turno.
+- Tolera pausas, muletillas e interrupciones del usuario sin sonar rigida.
+- Si algo no esta claro, haz una sola pregunta breve.
+- No uses listas largas ni respuestas extensas en voz.
+- No digas que eres un modelo ni menciones configuraciones tecnicas.
+- Tu voz seleccionada para esta sesion es "${preset.label}".
+- Comportamiento de voz deseado: ${preset.guidance}
+
+${recentConversation
+      ? `Contexto reciente de esta misma conversacion:\n${recentConversation}`
+      : 'No hay historial previo en esta conversacion.'}`;
+  }
+
+  private resolveVoicePreset(presetId?: string): VoicePresetConfig {
+    const presets: VoicePresetConfig[] = [
+      {
+        id: 'calida',
+        label: 'Calida',
+        voice: 'shimmer',
+        guidance: 'Habla con calidez, amabilidad y un ritmo suave.',
+      },
+      {
+        id: 'clara',
+        label: 'Clara',
+        voice: 'verse',
+        guidance: 'Habla con claridad, diccion limpia y energia equilibrada.',
+      },
+      {
+        id: 'serena',
+        label: 'Serena',
+        voice: 'sage',
+        guidance: 'Habla con tranquilidad, paciencia y seguridad.',
+      },
+      {
+        id: 'firme',
+        label: 'Firme',
+        voice: 'echo',
+        guidance: 'Habla con mas presencia, seguridad y tono sobrio.',
+      },
+    ];
+
+    return (
+      presets.find((preset) => preset.id === presetId) ??
+      presets[0]
+    );
+  }
+
+  private mergeVoiceTranscriptTurns(
+    turns: Array<{ role: string; content: string }>,
+  ): VoiceTranscriptTurn[] {
+    const normalized = turns
+      .map((turn) => ({
+        role: turn.role === 'assistant' ? 'assistant' : 'user',
+        content: turn.content.trim(),
+      }))
+      .filter((turn) => turn.content.length > 0) as VoiceTranscriptTurn[];
+
+    const merged: VoiceTranscriptTurn[] = [];
+    for (const turn of normalized) {
+      const previous = merged[merged.length - 1];
+      if (previous && previous.role === turn.role) {
+        previous.content = `${previous.content} ${turn.content}`.trim();
+        continue;
+      }
+
+      merged.push({
+        role: turn.role,
+        content: turn.content,
+      });
+    }
+
+    return merged;
   }
 
   private tryBuildDeterministicReply(

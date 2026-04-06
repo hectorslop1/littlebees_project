@@ -1,0 +1,434 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
+
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+
+import '../data/ai_voice_repository.dart';
+import '../domain/ai_voice_models.dart';
+
+enum AiVoiceRealtimeEventType {
+  status,
+  transcriptPartial,
+  transcriptFinal,
+  localLevel,
+  remoteLevel,
+  error,
+}
+
+class AiVoiceRealtimeEvent {
+  const AiVoiceRealtimeEvent({
+    required this.type,
+    this.status,
+    this.itemId,
+    this.role,
+    this.text,
+    this.level,
+    this.message,
+  });
+
+  final AiVoiceRealtimeEventType type;
+  final AiVoiceSessionStatus? status;
+  final String? itemId;
+  final String? role;
+  final String? text;
+  final double? level;
+  final String? message;
+}
+
+class AiRealtimeClient {
+  AiRealtimeClient({required AiVoiceRepository repository})
+    : _repository = repository;
+
+  final AiVoiceRepository _repository;
+  final StreamController<AiVoiceRealtimeEvent> _eventsController =
+      StreamController<AiVoiceRealtimeEvent>.broadcast();
+
+  RTCPeerConnection? _peerConnection;
+  RTCDataChannel? _dataChannel;
+  MediaStream? _localStream;
+  MediaStreamTrack? _localAudioTrack;
+  MediaStreamTrack? _remoteAudioTrack;
+  Timer? _statsTimer;
+  bool _isDisposed = false;
+  bool _rendererInitialized = false;
+
+  final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
+
+  Stream<AiVoiceRealtimeEvent> get events => _eventsController.stream;
+
+  Future<void> connect({
+    required String sessionId,
+    required AiVoicePreset preset,
+  }) async {
+    _isDisposed = false;
+    await _ensureRendererInitialized();
+    await _cleanup();
+
+    _emit(
+      const AiVoiceRealtimeEvent(
+        type: AiVoiceRealtimeEventType.status,
+        status: AiVoiceSessionStatus.connecting,
+      ),
+    );
+
+    _localStream = await navigator.mediaDevices.getUserMedia({
+      'audio': {
+        'echoCancellation': true,
+        'noiseSuppression': true,
+        'autoGainControl': true,
+      },
+      'video': false,
+    });
+    final localTracks =
+        _localStream?.getAudioTracks() ?? const <MediaStreamTrack>[];
+    if (localTracks.isNotEmpty) {
+      _localAudioTrack = localTracks.first;
+    }
+
+    _peerConnection = await createPeerConnection({
+      'sdpSemantics': 'unified-plan',
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'urls': 'stun:stun1.l.google.com:19302'},
+      ],
+    });
+
+    final stream = _localStream;
+    if (stream != null) {
+      for (final track in stream.getTracks()) {
+        await _peerConnection!.addTrack(track, stream);
+      }
+    }
+
+    _peerConnection!.onTrack = (event) {
+      if (event.track.kind == 'audio') {
+        _remoteAudioTrack = event.track;
+      }
+      if (_rendererInitialized && event.streams.isNotEmpty) {
+        remoteAudioRenderer.srcObject = event.streams.first;
+      }
+    };
+
+    _peerConnection!.onConnectionState = (state) {
+      if (_isDisposed) return;
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.listening,
+          ),
+        );
+      }
+
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+          state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.error,
+            message: 'La conexion de voz se interrumpio.',
+          ),
+        );
+      }
+    };
+
+    _dataChannel = await _peerConnection!.createDataChannel(
+      'oai-events',
+      RTCDataChannelInit()..ordered = true,
+    );
+    _dataChannel!.onDataChannelState = (state) {
+      if (_isDisposed) return;
+      if (state == RTCDataChannelState.RTCDataChannelOpen) {
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.listening,
+          ),
+        );
+      }
+    };
+    _dataChannel!.onMessage = (message) {
+      _handleRealtimeMessage(message.text);
+    };
+
+    final offer = await _peerConnection!.createOffer({
+      'offerToReceiveAudio': true,
+      'offerToReceiveVideo': false,
+    });
+    await _peerConnection!.setLocalDescription(offer);
+    await _waitForIceGatheringComplete();
+
+    final localDescription = await _peerConnection!.getLocalDescription();
+    final answer = await _repository.createVoiceCall(
+      sessionId: sessionId,
+      sdp: localDescription?.sdp ?? offer.sdp ?? '',
+      voicePresetId: preset.id,
+    );
+
+    await _peerConnection!.setRemoteDescription(
+      RTCSessionDescription(answer.sdp, 'answer'),
+    );
+
+    _startStatsSampling();
+  }
+
+  Future<void> setMicEnabled(bool enabled) async {
+    _localAudioTrack?.enabled = enabled;
+  }
+
+  Future<void> close() async {
+    _emit(
+      const AiVoiceRealtimeEvent(
+        type: AiVoiceRealtimeEventType.status,
+        status: AiVoiceSessionStatus.ending,
+      ),
+    );
+    await _cleanup();
+    if (!_eventsController.isClosed) {
+      _emit(
+        const AiVoiceRealtimeEvent(
+          type: AiVoiceRealtimeEventType.status,
+          status: AiVoiceSessionStatus.ended,
+        ),
+      );
+    }
+  }
+
+  Future<void> dispose() async {
+    _isDisposed = true;
+    await _cleanup();
+    if (_rendererInitialized) {
+      await remoteAudioRenderer.dispose();
+      _rendererInitialized = false;
+    }
+    await _eventsController.close();
+  }
+
+  Future<void> _cleanup() async {
+    _statsTimer?.cancel();
+    _statsTimer = null;
+
+    try {
+      await _dataChannel?.close();
+    } catch (_) {}
+    _dataChannel = null;
+
+    try {
+      await _peerConnection?.close();
+    } catch (_) {}
+    _peerConnection = null;
+
+    final tracks = _localStream?.getTracks() ?? const <MediaStreamTrack>[];
+    for (final track in tracks) {
+      track.stop();
+    }
+    await _localStream?.dispose();
+    _localStream = null;
+    _localAudioTrack = null;
+    _remoteAudioTrack = null;
+    if (_rendererInitialized) {
+      remoteAudioRenderer.srcObject = null;
+    }
+  }
+
+  Future<void> _ensureRendererInitialized() async {
+    if (_rendererInitialized) return;
+    await remoteAudioRenderer.initialize();
+    _rendererInitialized = true;
+  }
+
+  Future<void> _waitForIceGatheringComplete() async {
+    final connection = _peerConnection;
+    if (connection == null) return;
+    if (connection.iceGatheringState ==
+        RTCIceGatheringState.RTCIceGatheringStateComplete) {
+      return;
+    }
+
+    final completer = Completer<void>();
+    void Function(RTCIceGatheringState state)? listener;
+    listener = (state) {
+      if (state == RTCIceGatheringState.RTCIceGatheringStateComplete &&
+          !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    connection.onIceGatheringState = listener;
+    await completer.future.timeout(
+      const Duration(seconds: 4),
+      onTimeout: () {},
+    );
+  }
+
+  void _handleRealtimeMessage(String rawMessage) {
+    if (_isDisposed || rawMessage.isEmpty) return;
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(rawMessage);
+    } catch (_) {
+      return;
+    }
+    if (decoded is! Map<String, dynamic>) return;
+
+    final type = decoded['type']?.toString() ?? '';
+    switch (type) {
+      case 'session.created':
+      case 'session.updated':
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.listening,
+          ),
+        );
+        break;
+      case 'input_audio_buffer.speech_started':
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.listening,
+          ),
+        );
+        break;
+      case 'input_audio_buffer.speech_stopped':
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.processing,
+          ),
+        );
+        break;
+      case 'response.output_audio.delta':
+      case 'response.created':
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.speaking,
+          ),
+        );
+        break;
+      case 'response.output_audio.done':
+      case 'response.done':
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.listening,
+          ),
+        );
+        break;
+      case 'conversation.item.input_audio_transcription.completed':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.transcriptFinal,
+            itemId:
+                decoded['item_id']?.toString() ??
+                'user-${DateTime.now().microsecondsSinceEpoch}',
+            role: 'user',
+            text: decoded['transcript']?.toString() ?? '',
+          ),
+        );
+        break;
+      case 'response.output_audio_transcript.delta':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.transcriptPartial,
+            itemId:
+                decoded['item_id']?.toString() ??
+                'assistant-${DateTime.now().microsecondsSinceEpoch}',
+            role: 'assistant',
+            text: decoded['delta']?.toString() ?? '',
+          ),
+        );
+        break;
+      case 'response.output_audio_transcript.done':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.transcriptFinal,
+            itemId:
+                decoded['item_id']?.toString() ??
+                'assistant-${DateTime.now().microsecondsSinceEpoch}',
+            role: 'assistant',
+            text: decoded['transcript']?.toString() ?? '',
+          ),
+        );
+        break;
+      case 'error':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.error,
+            message:
+                decoded['error']?['message']?.toString() ??
+                'Ocurrio un error en la sesion de voz.',
+          ),
+        );
+        break;
+    }
+  }
+
+  void _startStatsSampling() {
+    _statsTimer?.cancel();
+    _statsTimer = Timer.periodic(const Duration(milliseconds: 120), (_) async {
+      final connection = _peerConnection;
+      if (connection == null || _isDisposed) return;
+
+      try {
+        if (_localAudioTrack != null) {
+          final localStats = await connection.getStats(_localAudioTrack);
+          _emit(
+            AiVoiceRealtimeEvent(
+              type: AiVoiceRealtimeEventType.localLevel,
+              level: _extractAudioLevel(localStats),
+            ),
+          );
+        }
+
+        if (_remoteAudioTrack != null) {
+          final remoteStats = await connection.getStats(_remoteAudioTrack);
+          _emit(
+            AiVoiceRealtimeEvent(
+              type: AiVoiceRealtimeEventType.remoteLevel,
+              level: _extractAudioLevel(remoteStats),
+            ),
+          );
+        }
+      } catch (_) {
+        // Stats vary per platform; if unavailable the orb still animates by state.
+      }
+    });
+  }
+
+  double _extractAudioLevel(List<StatsReport> reports) {
+    for (final report in reports) {
+      final directLevel =
+          _tryParseLevel(report.values['audioLevel']) ??
+          _tryParseLevel(report.values['audio_level']) ??
+          _tryParseLevel(report.values['level']);
+      if (directLevel != null) {
+        return directLevel.clamp(0.0, 1.0);
+      }
+    }
+
+    for (final report in reports) {
+      final energy = _tryParseLevel(report.values['totalAudioEnergy']);
+      final duration = _tryParseLevel(report.values['totalSamplesDuration']);
+      if (energy != null && duration != null && duration > 0) {
+        return math.min(1, math.sqrt(energy / duration));
+      }
+    }
+
+    return 0;
+  }
+
+  double? _tryParseLevel(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  void _emit(AiVoiceRealtimeEvent event) {
+    if (!_eventsController.isClosed) {
+      _eventsController.add(event);
+    }
+  }
+}

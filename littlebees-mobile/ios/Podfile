@@ -39,4 +39,31 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  frameworks_script = File.join(
+    installer.sandbox.root,
+    'Target Support Files',
+    'Pods-Runner',
+    'Pods-Runner-frameworks.sh'
+  )
+
+  next unless File.exist?(frameworks_script)
+
+  webrtc_dsym_hook = <<~'SH'
+
+    # Generate a matching dSYM for WebRTC.framework so Xcode can include it in the archive.
+    if [ -n "${DWARF_DSYM_FOLDER_PATH:-}" ]; then
+      WEBRTC_BINARY="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/WebRTC.framework/WebRTC"
+      WEBRTC_DSYM_OUTPUT="${DWARF_DSYM_FOLDER_PATH}/WebRTC.framework.dSYM"
+      if [ -r "${WEBRTC_BINARY}" ] && [ ! -d "${WEBRTC_DSYM_OUTPUT}" ]; then
+        echo "Generating WebRTC.framework.dSYM"
+        xcrun dsymutil "${WEBRTC_BINARY}" -o "${WEBRTC_DSYM_OUTPUT}" || true
+      fi
+    fi
+  SH
+
+  script_contents = File.read(frameworks_script)
+  unless script_contents.include?('Generating WebRTC.framework.dSYM')
+    File.write(frameworks_script, script_contents + webrtc_dsym_hook)
+  end
 end

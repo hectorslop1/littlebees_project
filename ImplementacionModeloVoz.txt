@@ -1,0 +1,167 @@
+Quiero implementar una experiencia de chat de voz tipo conversación natural (similar a ChatGPT voz) dentro de mi app Flutter existente, incluyendo un indicador visual tipo “orbe animado” estilo ChatGPT.
+
+---
+
+## Contexto actual:
+
+* Ya tengo un chat de texto funcional
+* Uso GROQ con modelo llama-versatile para texto
+* La UI tipo chat ya está construida (mensajes, input, historial, etc.)
+
+---
+
+## Objetivo:
+
+Agregar un “modo conversación por voz” que sea:
+
+* Natural (soporte de pausas, muletillas, interrupciones)
+* En español mexicano
+* De baja latencia
+* Integrado al chat existente (no reemplazarlo)
+* Con una experiencia visual moderna tipo ChatGPT (orbe animado reactivo a la voz)
+
+---
+
+## Requisitos funcionales:
+
+1. Agregar botón de micrófono en el chat
+2. Al presionar:
+
+   * Abrir un modo conversación (overlay/modal o pantalla ligera)
+   * Iniciar sesión de voz en tiempo real
+3. Durante la conversación:
+
+   * Capturar audio del usuario en streaming
+   * Enviar audio a OpenAI Realtime API
+   * Recibir respuesta en audio (streaming)
+   * Reproducir audio mientras llega (no esperar completo)
+4. Permitir:
+
+   * Interrupciones (barge-in)
+   * Detectar fin de turno automáticamente
+5. Al finalizar:
+
+   * Convertir la conversación en mensajes de texto
+   * Insertarlos en el chat existente
+
+---
+
+## Requisitos técnicos:
+
+* Usar WebRTC o WebSocket para streaming de audio
+* Manejar permisos de micrófono (iOS/Android)
+* Manejar lifecycle de sesión (start, active, end)
+* Auto cerrar sesión tras inactividad (10–15s)
+* Limitar duración de sesión (ej: 2 minutos)
+
+Estados de UI:
+
+* listening (escuchando)
+* processing (procesando)
+* speaking (respondiendo)
+
+---
+
+## 🎨 Requisito clave: ORBE estilo ChatGPT
+
+Implementar un orbe animado reactivo al audio con estas características:
+
+### Visual:
+
+* Forma circular tipo “blob/orb”
+* Estilo “tie-dye” usando colores primarios de la app
+* Gradiente dinámico (no estático)
+* Efecto glow suave
+* Animación fluida (60fps ideal)
+
+### Comportamiento:
+
+* Cuando el usuario habla:
+
+  * El orbe reacciona a la amplitud del audio
+  * Movimientos más rápidos/irregulares
+* Cuando está en silencio:
+
+  * Animación suave tipo “respiración”
+* Cuando la IA responde:
+
+  * Cambia patrón de animación (más estable, menos caótico)
+
+### Implementación técnica del orbe:
+
+* Usar CustomPainter (preferido) o Shader (opcional avanzado)
+* Recibir input de amplitud de audio normalizada (0.0 – 1.0)
+* Animar con AnimationController
+* Aplicar:
+
+  * Escalado dinámico
+  * Distorsión orgánica (blob effect)
+  * Gradientes animados
+
+Opcional:
+
+* Se puede usar waveform_visualizer como base si acelera desarrollo
+* Pero el objetivo es un orbe personalizado, no barras de audio
+
+---
+
+## Requisitos de UX:
+
+* Mostrar el orbe al centro durante la conversación
+* Botón claro para terminar conversación
+* Feedback inmediato al usuario
+* Evitar delays largos
+* Transición suave entre chat y modo voz
+
+---
+
+## Configuración del asistente:
+
+* Idioma: español mexicano
+* Tono: natural, conversacional, cercano
+* Respuestas cortas (máx 1–2 frases)
+* Capaz de manejar muletillas del usuario
+
+---
+
+## Entregables que necesito:
+
+1. Arquitectura recomendada para Flutter
+2. Código base para:
+
+   * Captura de audio
+   * Streaming hacia API
+   * Reproducción de audio en tiempo real
+3. Ejemplo de integración con OpenAI Realtime API
+4. Implementación del orbe animado:
+
+   * Widget reusable
+   * CustomPainter
+   * Manejo de amplitud
+5. Manejo de estado en Flutter (Provider, Riverpod o Bloc)
+6. Estructura de clases/servicios:
+
+   * voice_service
+   * audio_manager
+   * realtime_client
+   * orb_controller
+7. Estrategia para insertar mensajes de voz como texto en el chat existente
+
+---
+
+## Permisos:
+
+iOS (Info.plist): <key>NSMicrophoneUsageDescription</key> <string>Necesitamos acceso al micrófono para el chat de voz</string>
+
+Android (AndroidManifest.xml): <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+---
+
+## Importante:
+
+* Priorizar baja latencia
+* Código listo para pruebas (MVP funcional)
+* Separar claramente chat de texto vs modo voz
+* Optimizado para demos (no uso continuo)
+
+Si algo requiere configuración externa (API keys, etc.), indícalo paso a paso.
