@@ -373,19 +373,10 @@ class AiRealtimeClient {
         );
         break;
       case 'response.output_audio.done':
-        _isAssistantSpeaking = false;
-        _ignoreUserAudioUntil = DateTime.now().add(
-          const Duration(milliseconds: 2400),
-        );
-        unawaited(_restoreMicAfterSpeech());
-        _emit(
-          const AiVoiceRealtimeEvent(
-            type: AiVoiceRealtimeEventType.status,
-            status: AiVoiceSessionStatus.listening,
-          ),
-        );
+        _finishAssistantTurn();
         break;
       case 'response.done':
+        _finishAssistantTurn();
         break;
       case 'conversation.item.input_audio_transcription.delta':
         final itemId =
@@ -439,13 +430,6 @@ class AiRealtimeClient {
         _requestAssistantResponse(userItemId);
         break;
       case 'response.output_audio_transcript.delta':
-        _isAssistantSpeaking = true;
-        _emit(
-          const AiVoiceRealtimeEvent(
-            type: AiVoiceRealtimeEventType.status,
-            status: AiVoiceSessionStatus.speaking,
-          ),
-        );
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
@@ -458,7 +442,6 @@ class AiRealtimeClient {
         );
         break;
       case 'response.output_audio_transcript.done':
-        _isAssistantSpeaking = true;
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
@@ -561,6 +544,20 @@ class AiRealtimeClient {
     await Future<void>.delayed(const Duration(milliseconds: 2400));
     if (_isDisposed) return;
     await _applyMicState();
+  }
+
+  void _finishAssistantTurn() {
+    _isAssistantSpeaking = false;
+    _ignoreUserAudioUntil = DateTime.now().add(
+      const Duration(milliseconds: 2400),
+    );
+    unawaited(_restoreMicAfterSpeech());
+    _emit(
+      const AiVoiceRealtimeEvent(
+        type: AiVoiceRealtimeEventType.status,
+        status: AiVoiceSessionStatus.listening,
+      ),
+    );
   }
 
   void _requestAssistantResponse(String itemId) {
