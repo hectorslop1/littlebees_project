@@ -25,7 +25,7 @@ class _BeeaVoiceOrbState extends State<BeeaVoiceOrb>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 8),
+    duration: const Duration(seconds: 10),
   )..repeat();
 
   @override
@@ -159,7 +159,7 @@ class _BeeaVoiceOrbPainter extends CustomPainter {
     };
 
     final path = Path();
-    const segments = 72;
+    const segments = 56;
     for (var i = 0; i <= segments; i++) {
       final t = (i / segments) * math.pi * 2;
       final wave = math.sin((t * 3) + phase) * distortion;

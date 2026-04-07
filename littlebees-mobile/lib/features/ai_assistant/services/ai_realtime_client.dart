@@ -56,7 +56,11 @@ class AiRealtimeClient {
   bool _isMicRequestedEnabled = true;
   bool _isAssistantSpeaking = false;
   bool _speakerphoneRequested = true;
+  bool _hasActiveUserSpeech = false;
   DateTime? _ignoreUserAudioUntil;
+  double _lastLocalLevel = 0;
+  double _lastRemoteLevel = 0;
+  String? _activeUserItemId;
   final Set<String> _requestedResponseItemIds = <String>{};
 
   final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
@@ -241,7 +245,11 @@ class AiRealtimeClient {
     _isAssistantSpeaking = false;
     _isMicRequestedEnabled = true;
     _speakerphoneRequested = true;
+    _hasActiveUserSpeech = false;
     _ignoreUserAudioUntil = null;
+    _lastLocalLevel = 0;
+    _lastRemoteLevel = 0;
+    _activeUserItemId = null;
     _requestedResponseItemIds.clear();
     try {
       await Helper.setSpeakerphoneOn(false);
@@ -276,7 +284,7 @@ class AiRealtimeClient {
 
     connection.onIceGatheringState = listener;
     await completer.future.timeout(
-      const Duration(seconds: 4),
+      const Duration(milliseconds: 1800),
       onTimeout: () {},
     );
   }
@@ -304,9 +312,11 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.speech_started':
-        if (_shouldIgnoreUserAudio()) {
+        if (!_shouldAcceptUserAudio()) {
           break;
         }
+        _hasActiveUserSpeech = true;
+        _activeUserItemId = null;
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -315,7 +325,7 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.speech_stopped':
-        if (_shouldIgnoreUserAudio()) {
+        if (!_hasActiveUserSpeech || !_shouldAcceptUserAudio()) {
           break;
         }
         _emit(
@@ -326,15 +336,16 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.committed':
-        if (_shouldIgnoreUserAudio()) {
+        if (!_hasActiveUserSpeech || !_shouldAcceptUserAudio()) {
           break;
         }
+        _activeUserItemId =
+            decoded['item_id']?.toString() ??
+            'user-${DateTime.now().microsecondsSinceEpoch}';
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptSlot,
-            itemId:
-                decoded['item_id']?.toString() ??
-                'user-${DateTime.now().microsecondsSinceEpoch}',
+            itemId: _activeUserItemId,
             role: 'user',
           ),
         );
@@ -352,11 +363,19 @@ class AiRealtimeClient {
         break;
       case 'response.created':
         _isAssistantSpeaking = true;
+        _hasActiveUserSpeech = false;
+        _activeUserItemId = null;
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.speaking,
+          ),
+        );
         break;
       case 'response.output_audio.done':
         _isAssistantSpeaking = false;
         _ignoreUserAudioUntil = DateTime.now().add(
-          const Duration(milliseconds: 1800),
+          const Duration(milliseconds: 2400),
         );
         unawaited(_restoreMicAfterSpeech());
         _emit(
@@ -369,29 +388,36 @@ class AiRealtimeClient {
       case 'response.done':
         break;
       case 'conversation.item.input_audio_transcription.delta':
-        if (_shouldIgnoreUserAudio()) {
+        final itemId =
+            decoded['item_id']?.toString() ??
+            _activeUserItemId ??
+            'user-${DateTime.now().microsecondsSinceEpoch}';
+        if (!_shouldAcceptUserTranscript(itemId)) {
           break;
         }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
-            itemId:
-                decoded['item_id']?.toString() ??
-                'user-${DateTime.now().microsecondsSinceEpoch}',
+            itemId: itemId,
             role: 'user',
             text: decoded['delta']?.toString() ?? '',
           ),
         );
         break;
       case 'conversation.item.input_audio_transcription.completed':
-        if (_shouldIgnoreUserAudio()) {
-          break;
-        }
         final userItemId =
             decoded['item_id']?.toString() ??
+            _activeUserItemId ??
             'user-${DateTime.now().microsecondsSinceEpoch}';
+        if (!_shouldAcceptUserTranscript(userItemId)) {
+          _hasActiveUserSpeech = false;
+          _activeUserItemId = null;
+          break;
+        }
         final transcript = decoded['transcript']?.toString() ?? '';
         if (transcript.trim().isEmpty) {
+          _hasActiveUserSpeech = false;
+          _activeUserItemId = null;
           break;
         }
         _emit(
@@ -408,9 +434,18 @@ class AiRealtimeClient {
             status: AiVoiceSessionStatus.processing,
           ),
         );
+        _hasActiveUserSpeech = false;
+        _activeUserItemId = null;
         _requestAssistantResponse(userItemId);
         break;
       case 'response.output_audio_transcript.delta':
+        _isAssistantSpeaking = true;
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.speaking,
+          ),
+        );
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
@@ -423,6 +458,7 @@ class AiRealtimeClient {
         );
         break;
       case 'response.output_audio_transcript.done':
+        _isAssistantSpeaking = true;
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
@@ -456,20 +492,22 @@ class AiRealtimeClient {
       try {
         if (_localAudioTrack != null) {
           final localStats = await connection.getStats(_localAudioTrack);
+          _lastLocalLevel = _extractAudioLevel(localStats);
           _emit(
             AiVoiceRealtimeEvent(
               type: AiVoiceRealtimeEventType.localLevel,
-              level: _extractAudioLevel(localStats),
+              level: _lastLocalLevel,
             ),
           );
         }
 
         if (_remoteAudioTrack != null) {
           final remoteStats = await connection.getStats(_remoteAudioTrack);
+          _lastRemoteLevel = _extractAudioLevel(remoteStats);
           _emit(
             AiVoiceRealtimeEvent(
               type: AiVoiceRealtimeEventType.remoteLevel,
-              level: _extractAudioLevel(remoteStats),
+              level: _lastRemoteLevel,
             ),
           );
         }
@@ -520,7 +558,7 @@ class AiRealtimeClient {
   }
 
   Future<void> _restoreMicAfterSpeech() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1800));
+    await Future<void>.delayed(const Duration(milliseconds: 2400));
     if (_isDisposed) return;
     await _applyMicState();
   }
@@ -561,6 +599,42 @@ class AiRealtimeClient {
     }
 
     return DateTime.now().isBefore(ignoreUntil);
+  }
+
+  bool _shouldAcceptUserAudio() {
+    if (_shouldIgnoreUserAudio()) {
+      return false;
+    }
+
+    return !_isLikelyEchoInput();
+  }
+
+  bool _shouldAcceptUserTranscript(String itemId) {
+    if (_shouldIgnoreUserAudio()) {
+      return false;
+    }
+
+    if (_activeUserItemId != null && itemId == _activeUserItemId) {
+      return true;
+    }
+
+    if (_hasActiveUserSpeech && !_isLikelyEchoInput()) {
+      _activeUserItemId = itemId;
+      return true;
+    }
+
+    return false;
+  }
+
+  bool _isLikelyEchoInput() {
+    final remote = _lastRemoteLevel;
+    final local = _lastLocalLevel;
+
+    if (remote < 0.06) {
+      return false;
+    }
+
+    return remote > (local * 1.35) && local < 0.18;
   }
 
   Future<void> _setSpeakerphoneEnabled(

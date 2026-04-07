@@ -157,7 +157,7 @@ class _AiVoiceSessionScreenState extends ConsumerState<AiVoiceSessionScreen> {
       AiVoiceSessionStatus.listening => state.localLevel,
       AiVoiceSessionStatus.connecting => 0.12,
       _ => 0.08,
-    };
+    }.clamp(0.0, 1.0);
     final themeText = context.appColor(AppColors.textPrimary);
     final secondaryText = context.appColor(AppColors.textSecondary);
     final selectedPreset = state.selectedPreset;
@@ -218,10 +218,19 @@ class _AiVoiceSessionScreenState extends ConsumerState<AiVoiceSessionScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 12),
-                    BeeaVoiceOrb(
-                      status: state.status,
-                      amplitude: orbAmplitude,
-                      size: 224,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(end: orbAmplitude),
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, smoothedAmplitude, _) {
+                        return RepaintBoundary(
+                          child: BeeaVoiceOrb(
+                            status: state.status,
+                            amplitude: smoothedAmplitude,
+                            size: 224,
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 28),
                     Padding(
