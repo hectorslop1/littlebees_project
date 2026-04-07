@@ -56,6 +56,7 @@ class AiRealtimeClient {
   bool _isMicRequestedEnabled = true;
   bool _isAssistantSpeaking = false;
   bool _speakerphoneRequested = true;
+  DateTime? _ignoreUserAudioUntil;
 
   final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
 
@@ -239,6 +240,7 @@ class AiRealtimeClient {
     _isAssistantSpeaking = false;
     _isMicRequestedEnabled = true;
     _speakerphoneRequested = true;
+    _ignoreUserAudioUntil = null;
     try {
       await Helper.setSpeakerphoneOn(false);
     } catch (_) {}
@@ -300,6 +302,9 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.speech_started':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -308,6 +313,9 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.speech_stopped':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -316,6 +324,9 @@ class AiRealtimeClient {
         );
         break;
       case 'input_audio_buffer.committed':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptSlot,
@@ -342,6 +353,9 @@ class AiRealtimeClient {
         break;
       case 'response.output_audio.done':
         _isAssistantSpeaking = false;
+        _ignoreUserAudioUntil = DateTime.now().add(
+          const Duration(milliseconds: 1800),
+        );
         unawaited(_restoreMicAfterSpeech());
         _emit(
           const AiVoiceRealtimeEvent(
@@ -353,6 +367,9 @@ class AiRealtimeClient {
       case 'response.done':
         break;
       case 'conversation.item.input_audio_transcription.delta':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
@@ -365,6 +382,9 @@ class AiRealtimeClient {
         );
         break;
       case 'conversation.item.input_audio_transcription.completed':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
@@ -486,9 +506,22 @@ class AiRealtimeClient {
   }
 
   Future<void> _restoreMicAfterSpeech() async {
-    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await Future<void>.delayed(const Duration(milliseconds: 1800));
     if (_isDisposed) return;
     await _applyMicState();
+  }
+
+  bool _shouldIgnoreUserAudio() {
+    if (_isAssistantSpeaking) {
+      return true;
+    }
+
+    final ignoreUntil = _ignoreUserAudioUntil;
+    if (ignoreUntil == null) {
+      return false;
+    }
+
+    return DateTime.now().isBefore(ignoreUntil);
   }
 
   Future<void> _setSpeakerphoneEnabled(
