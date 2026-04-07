@@ -36,7 +36,11 @@ class AiVoiceState {
       presets.firstWhere((preset) => preset.id == selectedPresetId);
 
   String get visibleTranscript {
-    if (turns.isEmpty) {
+    final latestContent = turns.reversed
+        .map((turn) => turn.content.trim())
+        .firstWhere((content) => content.isNotEmpty, orElse: () => '');
+
+    if (latestContent.isEmpty) {
       return switch (status) {
         AiVoiceSessionStatus.connecting => 'Conectando a Beea...',
         AiVoiceSessionStatus.processing => 'Beea esta pensando...',
@@ -48,8 +52,7 @@ class AiVoiceState {
       };
     }
 
-    final current = turns.last;
-    return current.content;
+    return latestContent;
   }
 
   AiVoiceState copyWith({
@@ -209,6 +212,12 @@ class AiVoiceNotifier extends StateNotifier<AiVoiceState> {
       case AiVoiceRealtimeEventType.status:
         state = state.copyWith(status: event.status, clearError: true);
         break;
+      case AiVoiceRealtimeEventType.transcriptSlot:
+        _ensureTranscriptTurn(
+          itemId: event.itemId ?? 'user-${DateTime.now().microsecondsSinceEpoch}',
+          role: event.role ?? 'user',
+        );
+        break;
       case AiVoiceRealtimeEventType.transcriptPartial:
         _upsertTranscript(
           itemId: event.itemId ?? 'assistant-live',
@@ -275,6 +284,27 @@ class AiVoiceNotifier extends StateNotifier<AiVoiceState> {
         ),
       );
     }
+
+    state = state.copyWith(turns: updatedTurns);
+  }
+
+  void _ensureTranscriptTurn({
+    required String itemId,
+    required String role,
+  }) {
+    final updatedTurns = [...state.turns];
+    final index = updatedTurns.indexWhere((turn) => turn.itemId == itemId);
+    if (index >= 0) return;
+
+    updatedTurns.add(
+      AiVoiceTranscriptTurn(
+        itemId: itemId,
+        role: role,
+        content: '',
+        isFinal: false,
+        updatedAt: DateTime.now(),
+      ),
+    );
 
     state = state.copyWith(turns: updatedTurns);
   }

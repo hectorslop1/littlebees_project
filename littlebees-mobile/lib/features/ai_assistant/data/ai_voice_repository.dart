@@ -32,7 +32,13 @@ class AiVoiceRepository {
       data: {
         'turns': turns
             .where((turn) => turn.isFinal && turn.content.trim().isNotEmpty)
-            .map((turn) => {'role': turn.role, 'content': turn.content.trim()})
+            .map(
+              (turn) => {
+                'itemId': turn.itemId,
+                'role': turn.role,
+                'content': turn.content.trim(),
+              },
+            )
             .toList(),
         'voicePresetId': voicePresetId,
         'durationMs': durationMs,

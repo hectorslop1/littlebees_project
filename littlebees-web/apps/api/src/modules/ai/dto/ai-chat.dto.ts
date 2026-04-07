@@ -97,6 +97,11 @@ export class VoiceCallResponseDto {
 }
 
 export class VoiceTranscriptTurnDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  itemId?: string;
+
   @ApiProperty({ enum: ['user', 'assistant'] })
   @IsString()
   @IsIn(['user', 'assistant'])

@@ -79,7 +79,7 @@ class _BeeaVoiceOrbPainter extends CustomPainter {
     final orbPath = _buildBlobPath(center, radius);
     final glowPaint = Paint()
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 34)
-      ..color = const Color(0x662AA5FF);
+      ..color = const Color(0x66E7C55A);
     canvas.drawCircle(center, radius + 10, glowPaint);
 
     canvas.save();
@@ -91,10 +91,10 @@ class _BeeaVoiceOrbPainter extends CustomPainter {
         center,
         radius + 24,
         const [
-          Color(0xFFF8FFFF),
-          Color(0xFFAEEBFF),
-          Color(0xFF2391FF),
-          Color(0xFF1162F3),
+          Color(0xFFFFFCF4),
+          Color(0xFFFFE9B3),
+          Color(0xFFF2C14C),
+          Color(0xFFD79A28),
         ],
         const [0, 0.34, 0.72, 1],
       );
@@ -107,11 +107,11 @@ class _BeeaVoiceOrbPainter extends CustomPainter {
       angle: phase * 0.55,
       colors: const [
         Color(0x00FFFFFF),
-        Color(0x90F6FFFF),
-        Color(0x803FD2FF),
-        Color(0x001062F3),
+        Color(0x8CFFF8DA),
+        Color(0x90FFD36B),
+        Color(0x00D89A25),
       ],
-      stops: const [0.0, 0.28, 0.72, 1.0],
+      stops: const [0.0, 0.26, 0.74, 1.0],
       widthFactor: 0.34,
       verticalBias: -0.22,
     );
@@ -122,9 +122,9 @@ class _BeeaVoiceOrbPainter extends CustomPainter {
       angle: (phase * -0.75) + 1.4,
       colors: const [
         Color(0x00FFFFFF),
-        Color(0x75D9F7FF),
-        Color(0x8863B6FF),
-        Color(0x000D4CD9),
+        Color(0x75FFF2C4),
+        Color(0x88E8B448),
+        Color(0x00B77A16),
       ],
       stops: const [0.0, 0.26, 0.74, 1.0],
       widthFactor: 0.26,

@@ -31,6 +31,7 @@ interface VoicePresetConfig {
 }
 
 interface VoiceTranscriptTurn {
+  itemId?: string;
   role: 'user' | 'assistant';
   content: string;
 }
@@ -343,7 +344,7 @@ export class AiService {
         model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-mini',
         instructions,
         output_modalities: ['audio'],
-        max_output_tokens: 180,
+        max_output_tokens: 320,
         audio: {
           input: {
             transcription: {
@@ -566,30 +567,15 @@ ${recentConversation
   }
 
   private mergeVoiceTranscriptTurns(
-    turns: Array<{ role: string; content: string }>,
+    turns: Array<{ itemId?: string; role: string; content: string }>,
   ): VoiceTranscriptTurn[] {
-    const normalized = turns
+    return turns
       .map((turn) => ({
+        itemId: turn.itemId?.trim() || undefined,
         role: turn.role === 'assistant' ? 'assistant' : 'user',
         content: turn.content.trim(),
       }))
       .filter((turn) => turn.content.length > 0) as VoiceTranscriptTurn[];
-
-    const merged: VoiceTranscriptTurn[] = [];
-    for (const turn of normalized) {
-      const previous = merged[merged.length - 1];
-      if (previous && previous.role === turn.role) {
-        previous.content = `${previous.content} ${turn.content}`.trim();
-        continue;
-      }
-
-      merged.push({
-        role: turn.role,
-        content: turn.content,
-      });
-    }
-
-    return merged;
   }
 
   private tryBuildDeterministicReply(

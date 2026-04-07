@@ -9,6 +9,7 @@ import '../domain/ai_voice_models.dart';
 
 enum AiVoiceRealtimeEventType {
   status,
+  transcriptSlot,
   transcriptPartial,
   transcriptFinal,
   localLevel,
@@ -88,6 +89,7 @@ class AiRealtimeClient {
       _localAudioTrack = localTracks.first;
       await _applyMicState();
     }
+    await Helper.setSpeakerphoneOn(true);
 
     _peerConnection = await createPeerConnection({
       'sdpSemantics': 'unified-plan',
@@ -232,6 +234,9 @@ class AiRealtimeClient {
     _remoteAudioTrack = null;
     _isAssistantSpeaking = false;
     _isMicRequestedEnabled = true;
+    try {
+      await Helper.setSpeakerphoneOn(false);
+    } catch (_) {}
     if (_rendererInitialized) {
       remoteAudioRenderer.srcObject = null;
     }
@@ -305,8 +310,18 @@ class AiRealtimeClient {
           ),
         );
         break;
+      case 'input_audio_buffer.committed':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.transcriptSlot,
+            itemId:
+                decoded['item_id']?.toString() ??
+                'user-${DateTime.now().microsecondsSinceEpoch}',
+            role: 'user',
+          ),
+        );
+        break;
       case 'response.output_audio.delta':
-      case 'response.created':
         _isAssistantSpeaking = true;
         unawaited(_applyMicState());
         _emit(
@@ -316,8 +331,10 @@ class AiRealtimeClient {
           ),
         );
         break;
+      case 'response.created':
+        _isAssistantSpeaking = true;
+        break;
       case 'response.output_audio.done':
-      case 'response.done':
         _isAssistantSpeaking = false;
         unawaited(_restoreMicAfterSpeech());
         _emit(
@@ -327,10 +344,21 @@ class AiRealtimeClient {
           ),
         );
         break;
+      case 'response.done':
+        break;
+      case 'conversation.item.input_audio_transcription.delta':
+        _emit(
+          AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.transcriptPartial,
+            itemId:
+                decoded['item_id']?.toString() ??
+                'user-${DateTime.now().microsecondsSinceEpoch}',
+            role: 'user',
+            text: decoded['delta']?.toString() ?? '',
+          ),
+        );
+        break;
       case 'conversation.item.input_audio_transcription.completed':
-        if (_isAssistantSpeaking) {
-          break;
-        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
