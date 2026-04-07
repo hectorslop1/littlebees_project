@@ -55,6 +55,7 @@ class AiRealtimeClient {
   bool _rendererInitialized = false;
   bool _isMicRequestedEnabled = true;
   bool _isAssistantSpeaking = false;
+  bool _speakerphoneRequested = true;
 
   final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
 
@@ -89,7 +90,7 @@ class AiRealtimeClient {
       _localAudioTrack = localTracks.first;
       await _applyMicState();
     }
-    await Helper.setSpeakerphoneOn(true);
+    await _setSpeakerphoneEnabled(true, forceRetries: true);
 
     _peerConnection = await createPeerConnection({
       'sdpSemantics': 'unified-plan',
@@ -109,6 +110,7 @@ class AiRealtimeClient {
     _peerConnection!.onTrack = (event) {
       if (event.track.kind == 'audio') {
         _remoteAudioTrack = event.track;
+        unawaited(_setSpeakerphoneEnabled(true, forceRetries: true));
       }
       if (_rendererInitialized && event.streams.isNotEmpty) {
         remoteAudioRenderer.srcObject = event.streams.first;
@@ -118,6 +120,7 @@ class AiRealtimeClient {
     _peerConnection!.onConnectionState = (state) {
       if (_isDisposed) return;
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        unawaited(_setSpeakerphoneEnabled(true, forceRetries: true));
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -173,6 +176,7 @@ class AiRealtimeClient {
     await _peerConnection!.setRemoteDescription(
       RTCSessionDescription(answer.sdp, 'answer'),
     );
+    await _setSpeakerphoneEnabled(true, forceRetries: true);
 
     _startStatsSampling();
   }
@@ -234,6 +238,7 @@ class AiRealtimeClient {
     _remoteAudioTrack = null;
     _isAssistantSpeaking = false;
     _isMicRequestedEnabled = true;
+    _speakerphoneRequested = true;
     try {
       await Helper.setSpeakerphoneOn(false);
     } catch (_) {}
@@ -324,6 +329,7 @@ class AiRealtimeClient {
       case 'response.output_audio.delta':
         _isAssistantSpeaking = true;
         unawaited(_applyMicState());
+        unawaited(_setSpeakerphoneEnabled(true));
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -483,5 +489,28 @@ class AiRealtimeClient {
     await Future<void>.delayed(const Duration(milliseconds: 350));
     if (_isDisposed) return;
     await _applyMicState();
+  }
+
+  Future<void> _setSpeakerphoneEnabled(
+    bool enabled, {
+    bool forceRetries = false,
+  }) async {
+    _speakerphoneRequested = enabled;
+    try {
+      await Helper.setSpeakerphoneOn(enabled);
+    } catch (_) {}
+
+    if (!enabled || !forceRetries) return;
+
+    for (final delay in const [250, 800, 1600]) {
+      unawaited(
+        Future<void>.delayed(Duration(milliseconds: delay), () async {
+          if (_isDisposed || !_speakerphoneRequested) return;
+          try {
+            await Helper.setSpeakerphoneOn(true);
+          } catch (_) {}
+        }),
+      );
+    }
   }
 }

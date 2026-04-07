@@ -538,25 +538,29 @@ ${recentConversation
         id: 'calida',
         label: 'Calida',
         voice: 'shimmer',
-        guidance: 'Habla con calidez, amabilidad y un ritmo suave.',
+        guidance:
+          'Habla con calidez muy evidente, sonrisa en la voz, ritmo suave y frases acogedoras.',
       },
       {
         id: 'clara',
         label: 'Clara',
         voice: 'verse',
-        guidance: 'Habla con claridad, diccion limpia y energia equilibrada.',
+        guidance:
+          'Habla con diccion muy limpia, energia ligera, ritmo mas agil y tono brillante.',
       },
       {
         id: 'serena',
         label: 'Serena',
         voice: 'sage',
-        guidance: 'Habla con tranquilidad, paciencia y seguridad.',
+        guidance:
+          'Habla mas pausado, con tranquilidad marcada, paciencia y silencios breves entre ideas.',
       },
       {
         id: 'firme',
         label: 'Firme',
         voice: 'echo',
-        guidance: 'Habla con mas presencia, seguridad y tono sobrio.',
+        guidance:
+          'Habla con mas presencia, voz sobria, segura y un cierre mas decidido en cada frase.',
       },
     ];
 
