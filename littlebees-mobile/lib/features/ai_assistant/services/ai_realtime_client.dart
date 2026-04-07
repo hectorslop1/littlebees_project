@@ -52,6 +52,8 @@ class AiRealtimeClient {
   Timer? _statsTimer;
   bool _isDisposed = false;
   bool _rendererInitialized = false;
+  bool _isMicRequestedEnabled = true;
+  bool _isAssistantSpeaking = false;
 
   final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
 
@@ -84,6 +86,7 @@ class AiRealtimeClient {
         _localStream?.getAudioTracks() ?? const <MediaStreamTrack>[];
     if (localTracks.isNotEmpty) {
       _localAudioTrack = localTracks.first;
+      await _applyMicState();
     }
 
     _peerConnection = await createPeerConnection({
@@ -173,7 +176,8 @@ class AiRealtimeClient {
   }
 
   Future<void> setMicEnabled(bool enabled) async {
-    _localAudioTrack?.enabled = enabled;
+    _isMicRequestedEnabled = enabled;
+    await _applyMicState();
   }
 
   Future<void> close() async {
@@ -226,6 +230,8 @@ class AiRealtimeClient {
     _localStream = null;
     _localAudioTrack = null;
     _remoteAudioTrack = null;
+    _isAssistantSpeaking = false;
+    _isMicRequestedEnabled = true;
     if (_rendererInitialized) {
       remoteAudioRenderer.srcObject = null;
     }
@@ -301,6 +307,8 @@ class AiRealtimeClient {
         break;
       case 'response.output_audio.delta':
       case 'response.created':
+        _isAssistantSpeaking = true;
+        unawaited(_applyMicState());
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -310,6 +318,8 @@ class AiRealtimeClient {
         break;
       case 'response.output_audio.done':
       case 'response.done':
+        _isAssistantSpeaking = false;
+        unawaited(_restoreMicAfterSpeech());
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -318,6 +328,9 @@ class AiRealtimeClient {
         );
         break;
       case 'conversation.item.input_audio_transcription.completed':
+        if (_isAssistantSpeaking) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
@@ -430,5 +443,17 @@ class AiRealtimeClient {
     if (!_eventsController.isClosed) {
       _eventsController.add(event);
     }
+  }
+
+  Future<void> _applyMicState() async {
+    final track = _localAudioTrack;
+    if (track == null) return;
+    track.enabled = _isMicRequestedEnabled && !_isAssistantSpeaking;
+  }
+
+  Future<void> _restoreMicAfterSpeech() async {
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (_isDisposed) return;
+    await _applyMicState();
   }
 }
