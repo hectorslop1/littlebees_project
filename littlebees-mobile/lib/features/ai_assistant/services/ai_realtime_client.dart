@@ -367,9 +367,6 @@ class AiRealtimeClient {
       case 'response.done':
         break;
       case 'conversation.item.input_audio_transcription.delta':
-        if (_shouldIgnoreUserAudio()) {
-          break;
-        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
@@ -382,9 +379,6 @@ class AiRealtimeClient {
         );
         break;
       case 'conversation.item.input_audio_transcription.completed':
-        if (_shouldIgnoreUserAudio()) {
-          break;
-        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
