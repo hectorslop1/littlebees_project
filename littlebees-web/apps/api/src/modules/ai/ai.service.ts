@@ -354,8 +354,8 @@ export class AiService {
             },
             turn_detection: {
               type: 'server_vad',
-              create_response: true,
-              interrupt_response: true,
+              create_response: false,
+              interrupt_response: false,
               silence_duration_ms: 1200,
               prefix_padding_ms: 500,
               idle_timeout_ms: 12000,

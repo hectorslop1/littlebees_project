@@ -57,6 +57,7 @@ class AiRealtimeClient {
   bool _isAssistantSpeaking = false;
   bool _speakerphoneRequested = true;
   DateTime? _ignoreUserAudioUntil;
+  final Set<String> _requestedResponseItemIds = <String>{};
 
   final RTCVideoRenderer remoteAudioRenderer = RTCVideoRenderer();
 
@@ -241,6 +242,7 @@ class AiRealtimeClient {
     _isMicRequestedEnabled = true;
     _speakerphoneRequested = true;
     _ignoreUserAudioUntil = null;
+    _requestedResponseItemIds.clear();
     try {
       await Helper.setSpeakerphoneOn(false);
     } catch (_) {}
@@ -367,6 +369,9 @@ class AiRealtimeClient {
       case 'response.done':
         break;
       case 'conversation.item.input_audio_transcription.delta':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptPartial,
@@ -379,16 +384,31 @@ class AiRealtimeClient {
         );
         break;
       case 'conversation.item.input_audio_transcription.completed':
+        if (_shouldIgnoreUserAudio()) {
+          break;
+        }
+        final userItemId =
+            decoded['item_id']?.toString() ??
+            'user-${DateTime.now().microsecondsSinceEpoch}';
+        final transcript = decoded['transcript']?.toString() ?? '';
+        if (transcript.trim().isEmpty) {
+          break;
+        }
         _emit(
           AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.transcriptFinal,
-            itemId:
-                decoded['item_id']?.toString() ??
-                'user-${DateTime.now().microsecondsSinceEpoch}',
+            itemId: userItemId,
             role: 'user',
-            text: decoded['transcript']?.toString() ?? '',
+            text: transcript,
           ),
         );
+        _emit(
+          const AiVoiceRealtimeEvent(
+            type: AiVoiceRealtimeEventType.status,
+            status: AiVoiceSessionStatus.processing,
+          ),
+        );
+        _requestAssistantResponse(userItemId);
         break;
       case 'response.output_audio_transcript.delta':
         _emit(
@@ -503,6 +523,31 @@ class AiRealtimeClient {
     await Future<void>.delayed(const Duration(milliseconds: 1800));
     if (_isDisposed) return;
     await _applyMicState();
+  }
+
+  void _requestAssistantResponse(String itemId) {
+    final channel = _dataChannel;
+    if (channel == null) return;
+    if (_requestedResponseItemIds.contains(itemId)) return;
+
+    _requestedResponseItemIds.add(itemId);
+    try {
+      channel.send(
+        RTCDataChannelMessage(
+          jsonEncode({
+            'type': 'response.create',
+          }),
+        ),
+      );
+    } catch (_) {
+      _requestedResponseItemIds.remove(itemId);
+      _emit(
+        const AiVoiceRealtimeEvent(
+          type: AiVoiceRealtimeEventType.error,
+          message: 'No pudimos pedir la respuesta de Beea en esta sesion.',
+        ),
+      );
+    }
   }
 
   bool _shouldIgnoreUserAudio() {
