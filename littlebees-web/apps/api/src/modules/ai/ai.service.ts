@@ -191,8 +191,17 @@ export class AiService {
     });
 
     // Construir contexto con datos reales de la BD
-    const context = await this.contextBuilder.buildContext(userId, userRole, tenantId);
-    const contextFormatted = this.contextBuilder.formatContextForAI(context);
+    let context: any;
+    let contextFormatted: string;
+    try {
+      context = await this.contextBuilder.buildContext(userId, userRole, tenantId);
+      contextFormatted = this.contextBuilder.formatContextForAI(context);
+    } catch (ctxError: any) {
+      console.error('Error building AI context:', ctxError);
+      throw new BadRequestException(
+        'No fue posible preparar el contexto para Beea. Intenta de nuevo.',
+      );
+    }
 
     const deterministicReply = this.tryBuildDeterministicReply(
       userMessage,
@@ -294,7 +303,7 @@ export class AiService {
         usage: completion.usage,
       };
     } catch (error: any) {
-      console.error('Error calling Groq API:', error);
+      console.error('Error calling Groq API:', error?.message ?? error);
       const rawMessage = String(error?.message ?? '');
       if (
         rawMessage.includes('invalid_api_key') ||
@@ -302,6 +311,23 @@ export class AiService {
       ) {
         throw new ServiceUnavailableException(
           'Beea no esta disponible porque la configuracion de Groq del servidor no es valida.',
+        );
+      }
+      if (
+        rawMessage.includes('model_not_found') ||
+        rawMessage.includes('does not exist') ||
+        rawMessage.includes('model_decommissioned')
+      ) {
+        throw new ServiceUnavailableException(
+          `El modelo de IA configurado (${process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'}) no esta disponible en Groq. Revisa GROQ_MODEL en el servidor.`,
+        );
+      }
+      if (
+        rawMessage.includes('rate_limit') ||
+        rawMessage.includes('Rate limit')
+      ) {
+        throw new ServiceUnavailableException(
+          'Beea esta recibiendo muchas solicitudes. Espera unos segundos e intenta de nuevo.',
         );
       }
       throw new BadRequestException(

@@ -25,8 +25,10 @@ class _BeeaVoiceOrbState extends State<BeeaVoiceOrb>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 10),
+    duration: const Duration(seconds: 6),
   )..repeat();
+
+  double _smoothedAmplitude = 0;
 
   @override
   void dispose() {
@@ -39,11 +41,14 @@ class _BeeaVoiceOrbState extends State<BeeaVoiceOrb>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
+        final target = widget.amplitude.clamp(0.0, 1.0);
+        _smoothedAmplitude = ui.lerpDouble(_smoothedAmplitude, target, 0.15)!;
+
         return CustomPaint(
           size: Size.square(widget.size),
           painter: _BeeaVoiceOrbPainter(
             phase: _controller.value * math.pi * 2,
-            amplitude: widget.amplitude.clamp(0.0, 1.0),
+            amplitude: _smoothedAmplitude,
             status: widget.status,
           ),
         );

@@ -218,19 +218,12 @@ class _AiVoiceSessionScreenState extends ConsumerState<AiVoiceSessionScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 12),
-                    TweenAnimationBuilder<double>(
-                      tween: Tween<double>(end: orbAmplitude),
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, smoothedAmplitude, _) {
-                        return RepaintBoundary(
-                          child: BeeaVoiceOrb(
-                            status: state.status,
-                            amplitude: smoothedAmplitude,
-                            size: 224,
-                          ),
-                        );
-                      },
+                    RepaintBoundary(
+                      child: BeeaVoiceOrb(
+                        status: state.status,
+                        amplitude: orbAmplitude,
+                        size: 224,
+                      ),
                     ),
                     const SizedBox(height: 28),
                     Padding(

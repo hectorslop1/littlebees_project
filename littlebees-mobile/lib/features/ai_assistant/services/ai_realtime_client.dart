@@ -127,12 +127,6 @@ class AiRealtimeClient {
       if (_isDisposed) return;
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
         unawaited(_setSpeakerphoneEnabled(true, forceRetries: true));
-        _emit(
-          const AiVoiceRealtimeEvent(
-            type: AiVoiceRealtimeEventType.status,
-            status: AiVoiceSessionStatus.listening,
-          ),
-        );
       }
 
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
@@ -152,14 +146,6 @@ class AiRealtimeClient {
     );
     _dataChannel!.onDataChannelState = (state) {
       if (_isDisposed) return;
-      if (state == RTCDataChannelState.RTCDataChannelOpen) {
-        _emit(
-          const AiVoiceRealtimeEvent(
-            type: AiVoiceRealtimeEventType.status,
-            status: AiVoiceSessionStatus.listening,
-          ),
-        );
-      }
     };
     _dataChannel!.onMessage = (message) {
       _handleRealtimeMessage(message.text);
@@ -284,7 +270,7 @@ class AiRealtimeClient {
 
     connection.onIceGatheringState = listener;
     await completer.future.timeout(
-      const Duration(milliseconds: 1800),
+      const Duration(milliseconds: 1200),
       onTimeout: () {},
     );
   }
@@ -363,8 +349,8 @@ class AiRealtimeClient {
         break;
       case 'response.created':
         _isAssistantSpeaking = true;
-        _hasActiveUserSpeech = false;
-        _activeUserItemId = null;
+        unawaited(_applyMicState());
+        _clearServerAudioBuffer();
         _emit(
           const AiVoiceRealtimeEvent(
             type: AiVoiceRealtimeEventType.status,
@@ -427,7 +413,9 @@ class AiRealtimeClient {
         );
         _hasActiveUserSpeech = false;
         _activeUserItemId = null;
-        _requestAssistantResponse(userItemId);
+        if (!_isAssistantSpeaking) {
+          _requestAssistantResponse(userItemId);
+        }
         break;
       case 'response.output_audio_transcript.delta':
         _emit(
@@ -468,7 +456,7 @@ class AiRealtimeClient {
 
   void _startStatsSampling() {
     _statsTimer?.cancel();
-    _statsTimer = Timer.periodic(const Duration(milliseconds: 120), (_) async {
+    _statsTimer = Timer.periodic(const Duration(milliseconds: 80), (_) async {
       final connection = _peerConnection;
       if (connection == null || _isDisposed) return;
 
@@ -541,15 +529,17 @@ class AiRealtimeClient {
   }
 
   Future<void> _restoreMicAfterSpeech() async {
-    await Future<void>.delayed(const Duration(milliseconds: 2400));
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
     if (_isDisposed) return;
     await _applyMicState();
   }
 
   void _finishAssistantTurn() {
+    if (!_isAssistantSpeaking) return;
     _isAssistantSpeaking = false;
+    _clearServerAudioBuffer();
     _ignoreUserAudioUntil = DateTime.now().add(
-      const Duration(milliseconds: 2400),
+      const Duration(milliseconds: 1200),
     );
     unawaited(_restoreMicAfterSpeech());
     _emit(
@@ -560,6 +550,16 @@ class AiRealtimeClient {
     );
   }
 
+  void _clearServerAudioBuffer() {
+    final channel = _dataChannel;
+    if (channel == null) return;
+    try {
+      channel.send(
+        RTCDataChannelMessage(jsonEncode({'type': 'input_audio_buffer.clear'})),
+      );
+    } catch (_) {}
+  }
+
   void _requestAssistantResponse(String itemId) {
     final channel = _dataChannel;
     if (channel == null) return;
@@ -568,11 +568,7 @@ class AiRealtimeClient {
     _requestedResponseItemIds.add(itemId);
     try {
       channel.send(
-        RTCDataChannelMessage(
-          jsonEncode({
-            'type': 'response.create',
-          }),
-        ),
+        RTCDataChannelMessage(jsonEncode({'type': 'response.create'})),
       );
     } catch (_) {
       _requestedResponseItemIds.remove(itemId);
@@ -607,7 +603,12 @@ class AiRealtimeClient {
   }
 
   bool _shouldAcceptUserTranscript(String itemId) {
-    if (_shouldIgnoreUserAudio()) {
+    // Only check the post-response ignore window, NOT _isAssistantSpeaking.
+    // Transcripts arrive asynchronously and may come after the assistant
+    // has already started speaking (the transcript is for speech that
+    // happened BEFORE the response).
+    final ignoreUntil = _ignoreUserAudioUntil;
+    if (ignoreUntil != null && DateTime.now().isBefore(ignoreUntil)) {
       return false;
     }
 
